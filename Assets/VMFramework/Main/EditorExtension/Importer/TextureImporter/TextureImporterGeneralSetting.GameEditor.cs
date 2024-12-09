@@ -6,7 +6,7 @@ namespace VMFramework.Editor
 {
     public partial class TextureImporterGeneralSetting : IGameEditorMenuTreeNode
     {
-        string INameOwner.name => "Texture Importer";
+        string INameOwner.Name => "Texture Importer";
     }
 }
 #endif

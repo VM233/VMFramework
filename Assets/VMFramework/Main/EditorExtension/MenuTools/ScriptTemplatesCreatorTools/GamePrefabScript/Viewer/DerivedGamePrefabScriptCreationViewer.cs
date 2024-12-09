@@ -23,7 +23,7 @@ namespace VMFramework.Editor
         [EnableIf(nameof(IsGamePrefabHasGameItem))]
         public bool withGameItemInterface = true;
         
-        protected override string nameSuffix => withGameItem ? "Config" : string.Empty;
+        protected override string NameSuffix => withGameItem ? "Config" : string.Empty;
 
         private bool IsGamePrefabHasGameItem()
         {

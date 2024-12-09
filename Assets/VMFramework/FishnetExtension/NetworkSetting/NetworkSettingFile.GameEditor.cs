@@ -8,7 +8,7 @@ namespace VMFramework.Network
 {
     public partial class NetworkSettingFile : IGameEditorMenuTreeNode
     {
-        string INameOwner.name => "Network Setting";
+        string INameOwner.Name => "Network Setting";
 
         Icon IGameEditorMenuTreeNode.Icon => SdfIconType.HddNetwork;
     }

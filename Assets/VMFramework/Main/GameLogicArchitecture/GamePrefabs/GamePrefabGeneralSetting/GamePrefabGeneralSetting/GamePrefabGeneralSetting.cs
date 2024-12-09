@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace VMFramework.GameLogicArchitecture
 {
-    public abstract partial class GamePrefabGeneralSetting : GeneralSetting, IInitialGamePrefabProvider
+    public abstract partial class GamePrefabGeneralSetting : GeneralSetting, IGamePrefabProvider
     {
         public const string UNDEFINED_GAME_ITEM_NAME = "Undefined Game Item Name";
         
@@ -67,16 +67,13 @@ namespace VMFramework.GameLogicArchitecture
 
         #region Initial Game Prefab Provider
 
-        IEnumerable<IGamePrefab> IInitialGamePrefabProvider.GetInitialGamePrefabs()
+        public void GetGamePrefabs(ICollection<IGamePrefab> gamePrefabsCollection)
         {
             RefreshInitialGamePrefabWrappers();
             
             foreach (var wrapper in initialGamePrefabWrappers)
             {
-                foreach (var gamePrefab in wrapper.GetGamePrefabs())
-                {
-                    yield return gamePrefab;
-                }
+                wrapper.GetGamePrefabs(gamePrefabsCollection);
             }
         }
 

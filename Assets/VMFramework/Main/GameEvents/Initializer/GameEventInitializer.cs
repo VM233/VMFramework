@@ -10,9 +10,9 @@ namespace VMFramework.GameEvents
     [Preserve]
     public sealed class GameEventInitializer : IGameInitializer
     {
-        IEnumerable<InitializationAction> IInitializer.GetInitializationActions()
+        void IInitializer.GetInitializationActions(ICollection<InitializationAction> actions)
         {
-            yield return new(InitializationOrder.Init, OnInit, this);
+            actions.Add(new(InitializationOrder.Init, OnInit, this));
         }
 
         private static void OnInit(Action onDone)

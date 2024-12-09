@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 using Sirenix.OdinInspector;
 using VMFramework.Core;
@@ -18,9 +19,9 @@ namespace VMFramework.Configuration
         }
     }
     
-    public abstract partial class CircularSelectChooserConfig<TWrapper, TItem> : ChooserConfig<TWrapper, TItem>, ICircularSelectChooserConfig<TWrapper, TItem>
+    public abstract partial class CircularSelectChooserConfig<TWrapper, TItem> : WrapperChooserConfig<TWrapper, TItem>, ICircularSelectChooserConfig<TWrapper, TItem>
     {
-        [LabelText("从第几个开始循环"), SuffixLabel("从0开始计数")]
+        [LabelText("从第几个开始循环"), SuffixLabel("Begin with 0")]
         [MinValue(0)]
         [JsonProperty]
         public int startCircularIndex = 0;
@@ -28,12 +29,11 @@ namespace VMFramework.Configuration
         [LabelText("乒乓循环")]
         [PropertyTooltip("循环到底后，从后往前遍历")]
 #if UNITY_EDITOR
-        [ShowIf(nameof(showPingPongOption))]
+        [ShowIf(nameof(ShowPingPongOption))]
 #endif
         [JsonProperty]
         public bool pingPong = false;
 
-        [LabelText("循环体")]
 #if UNITY_EDITOR
         [ListDrawerSettings(CustomAddFunction = nameof(AddItemGUI), ShowFoldout = true)]
         [OnValueChanged(nameof(OnItemsChangedGUI), true)]
@@ -42,6 +42,8 @@ namespace VMFramework.Configuration
         [IsNotNullOrEmpty]
         [JsonProperty]
         public List<CircularSelectItemConfig<TWrapper>> items = new();
+
+        private CircularSelectChooser<TItem> chooser;
 
         protected override void OnInit()
         {
@@ -66,11 +68,23 @@ namespace VMFramework.Configuration
             }
         }
 
-        public override IChooser<TItem> GenerateNewObjectChooser()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private CircularSelectChooser<TItem> GenerateThisChooser()
         {
             return new CircularSelectChooser<TItem>(
                 items.Select(item => new CircularSelectItem<TItem>(UnboxWrapper(item.value), item.times)),
                 pingPong, startCircularIndex);
+        }
+
+        public override IChooser<TItem> GenerateNewChooser()
+        {
+            return GenerateThisChooser();
+        }
+
+        public override TItem GetRandomItem(Random random)
+        {
+            chooser ??= GenerateThisChooser();
+            return chooser.GetRandomItem(random);
         }
 
         public override IEnumerable<TWrapper> GetAvailableWrappers()
@@ -113,10 +127,10 @@ namespace VMFramework.Configuration
             {
                 if (item.times > 1)
                 {
-                    return $"{ValueToString(item.value)}:{item.times} times";
+                    return $"{WrapperToString(item.value)}:{item.times} times";
                 }
 
-                return ValueToString(item.value);
+                return WrapperToString(item.value);
             }));
 
             if (pingPong)

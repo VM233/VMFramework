@@ -4,6 +4,7 @@ using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using VMFramework.Core;
 using VMFramework.OdinExtensions;
 
 namespace VMFramework.Configuration.Animation
@@ -28,7 +29,7 @@ namespace VMFramework.Configuration.Animation
         {
             await base.Run(target, token);
             
-            await target.DOLocalMove(target.localPosition + end.GetValue(), moveDuration).SetEase(ease)
+            await target.DOLocalMove(target.localPosition + end.GetRandomItem(), moveDuration).SetEase(ease)
                 .AwaitForComplete(cancellationToken: token);
         }
 

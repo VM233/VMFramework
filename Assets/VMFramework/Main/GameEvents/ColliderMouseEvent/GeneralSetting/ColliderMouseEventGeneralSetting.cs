@@ -21,5 +21,11 @@ namespace VMFramework.GameEvents
         
         [TabGroup(TAB_GROUP_NAME, COLLIDER_MOUSE_EVENT_CATEGORY)]
         public LayerMask detectLayerMask = -1;
+        
+        [TabGroup(TAB_GROUP_NAME, COLLIDER_MOUSE_EVENT_CATEGORY)]
+        public bool includingDefaultPhysicsScene3D = true;
+        
+        [TabGroup(TAB_GROUP_NAME, COLLIDER_MOUSE_EVENT_CATEGORY)]
+        public bool includingDefaultPhysicsScene2D = true;
     }
 }

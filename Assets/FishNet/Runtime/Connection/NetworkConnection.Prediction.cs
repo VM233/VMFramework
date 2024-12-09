@@ -1,4 +1,7 @@
-﻿using FishNet.Managing;
+﻿#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#define DEVELOPMENT
+#endif
+using FishNet.Managing;
 using FishNet.Managing.Predicting;
 using FishNet.Managing.Timing;
 using FishNet.Managing.Transporting;
@@ -6,7 +9,6 @@ using FishNet.Serializing;
 using FishNet.Transporting;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using UnityEngine;
 
 namespace FishNet.Connection
 {
@@ -16,20 +18,6 @@ namespace FishNet.Connection
     /// </summary>
     public partial class NetworkConnection
     {
-        internal void Prediction_Initialize(NetworkManager manager, bool asServer) { }
-
-#if PREDICTION_1
-        /// <summary>
-        /// Local tick when the connection last replicated.
-        /// </summary>
-        public uint LocalReplicateTick { get; internal set; }
-
-        /// <summary>
-        /// Resets NetworkConnection.
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void Prediction_Reset() { }
-#else
         /// <summary>
         /// Approximate replicate tick on the server for this connection.
         /// This also contains the last set value for local and remote.
@@ -40,13 +28,16 @@ namespace FishNet.Connection
         /// </summary>
         internal List<PooledWriter> PredictionStateWriters = new List<PooledWriter>();
 
+        internal void Prediction_Initialize(NetworkManager manager, bool asServer) { }
+
+
         /// <summary>
         /// Writes a prediction state.
         /// </summary>
         /// <param name="data"></param>
         internal void WriteState(PooledWriter data)
         {
-#if !DEVELOPMENT_BUILD && !UNITY_EDITOR
+#if !DEVELOPMENT
             //Do not send states to clientHost.
             if (IsLocalClient)
                 return;
@@ -80,8 +71,8 @@ namespace FishNet.Connection
             if (writerCount == 0 || channel == Channel.Reliable)
             {
                 stateWriter = WriterPool.Retrieve(mtu);
-                PredictionStateWriters.Add(stateWriter);               
-                stateWriter.Reserve(PredictionManager.STATE_HEADER_RESERVE_LENGTH);
+                PredictionStateWriters.Add(stateWriter);
+                stateWriter.Skip(PredictionManager.STATE_HEADER_RESERVE_LENGTH);
                 /// 2 PacketId.
                 /// 4 Last replicate tick run for connection.
                 /// 4 Length unpacked.
@@ -105,6 +96,17 @@ namespace FishNet.Connection
             PredictionStateWriters.Clear();
         }
 
+
+        /// <summary>
+        /// Sets the last tick a NetworkBehaviour replicated with.
+        /// </summary>
+        /// <param name="setUnordered">True to set unordered value, false to set ordered.</param>
+        internal void SetReplicateTick(uint value, EstimatedTick.OldTickOption oldTickOption = EstimatedTick.OldTickOption.Discard)
+        {
+            ReplicateTick.Update(value, oldTickOption);
+        }
+
+
         /// <summary>
         /// Resets NetworkConnection.
         /// </summary>
@@ -114,8 +116,6 @@ namespace FishNet.Connection
             StorePredictionStateWriters();
             ReplicateTick.Reset();
         }
-#endif
-
     }
 
 

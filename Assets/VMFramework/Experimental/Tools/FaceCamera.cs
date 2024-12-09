@@ -17,7 +17,7 @@ public class FaceCamera : MonoBehaviour
 
         if (cameraToFace == null)
         {
-            cameraToFace = CameraManager.mainCamera;
+            cameraToFace = CameraManager.MainCamera;
         }
     }
 

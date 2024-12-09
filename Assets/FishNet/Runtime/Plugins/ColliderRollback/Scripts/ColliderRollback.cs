@@ -1,275 +1,90 @@
-﻿using FishNet.Managing;
+﻿using System.Collections.Generic;
+using FishNet.Managing;
 using FishNet.Object;
+using GameKit.Dependencies.Utilities;
 using UnityEngine;
 
 namespace FishNet.Component.ColliderRollback
 {
-
-    public class ColliderRollback : NetworkBehaviour
+    public partial class ColliderRollback : NetworkBehaviour
     {
-        #region Types.
-        internal enum BoundingBoxType
-        {
-            /// <summary>
-            /// Disable this feature.
-            /// </summary>
-            Disabled,
-            /// <summary>
-            /// Manually specify the dimensions of a bounding box.
-            /// </summary>
-            Manual,
-        }
-        //PROSTART
-        internal enum FrameRollbackTypes
-        {
-            LerpFirst,
-            LerpMiddle,
-            Exact
-        }
-        /// <summary>
-        /// Used to store where colliders are during the snapshot.
-        /// </summary>
-        private struct ColliderSnapshot
-        {
-            public ColliderSnapshot(Transform t)
-            {
-                WorldPosition = t.position;
-                WorldRotation = t.rotation;
-            }
-
-            /// <summary>
-            /// WorldPosition of transform during snapshot.
-            /// </summary>
-            public Vector3 WorldPosition;
-            /// <summary>
-            /// WorldRotation of transform during snapshot.
-            /// </summary>
-            public Quaternion WorldRotation;
-
-            public void UpdateValues(Transform t)
-            {
-                WorldPosition = t.position;
-                WorldRotation = t.rotation;
-            }
-        }
-
-        /// <summary>
-        /// Used to store where colliders start before rollbacks.
-        /// </summary>
-        internal class RollingCollider
-        {
-            public RollingCollider(Transform t, ColliderRollback colliderRollback)
-            {
-                Transform = t;
-                LocalPosition = t.localPosition;
-                LocalRotation = t.localRotation;
-            }
-
-            /// <summary>
-            /// Received when ReturnForward is called on ColliderRollback.
-            /// </summary>
-            public void Return()
-            {
-                Transform.localPosition = LocalPosition;
-                Transform.localRotation = LocalRotation;
-            }
-
-            /// <summary>
-            /// Received when Rollback is called on ColliderRollback.
-            /// </summary>
-            public void Rollback(FrameRollbackTypes rollbackType, int endFrame, float percent)
-            {
-                //Exact frame.
-                if (rollbackType == FrameRollbackTypes.Exact)
-                {
-                    int index = GetSnapshotIndex(endFrame);
-                    Transform.position = _snapshots[index].WorldPosition;
-                    Transform.rotation = _snapshots[index].WorldRotation;
-                }
-                //Start frame.
-                else if (rollbackType == FrameRollbackTypes.LerpFirst)
-                {
-                    //Lerp between actual position and the most recent snapshot.
-                    int firstFrame = GetSnapshotIndex(0);
-                    Transform.position = Vector3.Lerp(Transform.position, _snapshots[firstFrame].WorldPosition, percent);
-                    Transform.rotation = Quaternion.Lerp(Transform.rotation, _snapshots[firstFrame].WorldRotation, percent);
-                }
-                //Middle frame.
-                else if (rollbackType == FrameRollbackTypes.LerpMiddle)
-                {
-                    //Lerp between end frame and the one before it.
-                    int firstFrame = GetSnapshotIndex(endFrame - 1);
-                    int secondFrame = GetSnapshotIndex(endFrame);
-
-                    Transform.position = Vector3.Lerp(_snapshots[firstFrame].WorldPosition, _snapshots[secondFrame].WorldPosition, percent);
-                    Transform.rotation = Quaternion.Lerp(_snapshots[firstFrame].WorldRotation, _snapshots[secondFrame].WorldRotation, percent);
-                }
-            }
-
-            #region Public.
-            /// <summary>
-            /// Transform collider is for.
-            /// </summary>
-            public readonly Transform Transform;
-            /// <summary>
-            /// LocalPosition of transform at start.
-            /// </summary>
-            public readonly Vector3 LocalPosition;
-            /// <summary>
-            /// LocalRotation of transform at start.
-            /// </summary>
-            public readonly Quaternion LocalRotation;
-            #endregion
-
-            #region Private.
-            /// <summary>
-            /// Current snapshots for this collider.
-            /// </summary>
-            private ColliderSnapshot[] _snapshots;
-            /// <summary>
-            /// Index to write a snapshot in.
-            /// </summary>
-            private int _writeIndex = 0;
-            /// <summary>
-            /// True if snapshots are being recycled rather than written for the first time.
-            /// </summary>
-            private bool _recycleSnapshots = false;
-            #endregion
-
-            /// <summary>
-            /// Fills snapshots with current value.
-            /// </summary>
-            public void ResetSnapshots(int count)
-            {
-                if (count <= 0)
-                {
-                    Debug.LogError("Cannot reset snapshots with count less than 1.");
-                    return;
-                }
-
-                _snapshots = new ColliderSnapshot[count];
-                //Reset data as if new.
-                _writeIndex = 0;
-                _recycleSnapshots = false;
-            }
-
-            /// <summary>
-            /// Adds a snapshot for this collider.
-            /// </summary>
-            public void AddSnapshot()
-            {
-                //Not yet recycling, make a new snapshot.
-                if (!_recycleSnapshots)
-                    _snapshots[_writeIndex] = new ColliderSnapshot(Transform);
-                //Snapshot array traversed already, start recycling.
-                else
-                    _snapshots[_writeIndex].UpdateValues(Transform);
-
-                _writeIndex++;
-                if (_writeIndex >= _snapshots.Length)
-                {
-                    _writeIndex = 0;
-                    _recycleSnapshots = true;
-                }
-            }
-
-            /// <summary>
-            /// Gets a snapshot on the specified index.
-            /// </summary>
-            /// <returns></returns>
-            private int GetSnapshotIndex(int historyCount)
-            {
-                /* Since write index is increased after a write
-                 * we must reduce it by 1 to get to the last
-                 * write index, before removing history count. */
-                int index = (_writeIndex - 1) - historyCount;
-                //If negative value start taking from the back.
-                if (index < 0)
-                {
-                    /* Cannot take from back, snapshots aren't filled yet.
-                     * Instead take the oldest snapshot, which in this case
-                     * would be index 0. */
-                    if (!_recycleSnapshots)
-                        return 0;
-                    //Snapshots filled, take from back.
-                    else
-                        return (_snapshots.Length + index);
-                }
-                //Not a negative value, return as is.
-                else
-                {
-                    return index;
-                }
-            }
-        }
-        //PROEND
-        #endregion
-
         #region Serialized.
+
 #pragma warning disable CS0414
         /// <summary>
         /// How to configure the bounding box check.
         /// </summary>
-        [Tooltip("How to configure the bounding box check.")]
-        [SerializeField]
+        [Tooltip("How to configure the bounding box check.")] [SerializeField]
         private BoundingBoxType _boundingBox = BoundingBoxType.Disabled;
         /// <summary>
         /// Physics type to generate a bounding box for.
         /// </summary>
-        [Tooltip("Physics type to generate a bounding box for.")]
-        [SerializeField]
+        [Tooltip("Physics type to generate a bounding box for.")] [SerializeField]
         private RollbackPhysicsType _physicsType = RollbackPhysicsType.Physics;
         /// <summary>
         /// Size for the bounding box. This is only used when BoundingBox is set to Manual.
         /// </summary>
-        [Tooltip("Size for the bounding box.. This is only used when BoundingBox is set to Manual.")]
-        [SerializeField]
+        [Tooltip("Size for the bounding box.. This is only used when BoundingBox is set to Manual.")] [SerializeField]
         private Vector3 _boundingBoxSize = new Vector3(3f, 3f, 3f);
         /// <summary>
         /// Objects holding colliders which can rollback.
         /// </summary>
-        [Tooltip("Objects holding colliders which can rollback.")]
-        [SerializeField]
+        [Tooltip("Objects holding colliders which can rollback.")] [SerializeField]
         private GameObject[] _colliderParents = new GameObject[0];
 #pragma warning restore CS0414
+
         #endregion
 
         //PROSTART
+
         #region Private.
+
         /// <summary>
         /// Rollback data about ColliderParents.
         /// </summary>
-        private RollingCollider[] _rollingColliders = new RollingCollider[0];
+        private List<RollingCollider> _rollingColliders;
         /// <summary>
         /// True if rolled back.
         /// </summary>
-        private bool _rolledBack = false;
+        private bool _rolledBack;
         /// <summary>
         /// Maximum snapshots allowed. Generated at runtime using snapshot interval and max rollback time.
         /// </summary>
-        private int _maxSnapshots = 0;
-        /// <summary>
-        /// True if initialized.
-        /// </summary>
-        private bool _initialized = false;
+        private int _maxSnapshots;
         /// <summary>
         /// Becomes true once bounding box is made.
         /// </summary>
         private bool _boundingBoxCreated;
+        /// <summary>
+        /// Number of snapshots written. This value is used to determine if snapshots can be lerped. 
+        /// </summary>
+        private byte _lerpSnapshotCounter;
+
         #endregion
+
+        public override void OnStartNetwork()
+        {
+            if (base.IsServerStarted)
+            {
+                _maxSnapshots = Mathf.CeilToInt(base.RollbackManager.MaximumRollbackTime / (float)base.TimeManager.TickDelta);
+                if (_maxSnapshots < 2)
+                    _maxSnapshots = 2;
+            }
+        }
 
         public override void OnStartServer()
         {
             base.OnStartServer();
             CreateBoundingBox();
             ChangeEventSubscriptions(true);
-            Initialize();
+            InitializeRollingColliders();
         }
 
         public override void OnStopServer()
         {
             base.OnStopServer();
             ChangeEventSubscriptions(false);
+            DeinitializeRollingColliders();
         }
 
         /// <summary>
@@ -332,12 +147,12 @@ namespace FishNet.Component.ColliderRollback
             if (_rolledBack)
                 return;
 
-            for (int i = 0; i < _rollingColliders.Length; i++)
-            {
-                if (_rollingColliders[i] == null)
-                    continue;
+            if (_lerpSnapshotCounter < _maxSnapshots)
+                _lerpSnapshotCounter++;
+
+            int count = _rollingColliders.Count;
+            for (int i = 0; i < count; i++)
                 _rollingColliders[i].AddSnapshot();
-            }
         }
 
 
@@ -353,34 +168,45 @@ namespace FishNet.Component.ColliderRollback
                 base.NetworkManager.LogWarning("Colliders are already rolled back. Returning colliders forward first.");
                 Return();
             }
+            //None are written.
+            else if (_lerpSnapshotCounter == 0)
+            {
+                return;
+            }
 
             FrameRollbackTypes rollbackType;
             int endFrame;
             float percent;
 
+            /* If time were 0.3f and delta was 0.2f then the
+             * result would be 1.5f. This indicates to lerp between
+             * the first snapshot, and one after. */
             float decimalFrame = (time / (float)base.TimeManager.TickDelta);
-            //Out of frames.
-            if (decimalFrame >= (_maxSnapshots - 1))
+            /* Rollback is beyond written quantity.
+             * Set to use the last snapshot. */
+            if (decimalFrame > _lerpSnapshotCounter)
             {
-                rollbackType = FrameRollbackTypes.LerpMiddle;
-                endFrame = (_maxSnapshots - 1);
+                rollbackType = FrameRollbackTypes.Exact;
+                //Be sure to subtract 1 to get last entry in snapshots.
+                endFrame = (_lerpSnapshotCounter - 1);
+                //Not needed for exact but must be set.
                 percent = 1f;
             }
             //Within frames.
             else
             {
                 percent = (decimalFrame % 1);
+                endFrame = Mathf.CeilToInt(decimalFrame);
 
-                /* Rolling back at least 2 frames.
-                 * If only rolling back one frame decimalFrame
-                 * would be less than 1, since index of 0 would be
-                 * the first frame. */
-                if (decimalFrame > 1f)
+                /* If the end frame is larger than or equal to 1
+                 * then a lerp between two snapshots can occur. If
+                 * equal to 1 then the lerp would occur between 0 and 1. */
+                if (endFrame >= 1)
                 {
                     rollbackType = FrameRollbackTypes.LerpMiddle;
                     endFrame = Mathf.CeilToInt(decimalFrame);
                 }
-                //Not rolling back more than 1 frame.
+                //Rolling back only 1 frame.
                 else
                 {
                     endFrame = 0;
@@ -388,7 +214,8 @@ namespace FishNet.Component.ColliderRollback
                 }
             }
 
-            int count = _rollingColliders.Length;
+            
+            int count = _rollingColliders.Count;
             for (int i = 0; i < count; i++)
                 _rollingColliders[i].Rollback(rollbackType, endFrame, percent);
 
@@ -403,7 +230,7 @@ namespace FishNet.Component.ColliderRollback
             if (!_rolledBack)
                 return;
 
-            int count = _rollingColliders.Length;
+            int count = _rollingColliders.Count;
             for (int i = 0; i < count; i++)
                 _rollingColliders[i].Return();
 
@@ -411,27 +238,17 @@ namespace FishNet.Component.ColliderRollback
         }
 
         /// <summary>
-        /// Creates rolling collider values.
+        /// Initializes class for use.
         /// </summary>
-        private void Initialize()
+        private void InitializeRollingColliders()
         {
-            //Not going to make an event for this since it only occurs OnEnable.
-            for (int i = 0; i < _rollingColliders.Length; i++)
-                _rollingColliders[i].ResetSnapshots(_maxSnapshots);
-
-            if (_initialized)
-                return;
-
-            _maxSnapshots = Mathf.CeilToInt(base.RollbackManager.MaximumRollbackTime / (float)base.TimeManager.TickDelta);
-            if (_maxSnapshots < 2)
-                _maxSnapshots = 2;
-            _rollingColliders = new RollingCollider[_colliderParents.Length];
+            _rollingColliders = ResettableCollectionCaches<RollingCollider>.RetrieveList();
 
             /* Generate a rolling collider for each
              * collider parent. */
-            for (int i = 0; i < _colliderParents.Length; i++)
+            foreach (GameObject colliderParent in _colliderParents)
             {
-                if (_colliderParents[i].gameObject == null)
+                if (colliderParent.gameObject == null)
                     continue;
 
                 /* Creates a new rolling collider and fills the snapshots with it's current
@@ -439,14 +256,20 @@ namespace FishNet.Component.ColliderRollback
                  * with new data an incorrect rollback position/rotation would be returned
                  * but the chances of this happening are slim to none, and impossible after
                  * the MAX_ROLLBACK_TIME duration has passed. */
-                _rollingColliders[i] = new RollingCollider(_colliderParents[i].transform, this);
-                _rollingColliders[i].ResetSnapshots(_maxSnapshots);
+                RollingCollider rc = ResettableObjectCaches<RollingCollider>.Retrieve();
+                rc.Initialize(colliderParent.transform, _maxSnapshots);
+                _rollingColliders.Add(rc);
             }
-
-            _initialized = true;
         }
 
+        /// <summary>
+        /// Resets class state pooling objects.
+        /// </summary>
+        private void DeinitializeRollingColliders()
+        {
+            _lerpSnapshotCounter = 0;
+            ResettableCollectionCaches<RollingCollider>.StoreAndDefault(ref _rollingColliders);
+        }
         //PROEND
     }
-
 }

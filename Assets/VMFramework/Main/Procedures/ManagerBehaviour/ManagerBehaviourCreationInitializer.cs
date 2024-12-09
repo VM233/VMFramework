@@ -11,9 +11,9 @@ namespace VMFramework.Procedure
     [Preserve]
     public sealed class ManagerBehaviourCreationInitializer : IGameInitializer
     {
-        IEnumerable<InitializationAction> IInitializer.GetInitializationActions()
+        void IInitializer.GetInitializationActions(ICollection<InitializationAction> actions)
         {
-            yield return new(InitializationOrder.BeforeInitStart, OnBeforeInitStart, this);
+            actions.Add(new(InitializationOrder.BeforeInitStart, OnBeforeInitStart, this));
         }
 
         private static void OnBeforeInitStart(Action onDone)

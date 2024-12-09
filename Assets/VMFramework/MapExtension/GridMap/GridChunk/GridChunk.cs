@@ -6,13 +6,15 @@ using VMFramework.Core;
 
 namespace VMFramework.Maps
 {
-    public class GridChunk : IGridChunk
+    public partial class GridChunk : IGridChunk
     {
         public Vector3Int Position { get; private set; }
         
+        public CubeInteger Positions { get; private set; }
+        
         public Vector3Int MinTilePosition { get; private set; }
         
-        public CubeInteger Positions { get; private set; }
+        public CubeInteger TilePositions { get; private set; }
         
         public Vector3Int Size { get; private set; }
         
@@ -30,9 +32,10 @@ namespace VMFramework.Maps
         public void Place(GridChunkPlaceInfo info)
         {
             Position = info.position;
+            Positions = new(Size);
             
             MinTilePosition = Map.ChunkSize * Position;
-            Positions = new(MinTilePosition, MinTilePosition + Map.ChunkSize - Vector3Int.one);
+            TilePositions = new(MinTilePosition, MinTilePosition + Map.ChunkSize - Vector3Int.one);
         }
 
         public IEnumerable<IGridTile> GetAllTiles()
@@ -78,20 +81,34 @@ namespace VMFramework.Maps
             return true;
         }
 
-        public void ReplaceTile(Vector3Int relativePosition, IGridTile tile)
+        public bool FillTile(Vector3Int relativePosition, IGridTile tile, out IGridTile existingTile)
+        {
+            tile.AssertIsNotNull(nameof(tile));
+            relativePosition.AssertContainsBy(Positions, nameof(relativePosition), nameof(Positions));
+
+            if (tiles.TrySet(relativePosition, tile, out existingTile) == false)
+            {
+                return false;
+            }
+            
+            tile.InitGridTileInfo(new(this, MinTilePosition + relativePosition, relativePosition));
+            return true;
+        }
+
+        public bool ReplaceTile(Vector3Int relativePosition, IGridTile tile)
         {
             relativePosition.AssertContainsBy(Positions, nameof(relativePosition), nameof(Positions));
             
             if (tile == null)
             {
-                DestructTileWithoutChecking(relativePosition, out _);
-                return;
+                return DestructTileWithoutChecking(relativePosition, out _);
             }
 
-            DestructTileWithoutChecking(relativePosition, out _);
+            bool destructed = DestructTileWithoutChecking(relativePosition, out _);
             
             tiles.Set(relativePosition, tile);
             tile.InitGridTileInfo(new(this, MinTilePosition + relativePosition, relativePosition));
+            return destructed;
         }
 
         public bool DestructTile(Vector3Int relativePosition, out IGridTile tile)
@@ -106,6 +123,23 @@ namespace VMFramework.Maps
             foreach (var position in Positions)
             {
                 DestructTileWithoutChecking(position, out _);
+            }
+        }
+
+        public void WriteToArray<TGridTile>(TGridTile[] array)
+            where TGridTile : IGridTile
+        {
+            int index = 0;
+            for (int x = 0; x < Size.x; x++)
+            {
+                for (int y = 0; y < Size.y; y++)
+                {
+                    for (int z = 0; z < Size.z; z++)
+                    {
+                        array[index] = (TGridTile)tiles[x, y, z];
+                        index++;
+                    }
+                }
             }
         }
     }

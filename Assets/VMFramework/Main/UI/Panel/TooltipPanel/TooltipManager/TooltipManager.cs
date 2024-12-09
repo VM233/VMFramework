@@ -12,8 +12,10 @@ namespace VMFramework.UI
     public sealed class TooltipManager : ManagerBehaviour<TooltipManager>
     {
         private static TooltipGeneralSetting tooltipGeneralSetting => UISetting.TooltipGeneralSetting;
+
+        private static readonly List<ITooltip> tooltipsCache = new();
         
-        public static void Open(ITooltipProvider tooltipProvider, IUIPanelController source)
+        public static void Open(ITooltipProvider tooltipProvider, IUIPanel source)
         {
             if (tooltipProvider == null)
             {
@@ -31,16 +33,16 @@ namespace VMFramework.UI
             
             bool priorityFound = false;
 
-            if (tooltipProvider is IReadOnlyGameTypeOwner readOnlyGameTypeOwner)
+            if (tooltipProvider is IGameTagsOwner gameTagsOwner)
             {
                 if (tooltipGeneralSetting.tooltipIDBindConfigs.TryGetConfigRuntime(
-                        readOnlyGameTypeOwner.GameTypeSet, out var tooltipBindConfig))
+                        gameTagsOwner.GameTags, out var tooltipBindConfig))
                 {
                     tooltipID = tooltipBindConfig.tooltipID;
                 }
 
                 if (tooltipGeneralSetting.tooltipPriorityBindConfigs.TryGetConfigRuntime(
-                        readOnlyGameTypeOwner.GameTypeSet, out var priorityBindConfig))
+                        gameTagsOwner.GameTags, out var priorityBindConfig))
                 {
                     info.priority = priorityBindConfig.priority;
                     priorityFound = true;
@@ -54,7 +56,7 @@ namespace VMFramework.UI
                 info.priority = tooltipGeneralSetting.defaultPriority;
             }
 
-            if (UIPanelPool.TryGetUniquePanelWithWarning(tooltipID, out ITooltip tooltip) == false)
+            if (UIPanelManager.TryGetUniquePanelWithWarning(tooltipID, out ITooltip tooltip) == false)
             {
                 return;
             }
@@ -71,16 +73,12 @@ namespace VMFramework.UI
                 return;
             }
 
-            foreach (var tooltip in UIPanelPool.GetUniquePanels<ITooltip>())
+            tooltipsCache.Clear();
+            UIPanelManager.GetUniquePanels(tooltipsCache);
+            foreach (var tooltip in tooltipsCache)
             {
                 tooltip.Close(tooltipProvider);
             }
-        }
-        
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static IEnumerable<ITooltip> GetTooltips()
-        {
-            return UIPanelPool.GetUniquePanels<ITooltip>();
         }
     }
 }

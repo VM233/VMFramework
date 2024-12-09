@@ -106,7 +106,7 @@ public class LabelGUIFormat : BaseConfig
             return "无格式覆盖";
         }
 
-        return strList.ToString(",");
+        return strList.ToFormattedString(",");
     }
 
     #endregion

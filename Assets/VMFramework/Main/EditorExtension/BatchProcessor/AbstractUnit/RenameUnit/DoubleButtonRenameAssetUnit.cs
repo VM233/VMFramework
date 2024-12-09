@@ -12,7 +12,7 @@ namespace VMFramework.Editor.BatchProcessor
     {
         protected override Color buttonColor => Color.yellow;
 
-        public override bool IsValid(IList<object> selectedObjects)
+        public override bool IsValid(IReadOnlyList<object> selectedObjects)
         {
             return selectedObjects.Any(o => o is Object);
         }

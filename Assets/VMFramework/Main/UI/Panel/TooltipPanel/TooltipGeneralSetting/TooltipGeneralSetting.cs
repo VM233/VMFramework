@@ -12,31 +12,30 @@ namespace VMFramework.UI
     {
         private const string TOOLTIP_CATEGORY = "Tooltip";
 
-        private const string TOOLTIP_ID_BIND_CATEGORY =
-            TAB_GROUP_NAME + "/" + TOOLTIP_CATEGORY + "/Tooltip ID Bind";
+        private const string TOOLTIP_ID_BIND_CATEGORY = TAB_GROUP_NAME + "/" + TOOLTIP_CATEGORY + "/Tooltip ID Bind";
 
         private const string TOOLTIP_PRIORITY_CATEGORY =
             TAB_GROUP_NAME + "/" + TOOLTIP_CATEGORY + "/Tooltip Priority Bind";
 
         [TabGroup(TAB_GROUP_NAME, TOOLTIP_CATEGORY), TitleGroup(TOOLTIP_ID_BIND_CATEGORY)]
-        [GamePrefabID(typeof(ITooltipPreset))]
+        [GamePrefabID(typeof(ITooltipConfig))]
         [IsNotNullOrEmpty]
         [JsonProperty]
         public string defaultTooltipID;
 
         [TitleGroup(TOOLTIP_ID_BIND_CATEGORY)]
         [JsonProperty]
-        public GameTypeBasedConfigs<TooltipBindConfig> tooltipIDBindConfigs = new();
+        public GameTagBasedConfigs<TooltipBindConfig> tooltipIDBindConfigs = new();
 
         [TitleGroup(TOOLTIP_PRIORITY_CATEGORY)]
         [JsonProperty, SerializeField]
-        public DictionaryConfigs<string, TooltipPriorityPreset> tooltipPriorityPresets = new();
+        public DictionaryConfigs<string, PriorityPreset> tooltipPriorityPresets = new();
 
         [TitleGroup(TOOLTIP_PRIORITY_CATEGORY)]
-        public GameTypeBasedConfigs<TooltipPriorityBindConfig> tooltipPriorityBindConfigs = new();
+        public GameTagBasedConfigs<TooltipPriorityBindConfig> tooltipPriorityBindConfigs = new();
 
         [TitleGroup(TOOLTIP_PRIORITY_CATEGORY)]
-        public TooltipPriority defaultPriority;
+        public TooltipPriorityConfig defaultPriority;
 
         public override void CheckSettings()
         {

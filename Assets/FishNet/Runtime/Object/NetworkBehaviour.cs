@@ -67,6 +67,12 @@ namespace FishNet.Object
 #pragma warning restore CS0414
         #endregion
 
+        #region Consts.
+        /// <summary>
+        /// Maximum number of allowed added NetworkBehaviours.
+        /// </summary>
+        public const byte MAXIMUM_NETWORKBEHAVIOURS = byte.MaxValue;
+        #endregion
         /// <summary>
         /// Outputs data about this NetworkBehaviour to string.
         /// </summary>
@@ -76,28 +82,6 @@ namespace FishNet.Object
             return $"Name [{gameObject.name}] ComponentId [{ComponentIndex}] NetworkObject Name [{_networkObjectCache.name}] NetworkObject Id [{_networkObjectCache.ObjectId}]";
         }
 
-
-
-#if PREDICTION_1
-        /// <summary>
-        /// Preinitializes this script for the network.
-        /// </summary>
-        internal void Preinitialize_Internal(NetworkObject nob, bool asServer)
-        {
-            _transportManagerCache = nob.TransportManager;
-
-            InitializeOnceSyncTypes(asServer);
-            if (asServer)
-            {                
-                InitializeRpcLinks();
-                _initializedOnceServer = true;
-            }
-            else
-            {
-                _initializedOnceClient = true;
-            }
-        }
-#else
         /// <summary>
         /// Preinitializes this script for the network.
         /// </summary>
@@ -120,10 +104,9 @@ namespace FishNet.Object
             }
         }
 
-#endif
         internal void Deinitialize(bool asServer)
         {
-            SyncTypes_ResetState(asServer);
+            ResetState_SyncTypes(asServer);
         }
 
         /// <summary>
@@ -178,10 +161,8 @@ namespace FishNet.Object
         /// </summary>
         public virtual void ResetState(bool asServer)
         {
-            SyncTypes_ResetState(asServer);
-#if !PREDICTION_1
-            ResetPredictionTicks();
-#endif
+            ResetState_SyncTypes(asServer);
+            ResetState_Prediction(asServer);
             ClearReplicateCache();
             ClearBuffedRpcs();
         }

@@ -4,16 +4,9 @@ using VMFramework.Core;
 
 namespace VMFramework.Configuration
 {
-    public partial class RectangleIntegerChooserConfig : RectangleIntegerConfig, ISingleRangeChooserConfig<Vector2Int>
+    public partial class RectangleIntegerChooserConfig
+        : RectangleIntegerConfig, ISingleKCubeChooserConfig<Vector2Int, RectangleInteger>
     {
-        [ShowInInspector, HideInEditorMode]
-        IChooser<Vector2Int> ISingleChooserConfig<Vector2Int>.objectChooser { get; set; }
         
-        protected override void OnInit()
-        {
-            base.OnInit();
-            
-            this.RegenerateObjectChooser();
-        }
     }
 }

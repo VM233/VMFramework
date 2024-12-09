@@ -13,7 +13,7 @@ namespace VMFramework.Configuration
 
         #endregion
         
-        private bool showPingPongOption => items is { Count: > 2 };
+        private bool ShowPingPongOption => items is { Count: > 2 };
 
         #region Add Item GUI
 
@@ -33,36 +33,36 @@ namespace VMFramework.Configuration
 
         #region Circular Actions
 
-        [Button("上移")]
+        [Button]
         [ButtonGroup(CIRCULAR_ACTIONS_CATEGORY)]
-        private void ShiftUpItems()
+        private void ShiftUp()
         {
             items.Rotate(-1);
             
             OnItemsChangedGUI();
         }
 
-        [Button("下移")]
+        [Button]
         [ButtonGroup(CIRCULAR_ACTIONS_CATEGORY)]
-        private void ShiftDownItems()
+        private void ShiftDown()
         {
             items.Rotate(1);
             
             OnItemsChangedGUI();
         }
 
-        [Button("打乱")]
+        [Button]
         [ButtonGroup(CIRCULAR_ACTIONS_CATEGORY)]
-        private void ShuffleItems()
+        private void Shuffle()
         {
             items.Shuffle();
             
             OnItemsChangedGUI();
         }
 
-        [Button("重置循环次数")]
+        [Button]
         [ButtonGroup(CIRCULAR_ACTIONS_CATEGORY)]
-        private void ResetItemsTimes()
+        private void ResetCircularTimes()
         {
             foreach (var item in items)
             {
@@ -84,6 +84,11 @@ namespace VMFramework.Configuration
                 }
                 
                 item.index = index;
+            }
+
+            if (chooser != null)
+            {
+                chooser = GenerateThisChooser();
             }
         }
 

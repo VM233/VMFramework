@@ -1,6 +1,6 @@
 ﻿namespace VMFramework.Configuration
 {
-    public interface ISpritePresetChooserConfig : IChooserConfig<SpritePresetItem>
+    public interface ISpritePresetChooserConfig : IWrapperChooserConfig<SpritePresetItem, SpritePresetItem>
     {
         public ISpritePresetChooserConfig GetFlipChooserConfig(bool flipXReversed, bool flipYReversed);
     }

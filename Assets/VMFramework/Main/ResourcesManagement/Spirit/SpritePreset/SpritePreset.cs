@@ -6,7 +6,7 @@ using VMFramework.Procedure;
 
 namespace VMFramework.ResourcesManagement
 {
-    public partial class SpritePreset : GameTypedGamePrefab, IInitializer
+    public partial class SpritePreset : GamePrefab, IInitializer
     {
         protected const string SPRITE_PREVIEW_GROUP =
             TAB_GROUP_NAME + "/" + BASIC_CATEGORY + "/Sprite Preview Group";
@@ -18,7 +18,7 @@ namespace VMFramework.ResourcesManagement
         public Sprite sprite;
         
         [TabGroup(TAB_GROUP_NAME, BASIC_CATEGORY)]
-        public FlipType2D preloadFlipType = FlipType2D.None;
+        public FlipType2D preloadFlipType = FlipType2D.NonFlipped;
 
         [TabGroup(TAB_GROUP_NAME, BASIC_CATEGORY)]
         [SerializeField]
@@ -31,7 +31,7 @@ namespace VMFramework.ResourcesManagement
                 return null;
             }
 
-            if (flipType == FlipType2D.None)
+            if (flipType == FlipType2D.NonFlipped)
             {
                 return sprite;
             }

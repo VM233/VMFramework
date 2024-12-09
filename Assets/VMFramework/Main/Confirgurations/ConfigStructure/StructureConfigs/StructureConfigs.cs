@@ -63,7 +63,7 @@ namespace VMFramework.Configuration
         
         public override string ToString()
         {
-            return configs.Select<TConfig, INameOwner>().Select(nameOwner => nameOwner.name).Join(",");
+            return configs.Select<TConfig, INameOwner>().Select(nameOwner => nameOwner.Name).Join(",");
         }
     }
 }

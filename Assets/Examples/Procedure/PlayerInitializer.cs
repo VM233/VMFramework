@@ -9,9 +9,9 @@ namespace VMFramework.Examples
     [Preserve]
     public sealed class PlayerInitializer : IGameInitializer
     {
-        IEnumerable<InitializationAction> IInitializer.GetInitializationActions()
+        void IInitializer.GetInitializationActions(ICollection<InitializationAction> actions)
         {
-            yield return new(InitializationOrder.PostInit, OnPostInit, this);
+            actions.Add(new InitializationAction(InitializationOrder.PostInit, OnPostInit, this));
         }
 
         private void OnPostInit(Action onDone)

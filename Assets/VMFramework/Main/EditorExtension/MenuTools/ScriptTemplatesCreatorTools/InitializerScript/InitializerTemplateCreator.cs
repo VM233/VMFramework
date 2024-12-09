@@ -1,6 +1,7 @@
 ﻿#if UNITY_EDITOR
 using UnityEditor;
 using VMFramework.Core.Editor;
+using VMFramework.Tools.Editor;
 
 namespace VMFramework.Editor
 {
@@ -18,7 +19,7 @@ namespace VMFramework.Editor
                 ScriptCreator.CreateScriptAssets(ScriptTemplatesNames.GAME_INITIALIZER, info.ClassName,
                     info.assetFolderPath, extraInfo: new GameInitializerScriptExtraInfo()
                     {
-                        namespaceName = info.namespaceName,
+                        NamespaceName = info.namespaceName,
                         initializationOrderName = info.initializationOrder.ToString(),
                         loadingType = info.loadingType
                     }, postProcessor: gameInitializerPostProcessor);
@@ -33,7 +34,7 @@ namespace VMFramework.Editor
                 ScriptCreator.CreateScriptAssets(ScriptTemplatesNames.EDITOR_INITIALIZER, info.ClassName,
                     info.assetFolderPath, extraInfo: new InitializerScriptExtraInfo()
                     {
-                        namespaceName = info.namespaceName,
+                        NamespaceName = info.namespaceName,
                         initializationOrderName = info.initializationOrder.ToString()
                     }, postProcessor: editorInitializerPostProcessor);
             });

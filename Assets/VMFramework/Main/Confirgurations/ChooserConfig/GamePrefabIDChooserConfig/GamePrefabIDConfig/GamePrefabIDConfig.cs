@@ -15,7 +15,7 @@ namespace VMFramework.Configuration
         
         public override string ToString()
         {
-            return GamePrefabManager.GetGamePrefab<TGamePrefab>(id)?.name;
+            return GamePrefabManager.GetGamePrefab<TGamePrefab>(id)?.Name;
         }
     }
 }

@@ -13,7 +13,6 @@ namespace FishNet.Component.Prediction
 
     public abstract class NetworkCollider2D : NetworkBehaviour
     {
-#if !PREDICTION_1
         #region Types.
         private struct Collider2DData : IResettable
         {
@@ -78,6 +77,12 @@ namespace FishNet.Component.Prediction
         [Range(0f, 100f)]
         [SerializeField]
         private float _additionalSize = 0.1f;
+        /// <summary>
+        /// Layers to trace on. This is used when value is not nothing.
+        /// </summary>
+        [Tooltip("Layers to trace on. This is used when value is not nothing.")]
+        [SerializeField]
+        private LayerMask _layers = (LayerMask)0;
 
         /// <summary>
         /// The colliders on this object.
@@ -111,7 +116,8 @@ namespace FishNet.Component.Prediction
 
         protected virtual void Awake()
         {
-            _colliderDataHistory = ResettableCollectionCaches<Collider2DData>.RetrieveRingBuffer();
+            _colliderDataHistory = new();
+            //_colliderDataHistory = ResettableCollectionCaches<Collider2DData>.RetrieveRingBuffer();
             _hits = CollectionCaches<Collider2D>.RetrieveArray();
             if (_hits.Length < _maximumSimultaneousHits)
                 _hits = new Collider2D[_maximumSimultaneousHits];
@@ -119,8 +125,8 @@ namespace FishNet.Component.Prediction
 
         private void OnDestroy()
         {
-            ResettableCollectionCaches<Collider2DData>.StoreAndDefault(ref _colliderDataHistory);
-            CollectionCaches<Collider2D>.StoreAndDefault(ref _hits, -_hits.Length);
+            //ResettableCollectionCaches<Collider2DData>.StoreAndDefault(ref _colliderDataHistory);
+            CollectionCaches<Collider2D>.StoreAndDefault(ref _hits, _hits.Length);
         }
 
         public override void OnStartNetwork()
@@ -277,11 +283,20 @@ namespace FishNet.Component.Prediction
             // The rotation of the object for box colliders.
             Quaternion rotation = transform.rotation;
 
-            //If layer changed then get new interactableLayers.
-            if (_lastGameObjectLayer != gameObject.layer)
+            //If layers are specified then do not use GOs layers, use specified.
+            if (_layers != (LayerMask)0)
             {
-                _lastGameObjectLayer = gameObject.layer;
-                _interactableLayers = Layers.GetInteractableLayersValue(_lastGameObjectLayer);
+                _interactableLayers = _layers;
+            }
+            //Use GOs layers.
+            else
+            {
+                int currentLayer = gameObject.layer;
+                if (_lastGameObjectLayer != currentLayer)
+                {
+                    _lastGameObjectLayer = currentLayer;
+                    _interactableLayers = Layers.GetInteractableLayersValue(currentLayer);
+                }
             }
 
             // Check each collider for triggers.
@@ -439,7 +454,7 @@ namespace FishNet.Component.Prediction
         {
             circleCollider.GetCircleOverlapParams(out Vector3 center, out float radius);
             radius += GetAdditionalSize();
-            return Physics2D.OverlapCircleNonAlloc(center, radius, _hits, layerMask);
+            return gameObject.scene.GetPhysicsScene2D().OverlapCircle(center, radius, _hits, layerMask);
         }
 
         /// <summary>
@@ -451,7 +466,7 @@ namespace FishNet.Component.Prediction
             boxCollider.GetBox2DOverlapParams(out Vector3 center, out Vector3 halfExtents);
             Vector3 additional = (Vector3.one * GetAdditionalSize());
             halfExtents += additional;
-            return Physics2D.OverlapBoxNonAlloc(center, halfExtents, rotation.z, _hits, layerMask);
+            return gameObject.scene.GetPhysicsScene2D().OverlapBox(center, halfExtents, rotation.z, _hits, layerMask);
         }
 
         /// <summary>
@@ -486,7 +501,6 @@ namespace FishNet.Component.Prediction
                 cd.ResetState();
             _colliderDataHistory.Clear();
         }
-#endif
     }
 
 

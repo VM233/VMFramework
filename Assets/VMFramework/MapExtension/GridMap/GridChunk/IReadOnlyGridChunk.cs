@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using VMFramework.Core.Pools;
+using VMFramework.Properties;
 
 namespace VMFramework.Maps
 {

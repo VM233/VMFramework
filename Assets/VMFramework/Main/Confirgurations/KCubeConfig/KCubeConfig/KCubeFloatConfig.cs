@@ -11,7 +11,7 @@ namespace VMFramework.Configuration
 
         [LabelText("@" + nameof(extentsName)), VerticalGroup(INFO_VALUE_GROUP)]
         [ShowInInspector, DisplayAsString]
-        public abstract TPoint extents
+        public abstract TPoint Extents
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get;

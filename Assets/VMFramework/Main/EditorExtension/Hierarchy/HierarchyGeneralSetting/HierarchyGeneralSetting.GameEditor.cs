@@ -7,7 +7,7 @@ namespace VMFramework.Editor
 {
     public partial class HierarchyGeneralSetting : IGameEditorMenuTreeNode
     {
-        string INameOwner.name => "Hierarchy";
+        string INameOwner.Name => "Hierarchy";
 
         Icon IGameEditorMenuTreeNode.Icon => SdfIconType.FileEarmarkRichtextFill;
     }

@@ -9,9 +9,9 @@ namespace VMFramework.Editor.BatchProcessor
 {
     public sealed class FindGamePrefabWrapperUnit : SingleButtonBatchProcessorUnit
     {
-        protected override string processButtonName => "Get GamePrefabWrapper";
+        protected override string ProcessButtonName => "Get GamePrefabWrapper";
 
-        public override bool IsValid(IList<object> selectedObjects)
+        public override bool IsValid(IReadOnlyList<object> selectedObjects)
         {
             foreach (var obj in selectedObjects)
             {

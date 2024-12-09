@@ -22,7 +22,7 @@ namespace VMFramework.Examples
 
             // 用RangeInteger.unit快速创建一个[0, 1]的整数范围
             // Create a range of integers from 0 to 1, with RangeInteger.unit
-            var d = RangeInteger.unit;
+            var d = RangeInteger.Unit;
 
             // 与3相加，得到一个[3, 4]的整数范围
             // Add 3 to a range of integers, resulting in a range of integers from 3 to 4
@@ -38,7 +38,7 @@ namespace VMFramework.Examples
 
             // 获取[3, 7]内的5个随机整数
             // Get 5 random integers within the range of [3, 7]
-            foreach (var point in rangeInt.GetRandomPoints(5))
+            foreach (var point in rangeInt.GetRandomItems(5))
             {
                 Debug.Log(point);
             }
@@ -52,7 +52,7 @@ namespace VMFramework.Examples
             {
                 Debug.Log(point);
             }
-            randomPoints.ReturnToPool();
+            randomPoints.ReturnToDefaultPool();
 
             // 获取[3, 7]内的所有整数
             // Get all integers within the range of [3, 7]

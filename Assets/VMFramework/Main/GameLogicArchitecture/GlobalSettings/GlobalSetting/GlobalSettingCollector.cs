@@ -27,7 +27,7 @@ namespace VMFramework.GameLogicArchitecture
             {
                 if (globalSetting.GlobalSettingFile == null)
                 {
-                    Debug.LogWarning($"GlobalSetting {globalSetting.name} has no GlobalSettingFile assigned.");
+                    Debug.LogWarning($"GlobalSetting {globalSetting.Name} has no GlobalSettingFile assigned.");
                     continue;
                 }
 

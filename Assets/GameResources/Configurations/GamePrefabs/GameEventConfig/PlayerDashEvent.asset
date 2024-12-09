@@ -33,21 +33,15 @@ MonoBehaviour:
     - Name: isDebugging
       Entry: 5
       Data: false
-    - Name: _initialGameTypesID
-      Entry: 7
-      Data: 1|System.Collections.Generic.List`1[[System.String, mscorlib]], mscorlib
-    - Name: 
-      Entry: 12
+    - Name: gameItemPrewarmCount
+      Entry: 3
       Data: 0
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
+    - Name: gameTags
+      Entry: 6
       Data: 
     - Name: name
       Entry: 7
-      Data: 2|VMFramework.Localization.LocalizedStringReference, Assembly-CSharp
+      Data: 1|VMFramework.Localization.LocalizedStringReference, Assembly-CSharp
     - Name: _tableName
       Entry: 6
       Data: 
@@ -65,17 +59,17 @@ MonoBehaviour:
       Data: false
     - Name: actionGroups
       Entry: 7
-      Data: 3|System.Collections.Generic.List`1[[VMFramework.GameEvents.InputActionGroup,
+      Data: 2|System.Collections.Generic.List`1[[VMFramework.GameEvents.InputActionGroup,
         Assembly-CSharp]], mscorlib
     - Name: 
       Entry: 12
       Data: 2
     - Name: 
       Entry: 7
-      Data: 4|VMFramework.GameEvents.InputActionGroup, Assembly-CSharp
+      Data: 3|VMFramework.GameEvents.InputActionGroup, Assembly-CSharp
     - Name: actions
       Entry: 7
-      Data: 5|System.Collections.Generic.List`1[[VMFramework.GameEvents.InputAction,
+      Data: 4|System.Collections.Generic.List`1[[VMFramework.GameEvents.InputAction,
         Assembly-CSharp]], mscorlib
     - Name: 
       Entry: 12
@@ -127,10 +121,10 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 6|VMFramework.GameEvents.InputActionGroup, Assembly-CSharp
+      Data: 5|VMFramework.GameEvents.InputActionGroup, Assembly-CSharp
     - Name: actions
       Entry: 7
-      Data: 7|System.Collections.Generic.List`1[[VMFramework.GameEvents.InputAction,
+      Data: 6|System.Collections.Generic.List`1[[VMFramework.GameEvents.InputAction,
         Assembly-CSharp]], mscorlib
     - Name: 
       Entry: 12

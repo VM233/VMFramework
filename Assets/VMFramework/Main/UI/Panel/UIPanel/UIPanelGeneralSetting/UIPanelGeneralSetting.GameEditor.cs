@@ -8,7 +8,7 @@ namespace VMFramework.UI
 {
     public partial class UIPanelGeneralSetting : IGameEditorMenuTreeNode
     {
-        string INameOwner.name => "UI Panel";
+        string INameOwner.Name => "UI Panel";
 
         Icon IGameEditorMenuTreeNode.Icon => SdfIconType.LayoutWtf;
     }

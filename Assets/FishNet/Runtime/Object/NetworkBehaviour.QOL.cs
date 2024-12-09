@@ -12,6 +12,7 @@ using FishNet.Managing.Transporting;
 using FishNet.Observing;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace FishNet.Object
@@ -128,12 +129,10 @@ namespace FishNet.Object
         /// To check if server or client has been initialized on this object use IsXYZInitialized.
         /// </summary>
         public bool IsNetworked => _networkObjectCache.IsNetworked;
-#if !PREDICTION_1
         /// <summary>
         /// True if a reconcile is occuring on the PredictionManager. Note the difference between this and IsBehaviourReconciling.
         /// </summary>
         public bool IsManagerReconciling => _networkObjectCache.IsManagerReconciling;
-#endif
         /// <summary>
         /// Observers for this NetworkBehaviour.
         /// </summary>
@@ -154,7 +153,7 @@ namespace FishNet.Object
         [PreventUsageInside("global::FishNet.Object.NetworkBehaviour", "Awake", "")]
         [PreventUsageInside("global::FishNet.Object.NetworkBehaviour", "Start", "")]
         public bool HasAuthority => (_networkObjectCache.IsOwner || (_networkObjectCache.IsServerInitialized && !_networkObjectCache.Owner.IsValid));
-        [Obsolete("Use HasAuthority")]
+        [Obsolete("Use HasAuthority")] //Remove v5
         public bool IsOwnerOrServer => HasAuthority;
         /// <summary>
         /// Owner of this object.
@@ -262,18 +261,19 @@ namespace FishNet.Object
         /// <summary>
         /// Removes ownership from all clients.
         /// </summary>
-        public void RemoveOwnership()
-        {
-            _networkObjectCache.GiveOwnership(null, true);
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void RemoveOwnership() => _networkObjectCache.RemoveOwnership();
         /// <summary>
         /// Gives ownership to newOwner.
         /// </summary>
-        /// <param name="newOwner"></param>
-        public void GiveOwnership(NetworkConnection newOwner)
-        {
-            _networkObjectCache.GiveOwnership(newOwner, true);
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void GiveOwnership(NetworkConnection newOwner) => _networkObjectCache.GiveOwnership(newOwner, asServer: true, includeNested: false);
+
+        /// <summary>
+        /// Gives ownership to newOwner.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void GiveOwnership(NetworkConnection newOwner, bool includeNested) => _networkObjectCache.GiveOwnership(newOwner, asServer: true, includeNested);
 
         #region Registered components
         /// <summary>

@@ -19,7 +19,7 @@ namespace VMFramework.GameEvents
         
         public static bool isEnabled => disabledCount <= 0;
 
-        public static event IGameEvent.EnabledChangedEventHandler OnEnabledChangedEvent;
+        public static event EnabledChangedEventHandler OnEnabledChangedEvent;
 
         #region Enabled
 

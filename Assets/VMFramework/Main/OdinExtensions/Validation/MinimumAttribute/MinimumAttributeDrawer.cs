@@ -22,7 +22,7 @@ namespace VMFramework.OdinExtensions
             if (value is not IMinimumValueProvider minimumValueProvider)
             {
                 SirenixEditorGUI.ErrorMessageBox(
-                    $"{Property.ValueEntry.TypeOfValue.GetNiceName()}没有实现{typeof(IMinimumValueProvider)}");
+                    $"{Property.ValueEntry.TypeOfValue.GetNiceName()}does not implement {typeof(IMinimumValueProvider)}");
                 CallNextDrawer(label);
                 return;
             }

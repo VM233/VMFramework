@@ -8,7 +8,7 @@ namespace VMFramework.UI
 {
     public partial class TooltipGeneralSetting : IGameEditorMenuTreeNode
     {
-        string INameOwner.name => "Tooltip";
+        string INameOwner.Name => "Tooltip";
 
         Icon IGameEditorMenuTreeNode.Icon => SdfIconType.CardHeading;
     }

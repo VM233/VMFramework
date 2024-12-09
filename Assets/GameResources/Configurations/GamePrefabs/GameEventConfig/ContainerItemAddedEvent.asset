@@ -23,7 +23,7 @@ MonoBehaviour:
     SerializationNodes:
     - Name: gamePrefab
       Entry: 7
-      Data: 0|VMFramework.Containers.ContainerItemAddedEventConfig, Assembly-CSharp
+      Data: 0|VMFramework.Containers.ContainerItemChangedEventConfig, Assembly-CSharp
     - Name: _id
       Entry: 1
       Data: container_item_added_event
@@ -33,7 +33,10 @@ MonoBehaviour:
     - Name: isDebugging
       Entry: 5
       Data: false
-    - Name: _initialGameTypesID
+    - Name: gameItemPrewarmCount
+      Entry: 3
+      Data: 0
+    - Name: gameTags
       Entry: 7
       Data: 1|System.Collections.Generic.List`1[[System.String, mscorlib]], mscorlib
     - Name: 

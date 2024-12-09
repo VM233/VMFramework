@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Sirenix.OdinInspector;
 using VMFramework.GameLogicArchitecture;
 using VMFramework.OdinExtensions;
 
@@ -9,6 +10,8 @@ namespace VMFramework.Procedure
         public bool enableDefaultGlobalScenesLoader = true;
         
         [BuildSceneName]
+        [IsNotNullOrEmpty]
+        [EnableIf(nameof(enableDefaultGlobalScenesLoader))]
         public List<string> sceneNames = new();
     }
 }

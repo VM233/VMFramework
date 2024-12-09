@@ -8,7 +8,7 @@ namespace VMFramework.UI
 {
     public partial class UISettingFile : IGameEditorMenuTreeNode
     {
-        string INameOwner.name => EditorNames.UI_SETTINGS;
+        string INameOwner.Name => EditorNames.UI_SETTINGS;
 
         Icon IGameEditorMenuTreeNode.Icon => SdfIconType.Window;
     }

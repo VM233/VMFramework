@@ -60,7 +60,7 @@ namespace VMFramework.Configuration
         public override Vector2Int ClampMax(Vector2Int pos) => pos.ClampMax(max);
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override Vector2Int GetRandomPoint(Random random) => random.Range(min, max);
+        public override Vector2Int GetRandomItem(Random random) => random.Range(min, max);
 
         public override IEnumerator<Vector2Int> GetEnumerator()
         {

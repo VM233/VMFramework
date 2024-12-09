@@ -6,20 +6,20 @@ namespace VMFramework.Configuration
     public interface IKCubeConfig<TPoint> : IKCube<TPoint>
         where TPoint : struct, IEquatable<TPoint>
     {
-        public new TPoint min { get; set; }
+        public new TPoint Min { get; set; }
 
-        public new TPoint max { get; set; }
+        public new TPoint Max { get; set; }
 
         TPoint IMinMaxOwner<TPoint>.Min
         {
-            get => min;
-            init => min = value;
+            get => Min;
+            init => Min = value;
         }
 
         TPoint IMinMaxOwner<TPoint>.Max
         {
-            get => max;
-            init => max = value;
+            get => Max;
+            init => Max = value;
         }
     }
 }

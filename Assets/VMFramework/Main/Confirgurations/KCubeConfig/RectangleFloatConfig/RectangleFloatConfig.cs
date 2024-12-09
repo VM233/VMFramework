@@ -15,7 +15,7 @@ namespace VMFramework.Configuration
 
         public override Vector2 Pivot => (max + min) / 2f;
 
-        public override Vector2 extents => (max - min) / 2f;
+        public override Vector2 Extents => (max - min) / 2f;
 
         public RangeFloat xRange => new(min.x, max.x);
 
@@ -71,7 +71,7 @@ namespace VMFramework.Configuration
         public override Vector2 ClampMax(Vector2 pos) => pos.ClampMax(max);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override Vector2 GetRandomPoint(Random random) => random.Range(min, max);
+        public override Vector2 GetRandomItem(Random random) => random.Range(min, max);
 
         #endregion
 

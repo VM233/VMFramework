@@ -1,3 +1,6 @@
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#define DEVELOPMENT
+#endif
 using FishNet.Connection;
 using FishNet.Managing;
 using GameKit.Dependencies.Utilities;
@@ -338,7 +341,7 @@ namespace FishNet.Transporting.Multipass
         private void Multipass_OnRemoteConnectionState(RemoteConnectionStateArgs connectionStateArgs)
         {
             /* When starting Multipass needs to get a new
-            * connectionId to be used within FN. This is the 'ClientId'
+             * connectionId to be used within FN. This is the 'ClientId'
              * that is passed around for ownership, rpcs, ect.
              * 
              * The new connectionId will be linked with the connectionId
@@ -401,7 +404,7 @@ namespace FishNet.Transporting.Multipass
                 _availableMultipassIds.Enqueue(ctd.MultipassId);
                 transportToMultipass.Remove(transportConnectionId);
                 _multpassIdLookup.Remove(ctd.MultipassId);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if DEVELOPMENT
                 //Remove packets held for connection from latency simulator.
                 base.NetworkManager.TransportManager.LatencySimulator.RemovePendingForConnection(ctd.MultipassId);
 #endif
@@ -482,9 +485,6 @@ namespace FishNet.Transporting.Multipass
         /// <summary>
         /// Sends data to a client.
         /// </summary>
-        /// <param name="channelId"></param>
-        /// <param name="segment"></param>
-        /// <param name="multipassId"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override void SendToClient(byte channelId, ArraySegment<byte> segment, int multipassId)
         {
@@ -493,6 +493,15 @@ namespace FishNet.Transporting.Multipass
                 return;
 
             _transports[ctd.TransportIndex].SendToClient(channelId, segment, ctd.TransportId);
+        }
+        /// <summary>
+        /// Sends data to a client.
+        /// </summary>
+        /// <param name="transportIndex">TransportIndex the client is using.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SendToClient(byte channelId, ArraySegment<byte> segment, int transportId, int transportIndex)
+        {
+            _transports[transportIndex].SendToClient(channelId, segment, transportId);
         }
         #endregion
 
@@ -549,7 +558,7 @@ namespace FishNet.Transporting.Multipass
             {
                 added++;
                 _availableMultipassIds.Enqueue(_lastAvailableMultipassId);
-                _lastAvailableMultipassId++;                
+                _lastAvailableMultipassId++;
             }
 
             return (added > 0);
@@ -649,21 +658,33 @@ namespace FishNet.Transporting.Multipass
             return default(T);
         }
         /// <summary>
-        /// Returns if the transport for connectionId is a local transport.
+        /// Returns if the first transport is a local transport, optionally checking against connectionId.
         /// While true several security checks are disabled.
         /// </summary>
-        public override bool IsLocalTransport(int multipassId)
+        public override bool IsLocalTransport(int connectionId)
         {
-            ClientTransportData ctd = GetDataFromMultipassId(multipassId);
-            if (ctd.Equals(INVALID_CLIENTTRANSPORTDATA))
-                return false;
+            foreach (Transport item in _transports)
+                return item.IsLocalTransport(connectionId);
 
-            return _transports[ctd.TransportIndex].IsLocalTransport(ctd.TransportId);
+            return false;
         }
 
         /// <summary>
+        /// Returns if the transportId is a local transport, optionally checking against connectionId.
+        /// While true several security checks are disabled.
+        /// </summary>
+        public bool IsLocalTransport(int transportId, int connectionId)
+        {
+            if (!IndexInRange(transportId, true))
+                return false;
+
+            return _transports[transportId].IsLocalTransport(connectionId);
+        }
+
+
+        /// <summary>
         /// Returns the maximum number of clients allowed to connect to the server. If the transport does not support this method the value -1 is returned.
-        /// The first transport is used.
+        /// This method is not supported. Use GetMaximumClients(transportIndex) instead.
         /// </summary>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -687,12 +708,13 @@ namespace FishNet.Transporting.Multipass
         }
         /// <summary>
         /// Sets maximum number of clients allowed to connect to the server. If applied at runtime and clients exceed this value existing clients will stay connected but new clients may not connect.
-        /// This sets the value to the transport on the first index.
+        /// This sets the value for every transport.
         /// </summary>
         /// <param name="value"></param>
         public override void SetMaximumClients(int value)
         {
-            base.NetworkManager.LogError($"This method is not supported. Use SetMaximumClients(value, transportIndex) instead.");
+            foreach (Transport t in _transports)
+                t.SetMaximumClients(value);
         }
         /// <summary>
         /// Sets maximum number of clients allowed to connect to the server. If applied at runtime and clients exceed this value existing clients will stay connected but new clients may not connect.
@@ -716,10 +738,29 @@ namespace FishNet.Transporting.Multipass
             foreach (Transport t in _transports)
                 t.SetClientAddress(address);
         }
+        /// <summary>
+        /// Sets which address the client will connect to.
+        /// </summary>
+        /// <param name="address"></param>
+        /// <param name="index">Transport index to set for.</param>
+        public void SetClientAddress(string address, int index)
+        {
+            if (!IndexInRange(index, true))
+                return;
+
+            _transports[index].SetClientAddress(address);
+        }
+
+        /// <summary>
+        /// Sets which address the server will bind to.
+        /// This will set the address for every transport.
+        /// </summary>
         public override void SetServerBindAddress(string address, IPAddressType addressType)
         {
-            base.NetworkManager.LogError($"This method is not supported. Use SetServerBindAddress(address, transportIndex) instead.");
+            foreach (Transport t in _transports)
+                t.SetServerBindAddress(address, addressType);
         }
+
         /// Sets which address the server will bind to.
         /// This is called on the transport of index.
         /// </summary>
@@ -732,11 +773,13 @@ namespace FishNet.Transporting.Multipass
             _transports[index].SetServerBindAddress(address, addressType);
         }
         /// <summary>
-        /// Sets which port to use on the first transport.
+        /// Sets which port to use.
+        /// This will set the port for every transport.
         /// </summary>
         public override void SetPort(ushort port)
         {
-            base.NetworkManager.LogError($"This method is not supported. Use SetPort(port, transportIndex) instead.");
+            foreach (Transport t in _transports)
+                t.SetPort(port);
         }
         /// <summary>
         /// Sets which port to use on transport of index.
@@ -747,6 +790,17 @@ namespace FishNet.Transporting.Multipass
                 return;
 
             _transports[index].SetPort(port);
+        }
+        /// <summary>
+        /// Gets the first transports port.
+        /// </summary>
+        /// <returns></returns>
+        public override ushort GetPort()
+        {
+            foreach (Transport t in _transports)
+                return t.GetPort();
+
+            return base.GetPort();
         }
         #endregion
 

@@ -29,7 +29,7 @@ namespace VMFramework.Configuration
         public IEnumerable<ValueDropdownItem<int>> GetNameList()
         {
             return configs.Select((config, index) =>
-                new ValueDropdownItem<int>(config.name, index));
+                new ValueDropdownItem<int>(config.Name, index));
         }
     }
 }

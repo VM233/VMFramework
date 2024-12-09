@@ -13,10 +13,10 @@ namespace VMFramework.GameLogicArchitecture
     {
         private static readonly List<IGlobalSetting> globalSettings = new();
 
-        IEnumerable<InitializationAction> IInitializer.GetInitializationActions()
+        void IInitializer.GetInitializationActions(ICollection<InitializationAction> actions)
         {
-            yield return new(InitializationOrder.InitStart, OnInitStart, this);
-            yield return new(InitializationOrder.Init, OnInit, this);
+            actions.Add(new(InitializationOrder.InitStart, OnInitStart, this));
+            actions.Add(new(InitializationOrder.Init, OnInit, this));
         }
 
         private static async void OnInitStart(Action onDone)

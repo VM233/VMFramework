@@ -1,9 +1,12 @@
-﻿using VMFramework.GameLogicArchitecture;
+﻿using System;
+using VMFramework.GameLogicArchitecture;
 
 namespace VMFramework.GameEvents
 {
-    public abstract class GameEventConfig : LocalizedGameTypedGamePrefab, IGameEventConfig
+    public class GameEventConfig : LocalizedGamePrefab, IGameEventConfig
     {
-        protected override string IDSuffix => "event";
+        public override string IDSuffix => "event";
+
+        public override Type GameItemType => typeof(ParameterlessGameEvent);
     }
 }

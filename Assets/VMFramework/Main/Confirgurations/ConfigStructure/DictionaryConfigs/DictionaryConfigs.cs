@@ -6,8 +6,8 @@ using VMFramework.OdinExtensions;
 namespace VMFramework.Configuration
 {
     [PreviewComposite]
-    public sealed partial class DictionaryConfigs<TID, TConfig> : StructureConfigs<TConfig>,
-        IDictionaryConfigs<TID, TConfig>
+    public sealed partial class DictionaryConfigs<TID, TConfig>
+        : StructureConfigs<TConfig>, IDictionaryConfigs<TID, TConfig>
         where TConfig : IConfig, IIDOwner<TID>
     {
         [ShowInInspector]
@@ -19,7 +19,7 @@ namespace VMFramework.Configuration
         public override void CheckSettings()
         {
             base.CheckSettings();
-            
+
             configsRuntime = new();
         }
 
@@ -92,7 +92,7 @@ namespace VMFramework.Configuration
             {
                 return false;
             }
-            
+
             return GetConfigEditor(config.id) != null;
         }
 
@@ -102,8 +102,8 @@ namespace VMFramework.Configuration
             {
                 return false;
             }
-            
-            return GetConfigRuntime(config.id)!= null;
+
+            return GetConfigRuntime(config.id) != null;
         }
 
         #endregion

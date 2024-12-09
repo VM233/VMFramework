@@ -6,7 +6,7 @@ namespace VMFramework.Examples
 {
     public partial class PlayerGeneralSetting : IGameEditorMenuTreeNode
     {
-        string INameOwner.name => "Player Setting";
+        string INameOwner.Name => "Player Setting";
     }
 }
 #endif

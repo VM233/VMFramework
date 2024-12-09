@@ -2,10 +2,10 @@
 
 namespace VMFramework.UI
 {
-    public interface IUIPanelPointerEventProvider : IUIPanelController
+    public interface IUIPanelPointerEventProvider : IUIPanel
     {
-        public void AddPointerEvent(Action<IUIPanelController> onPointerEnter,
-            Action<IUIPanelController> onPointerLeave);
+        public void AddPointerEvent(Action<IUIPanel> onPointerEnter,
+            Action<IUIPanel> onPointerLeave);
         
         public void RemovePointerEvent()
         {

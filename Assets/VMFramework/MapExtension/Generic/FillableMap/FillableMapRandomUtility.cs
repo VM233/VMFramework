@@ -12,16 +12,16 @@ namespace VMFramework.Maps
         public static void FillRandomRectangleTiles<TTileInfo>(this ITileFillableMap<Vector2Int, TTileInfo> map,
             RectangleInteger rectangle, TTileInfo tileInfo, int count, Random random)
         {
-            var array = ArrayPool<Vector2Int>.GetByMinLength(count);
+            var array = ArrayDefaultPool<Vector2Int>.GetByMinLength(count);
 
-            rectangle.GetRandomPoints(count, ref array, random);
+            rectangle.GetRandomItems(count, ref array, random);
             
             for (int i = 0; i < count; i++)
             {
                 map.FillTile(array[i], tileInfo);
             }
             
-            array.ReturnToPool();
+            array.ReturnToDefaultPool();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -36,16 +36,16 @@ namespace VMFramework.Maps
         public static void FillRandomCubeTiles<TTileInfo>(this ITileFillableMap<Vector3Int, TTileInfo> map,
             CubeInteger cube, TTileInfo tileInfo, int count, Random random)
         {
-            var array = ArrayPool<Vector3Int>.GetByMinLength(count);
+            var array = ArrayDefaultPool<Vector3Int>.GetByMinLength(count);
 
-            cube.GetRandomPoints(count, ref array, random);
+            cube.GetRandomItems(count, ref array, random);
 
             for (int i = 0; i < count; i++)
             {
                 map.FillTile(array[i], tileInfo);
             }
             
-            array.ReturnToPool();
+            array.ReturnToDefaultPool();
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

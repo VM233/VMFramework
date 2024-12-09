@@ -3,7 +3,7 @@ namespace VMFramework.Editor
 {
     public sealed class GeneralSettingScriptCreationViewer : ScriptCreationViewer
     {
-        protected override string nameSuffix => "GeneralSetting";
+        protected override string NameSuffix => "GeneralSetting";
     }
 }
 #endif

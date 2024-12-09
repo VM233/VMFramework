@@ -9,6 +9,6 @@ namespace VMFramework.Procedure
     {
         public bool EnableInitializationDebugLog => true;
 
-        public IEnumerable<InitializationAction> GetInitializationActions();
+        public void GetInitializationActions(ICollection<InitializationAction> actions);
     }
 }

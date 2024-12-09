@@ -1,5 +1,6 @@
 ﻿#if UNITY_EDITOR
 using VMFramework.Core.Editor;
+using VMFramework.Core.Pools;
 using VMFramework.Localization;
 
 namespace VMFramework.GameLogicArchitecture
@@ -9,8 +10,12 @@ namespace VMFramework.GameLogicArchitecture
         public void AutoConfigureLocalizedString(LocalizedStringAutoConfigSettings settings)
         {
             bool isDirty = false;
+
+            var gamePrefabsCache = ListPool<IGamePrefab>.Default.Get();
+            gamePrefabsCache.Clear();
+            GetGamePrefabs(gamePrefabsCache);
             
-            foreach (var gamePrefab in GetGamePrefabs())
+            foreach (var gamePrefab in gamePrefabsCache)
             {
                 if (gamePrefab is ILocalizedStringOwnerConfig localizedStringOwnerConfig)
                 {
@@ -18,6 +23,8 @@ namespace VMFramework.GameLogicArchitecture
                     isDirty = true;
                 }
             }
+            
+            gamePrefabsCache.ReturnToDefaultPool();
 
             if (isDirty)
             {
@@ -34,13 +41,19 @@ namespace VMFramework.GameLogicArchitecture
 
         public void SetKeyValueByDefault()
         {
-            foreach (var gamePrefab in GetGamePrefabs())
+            var gamePrefabsCache = ListPool<IGamePrefab>.Default.Get();
+            gamePrefabsCache.Clear();
+            GetGamePrefabs(gamePrefabsCache);
+            
+            foreach (var gamePrefab in gamePrefabsCache)
             {
                 if (gamePrefab is ILocalizedStringOwnerConfig localizedStringOwnerConfig)
                 {
                     localizedStringOwnerConfig.SetKeyValueByDefault();
                 }
             }
+            
+            gamePrefabsCache.ReturnToDefaultPool();
         }
     }
 }

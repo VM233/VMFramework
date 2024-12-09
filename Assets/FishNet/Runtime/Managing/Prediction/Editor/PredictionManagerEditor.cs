@@ -10,24 +10,20 @@ namespace FishNet.Managing.Predicting.Editing
     [CanEditMultipleObjects]
     public class PredictionManagerEditor : Editor
     {
-       // private SerializedProperty _queuedInputs;
+        // private SerializedProperty _queuedInputs;
         private SerializedProperty _dropExcessiveReplicates;
         private SerializedProperty _maximumServerReplicates;
         private SerializedProperty _maximumConsumeCount;
-        private SerializedProperty _interpolation;
-        private SerializedProperty _allowPredictedSpawning;
-        private SerializedProperty _reservedObjectIds;
-
+        private SerializedProperty _stateInterpolation;
+        private SerializedProperty _stateOrder;
 
         protected virtual void OnEnable()
         {
-            //_queuedInputs = serializedObject.FindProperty(nameof(_queuedInputs));
             _dropExcessiveReplicates = serializedObject.FindProperty(nameof(_dropExcessiveReplicates));
             _maximumServerReplicates = serializedObject.FindProperty(nameof(_maximumServerReplicates));
             _maximumConsumeCount = serializedObject.FindProperty(nameof(_maximumConsumeCount));
-            _interpolation = serializedObject.FindProperty(nameof(_interpolation));
-            _allowPredictedSpawning = serializedObject.FindProperty(nameof(_allowPredictedSpawning));
-            _reservedObjectIds = serializedObject.FindProperty(nameof(_reservedObjectIds));
+            _stateInterpolation = serializedObject.FindProperty(nameof(_stateInterpolation));
+            _stateOrder = serializedObject.FindProperty(nameof(_stateOrder));
         }
 
         public override void OnInspectorGUI()
@@ -39,36 +35,26 @@ namespace FishNet.Managing.Predicting.Editing
             GUI.enabled = true;
 
 
-            EditorGUILayout.LabelField("Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Client", EditorStyles.boldLabel);
             EditorGUI.indentLevel++;
-            //EditorGUILayout.PropertyField(_queuedInputs);
-            EditorGUILayout.PropertyField(_interpolation);
-
-            EditorGUILayout.PropertyField(_allowPredictedSpawning);
-            if (_allowPredictedSpawning.boolValue == true)
-            {
-                EditorGUI.indentLevel++;
-                EditorGUILayout.PropertyField(_reservedObjectIds);
-                EditorGUI.indentLevel--;
-            }
+            if (_stateInterpolation.intValue == 0)
+                EditorGUILayout.HelpBox($"With interpolation set at 0 states will run as they are received, rather than create an interpolation buffer. Using 0 interpolation drastically increases the chance of Created states arriving out of order.", MessageType.Warning);
+            EditorGUILayout.PropertyField(_stateInterpolation);
+            EditorGUILayout.PropertyField(_stateOrder);
             EditorGUI.indentLevel--;
             EditorGUILayout.Space();
 
             EditorGUILayout.LabelField("Server", EditorStyles.boldLabel);
             EditorGUI.indentLevel++;
+            // EditorGUILayout.PropertyField(_serverInterpolation);
             EditorGUILayout.PropertyField(_dropExcessiveReplicates);
             EditorGUI.indentLevel++;
             if (_dropExcessiveReplicates.boolValue == true)
             {
+                EditorGUI.indentLevel++;
                 EditorGUILayout.PropertyField(_maximumServerReplicates);
+                EditorGUI.indentLevel--;
             }
-            else
-            {
-#if PREDICTION_1
-                EditorGUILayout.PropertyField(_maximumConsumeCount);
-#endif
-            }
-            EditorGUI.indentLevel--;
             EditorGUI.indentLevel--;
 
 
@@ -78,3 +64,4 @@ namespace FishNet.Managing.Predicting.Editing
     }
 }
 #endif
+

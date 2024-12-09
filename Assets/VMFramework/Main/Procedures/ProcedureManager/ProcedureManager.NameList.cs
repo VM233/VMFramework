@@ -9,15 +9,15 @@ namespace VMFramework.Procedure
     {
         private static readonly TypeCollector<IProcedure> procedureCollector = new()
         {
-            includingSelf = false,
-            includingAbstract = false,
-            includingInterface = false,
-            includingGenericDefinition = false
+            IncludingSelf = false,
+            IncludingAbstract = false,
+            IncludingInterface = false,
+            IncludingGenericDefinition = false
         };
 
         public static IEnumerable<ValueDropdownItem> GetNameList()
         {
-            if (procedureCollector.count == 0)
+            if (procedureCollector.Count == 0)
             {
                 procedureCollector.Collect();
             }

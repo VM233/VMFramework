@@ -29,9 +29,9 @@ namespace VMFramework.Properties
             
             foreach (var config in GamePrefabManager.GetAllGamePrefabs<IGameProperty>())
             {
-                if (config is { IsActive: true } && targetType.IsDerivedFrom(config.targetType, true))
+                if (config is { IsActive: true } && targetType.IsDerivedFrom(config.TargetType, true))
                 {
-                    yield return new(config.name, config.id);
+                    yield return new(config.Name, config.id);
                 }
             }
         }

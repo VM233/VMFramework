@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using VMFramework.Configuration;
 using VMFramework.Core;
 using VMFramework.GameLogicArchitecture;
@@ -12,7 +13,9 @@ namespace VMFramework.UI
         private static ContextMenuGeneralSetting ContextMenuGeneralSetting => 
             UISetting.ContextMenuGeneralSetting;
         
-        public static void Open(IContextMenuProvider contextMenuProvider, IUIPanelController source)
+        private static readonly List<IContextMenu> contextMenusCache = new();
+        
+        public static void Open(IContextMenuProvider contextMenuProvider, IUIPanel source)
         {
             if (contextMenuProvider == null)
             {
@@ -27,10 +30,10 @@ namespace VMFramework.UI
 
             string contextMenuID = null;
             
-            if (contextMenuProvider is IReadOnlyGameTypeOwner readOnlyGameTypeOwner)
+            if (contextMenuProvider is IGameTagsOwner gameTagsOwner)
             {
                 if (ContextMenuGeneralSetting.contextMenuIDBindConfigs.TryGetConfigRuntime(
-                        readOnlyGameTypeOwner.GameTypeSet, out var idBindConfig))
+                        gameTagsOwner.GameTags, out var idBindConfig))
                 {
                     contextMenuID = idBindConfig.contextMenuID;
                 }
@@ -38,7 +41,7 @@ namespace VMFramework.UI
 
             contextMenuID ??= ContextMenuGeneralSetting.defaultContextMenuID;
 
-            if (UIPanelPool.TryGetUniquePanelWithWarning(contextMenuID, out IContextMenu contextMenu) == false)
+            if (UIPanelManager.TryGetUniquePanelWithWarning(contextMenuID, out IContextMenu contextMenu) == false)
             {
                 return;
             }
@@ -53,8 +56,11 @@ namespace VMFramework.UI
                 Debugger.LogWarning($"{nameof(contextMenuProvider)} is Null");
                 return;
             }
+            
+            contextMenusCache.Clear();
+            UIPanelManager.GetUniquePanels(contextMenusCache);
 
-            foreach (var contextMenu in UIPanelPool.GetUniquePanels<IContextMenu>())
+            foreach (var contextMenu in contextMenusCache)
             {
                 contextMenu.Close(contextMenuProvider);
             }

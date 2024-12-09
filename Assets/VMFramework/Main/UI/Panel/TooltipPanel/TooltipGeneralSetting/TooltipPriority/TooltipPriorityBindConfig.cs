@@ -3,9 +3,8 @@ using VMFramework.Configuration;
 
 namespace VMFramework.UI
 {
-    public sealed class TooltipPriorityBindConfig : GameTypeBasedConfigBase
+    public sealed partial class TooltipPriorityBindConfig : GameTagBasedConfigBase
     {
-        [PropertyTooltip("优先级")]
-        public TooltipPriority priority;
+        public TooltipPriorityConfig priority = new();
     }
 }

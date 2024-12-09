@@ -1,7 +1,7 @@
-﻿namespace VMFramework.GameLogicArchitecture
-{
-    public interface ILocalizedGameTypedGamePrefab : IGameTypedGamePrefab, ILocalizedGamePrefab
-    {
-        
-    }
-}
+﻿// namespace VMFramework.GameLogicArchitecture
+// {
+//     public interface ILocalizedGameTypedGamePrefab : IGameTypedGamePrefab, ILocalizedGamePrefab
+//     {
+//         
+//     }
+// }

@@ -1,11 +1,13 @@
 ﻿#if UNITY_EDITOR
 using System;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEditor;
 using UnityEngine;
 using VMFramework.Core;
 using VMFramework.Core.Editor;
 using VMFramework.Core.Linq;
+using VMFramework.Core.Pools;
 using VMFramework.Localization;
 
 namespace VMFramework.GameLogicArchitecture.Editor
@@ -59,7 +61,49 @@ namespace VMFramework.GameLogicArchitecture.Editor
 
             path += gamePrefab.id.ToPascalCase();
 
-            return CreateGamePrefabWrapper(path, gamePrefab, wrapperType);
+            return CreateGamePrefabWrapper(path, wrapperType, gamePrefab);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static GamePrefabWrapper CreateGamePrefabWrapper(string wrapperName, params IGamePrefab[] gamePrefabs)
+        {
+            GamePrefabGeneralSetting gamePrefabSetting = null;
+
+            foreach (var gamePrefab in gamePrefabs)
+            {
+                if (gamePrefab.TryGetGamePrefabGeneralSettingWithWarning(out var newGamePrefabSetting) == false)
+                {
+                    return null;
+                }
+
+                if (gamePrefabSetting == null)
+                {
+                    gamePrefabSetting = newGamePrefabSetting;
+                    continue;
+                }
+
+                if (gamePrefabSetting != newGamePrefabSetting)
+                {
+                    throw new InvalidOperationException($"Cannot create a {nameof(GamePrefabWrapper)} " +
+                                                        $"with multiple {nameof(GamePrefabGeneralSetting)}s.");
+                }
+            }
+
+            if (gamePrefabSetting == null)
+            {
+                return null;
+            }
+            
+            string path = gamePrefabSetting.GamePrefabFolderPath;
+
+            if (path.EndsWith("/") == false)
+            {
+                path += "/";
+            }
+
+            path += wrapperName;
+
+            return CreateGamePrefabWrapper(path, GamePrefabWrapperType.Multiple, gamePrefabs);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -68,31 +112,41 @@ namespace VMFramework.GameLogicArchitecture.Editor
         {
             var gamePrefab = CreateDefaultGamePrefab(id, gamePrefabType);
 
-            return CreateGamePrefabWrapper(path, gamePrefab, wrapperType);
+            return CreateGamePrefabWrapper(path, wrapperType, gamePrefab);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static GamePrefabWrapper CreateGamePrefabWrapper(string path, IGamePrefab gamePrefab,
-            GamePrefabWrapperType wrapperType)
+        public static GamePrefabWrapper CreateGamePrefabWrapper(string path,
+            GamePrefabWrapperType wrapperType, params IGamePrefab[] gamePrefabs)
         {
-            gamePrefab.id.AssertIsNotNull(nameof(gamePrefab.id));
-
-            if (gamePrefab.id.IsWhiteSpace())
+            if (gamePrefabs.Length > 1 && wrapperType == GamePrefabWrapperType.Single)
             {
-                throw new ArgumentException($"{nameof(gamePrefab.id)} ID cannot be empty or whitespace.");
+                throw new InvalidOperationException(
+                    $"Cannot create a {nameof(GamePrefabWrapper)} with multiple game prefabs " +
+                    $"in {nameof(GamePrefabWrapperType.Single)} mode.");
             }
-
-            if (gamePrefab is ILocalizedStringOwnerConfig localizedStringOwner)
+            
+            foreach (var gamePrefab in gamePrefabs)
             {
-                localizedStringOwner.AutoConfigureLocalizedString(default);
+                gamePrefab.id.AssertIsNotNull(nameof(gamePrefab.id));
+
+                if (gamePrefab.id.IsWhiteSpace())
+                {
+                    throw new ArgumentException($"{nameof(gamePrefab.id)} ID cannot be empty or whitespace.");
+                }
+
+                if (gamePrefab is ILocalizedStringOwnerConfig localizedStringOwner)
+                {
+                    localizedStringOwner.AutoConfigureLocalizedString(default);
+                }
             }
 
             return wrapperType switch
             {
                 GamePrefabWrapperType.Single => CreateGamePrefabWrapper<GamePrefabSingleWrapper>(path,
-                    gamePrefab),
+                    gamePrefabs),
                 GamePrefabWrapperType.Multiple => CreateGamePrefabWrapper<GamePrefabMultipleWrapper>(path,
-                    gamePrefab),
+                    gamePrefabs),
                 _ => throw new ArgumentOutOfRangeException(nameof(wrapperType), wrapperType, null)
             };
         }
@@ -101,42 +155,83 @@ namespace VMFramework.GameLogicArchitecture.Editor
             params IGamePrefab[] gamePrefabs)
             where TWrapper : GamePrefabWrapper
         {
-            if (PreCheckPath(path) == false)
+            if (path.EndsWith(".asset") == false)
             {
-                return null;
+                path += ".asset";
             }
+
+            AssetDatabase.Refresh();
+
+            TWrapper gamePrefabWrapper = null;
+
+            if (path.ExistsAsset())
+            {
+                gamePrefabWrapper = AssetDatabase.LoadAssetAtPath<TWrapper>(path);
+
+                if (gamePrefabWrapper == null)
+                {
+                    Debugger.LogWarning($"Asset already exists at {path}.");
+                    return null;
+                }
+                
+                var existingGamePrefabs = ListPool<IGamePrefab>.Default.Get();
+                existingGamePrefabs.Clear();
+                gamePrefabWrapper.GetGamePrefabs(existingGamePrefabs);
+
+                if (existingGamePrefabs.Count != 0 && existingGamePrefabs.IsAllNull() == false)
+                {
+                    Debugger.LogWarning($"{typeof(TWrapper).Name} already exists at {path} " +
+                                        $"with {existingGamePrefabs.Count} game prefabs.");
+                    
+                    existingGamePrefabs.ReturnToDefaultPool();
+                    return null;
+                }
+                
+                existingGamePrefabs.ReturnToDefaultPool();
+            }
+
+            path.CreateFolderByAssetPath();
 
             if (gamePrefabs.Length == 0)
             {
-                Debug.LogError($"No {nameof(IGamePrefab)} provided to create {typeof(TWrapper).Name}.");
+                Debugger.LogError($"No {nameof(IGamePrefab)} provided to create {typeof(TWrapper).Name}.");
                 return null;
             }
 
             if (gamePrefabs.IsAllNull())
             {
-                Debug.LogError(
+                Debugger.LogError(
                     $"All {nameof(IGamePrefab)} provided to create {typeof(TWrapper).Name} are null.");
                 return null;
             }
 
-            var gamePrefabWrapper = path.CreateScriptableObjectAsset<TWrapper>();
-
             if (gamePrefabWrapper == null)
             {
-                Debug.LogError($"Could not create {typeof(TWrapper).Name} " +
-                               $"of {gamePrefabs.Join(", ")} on Path : {path}");
-                return null;
+                gamePrefabWrapper = path.CreateScriptableObjectAsset<TWrapper>();
+
+                if (gamePrefabWrapper == null)
+                {
+                    Debugger.LogError($"Could not create {typeof(TWrapper).Name} " +
+                                   $"of {gamePrefabs.Join(", ")} on Path : {path}");
+                    return null;
+                }
             }
 
             gamePrefabWrapper.InitGamePrefabs(gamePrefabs);
-
-            foreach (var gamePrefab in gamePrefabWrapper.GetGamePrefabs())
-            {
-                if (gamePrefab.TryGetGamePrefabGeneralSettingWithWarning(out var gamePrefabSetting))
-                {
-                    gamePrefabSetting.AddDefaultGameTypeToGamePrefabWrapper(gamePrefabWrapper);
-                }
-            }
+            
+            // var gamePrefabsCache = ListPool<IGamePrefab>.Default.Get();
+            // gamePrefabsCache.Clear();
+            // gamePrefabWrapper.GetGamePrefabs(gamePrefabsCache);
+            //
+            // foreach (var gamePrefab in gamePrefabsCache)
+            // {
+            //     if (gamePrefab.TryGetGamePrefabGeneralSettingWithWarning(out var gamePrefabSetting))
+            //     {
+            //         gamePrefabSetting.AddDefaultGameTypeToGamePrefabWrapper(gamePrefabWrapper);
+            //     }
+            // }
+            //
+            // gamePrefabsCache.ReturnToDefaultPool();
 
             EditorApplication.delayCall += () =>
             {
@@ -145,27 +240,6 @@ namespace VMFramework.GameLogicArchitecture.Editor
             };
             
             return gamePrefabWrapper;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool PreCheckPath(string path)
-        {
-            if (path.EndsWith(".asset") == false)
-            {
-                path += ".asset";
-            }
-
-            AssetDatabase.Refresh();
-
-            if (path.ExistsAsset())
-            {
-                Debug.LogWarning($"{nameof(GamePrefabWrapper)} already exists at {path}.");
-                return false;
-            }
-
-            path.CreateFolderByAssetPath();
-
-            return true;
         }
     }
 }

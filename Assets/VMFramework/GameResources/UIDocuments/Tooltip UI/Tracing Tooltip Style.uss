@@ -7,9 +7,6 @@
     align-self: center;
 }
 
-.content {
-}
-
 .group {
     flex-direction: row;
     flex-wrap: wrap;

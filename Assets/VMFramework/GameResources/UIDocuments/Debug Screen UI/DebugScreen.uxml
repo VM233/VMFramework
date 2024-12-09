@@ -1,4 +1,8 @@
 <engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <engine:VisualElement name="LeftGroup" style="position: absolute; top: 0; left: 0; bottom: 0; right: 0; align-items: flex-start;" />
-    <engine:VisualElement name="RightGroup" style="position: absolute; top: 0; left: 0; bottom: 0; right: 0; align-items: flex-end;" />
+    <engine:VisualElement style="flex-grow: 1;">
+        <engine:VisualElement name="UIMainPart">
+            <engine:VisualElement name="LeftGroup" style="position: absolute; align-items: flex-start; top: 0; left: 0;" />
+            <engine:VisualElement name="RightGroup" style="position: absolute; align-items: flex-end; top: 0; right: 0;" />
+        </engine:VisualElement>
+    </engine:VisualElement>
 </engine:UXML>

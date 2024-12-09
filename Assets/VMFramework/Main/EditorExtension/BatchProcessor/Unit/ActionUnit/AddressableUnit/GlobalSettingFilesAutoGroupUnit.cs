@@ -10,9 +10,9 @@ namespace VMFramework.Editor.BatchProcessor
 {
     public sealed class GlobalSettingFilesAutoGroupUnit : SingleButtonBatchProcessorUnit
     {
-        protected override string processButtonName => "Auto Group Global Setting Files";
+        protected override string ProcessButtonName => "Auto Group Global Setting Files";
         
-        public override bool IsValid(IList<object> selectedObjects)
+        public override bool IsValid(IReadOnlyList<object> selectedObjects)
         {
             return selectedObjects.Any(obj =>
                 obj is IGlobalSettingFile && ((Object)obj).IsAddressableAsset() == false);

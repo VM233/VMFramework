@@ -32,11 +32,7 @@ namespace VMFramework.GameLogicArchitecture
         {
             var gamePrefab = GamePrefabManager.GetGamePrefabStrictly(id);
             
-            var gameItemType = gamePrefab.GameItemType;
-            
-            gameItemType.AssertIsNotNull(nameof(gameItemType));
-            
-            var gameItem = (IGameItem)Activator.CreateInstance(gameItemType);
+            var gameItem = gamePrefab.GenerateGameItem();
             
             return gameItem;
         }
@@ -44,7 +40,7 @@ namespace VMFramework.GameLogicArchitecture
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static CreatablePoolItemsPool<IGameItem, string> CreatePool(string id)
         {
-            var pool = new CreatablePoolItemsPool<IGameItem, string>(id, createGameItemHandler, 1000);
+            var pool = new CreatablePoolItemsPool<IGameItem, string>(id, createGameItemHandler, 20000);
             pools.Add(id, pool);
             return pool;
         }
@@ -97,7 +93,7 @@ namespace VMFramework.GameLogicArchitecture
         /// </summary>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static TGameItem GetClone<TGameItem>(this TGameItem instance) where TGameItem : IGameItem
+        public static TGameItem GetClone<TGameItem>(this TGameItem instance) where TGameItem : class, IGameItem
         {
             instance.AssertIsNotNull(nameof(instance));
             
@@ -106,6 +102,46 @@ namespace VMFramework.GameLogicArchitecture
             clone.CloneTo(instance);
 
             return (TGameItem)clone;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void PrewarmUntil(string id, int count)
+        {
+            if (count <= 0)
+            {
+                return;
+            }
+            
+            if (pools.TryGetValue(id, out var pool) == false)
+            {
+                pool = CreatePool(id);
+            }
+
+            if (pool.Count >= count)
+            {
+                return;
+            }
+
+            var gameItems = ListPool<IGameItem>.Default.Get();
+            gameItems.Clear();
+
+            for (int i = 0; i < count; i++)
+            {
+                var gameItem = pool.Get(out _);
+                
+                OnGameItemCreated?.Invoke(gameItem);
+                
+                gameItems.Add(gameItem);
+            }
+
+            foreach (var gameItem in gameItems)
+            {
+                pool.Return(gameItem);
+            
+                OnGameItemDestroyed?.Invoke(gameItem);
+            }
+            
+            gameItems.ReturnToDefaultPool();
         }
     }
 }

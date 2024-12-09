@@ -11,7 +11,7 @@ namespace VMFramework.Configuration
 
         public override Vector4 Pivot => (min + max) / 2f;
 
-        public override Vector4 extents => (max - min) / 2f;
+        public override Vector4 Extents => (max - min) / 2f;
 
         #region Constructor
 
@@ -61,7 +61,7 @@ namespace VMFramework.Configuration
         public override Vector4 ClampMax(Vector4 pos) => pos.ClampMax(max);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override Vector4 GetRandomPoint(Random random) => random.Range(min, max);
+        public override Vector4 GetRandomItem(Random random) => random.Range(min, max);
 
         #endregion
 

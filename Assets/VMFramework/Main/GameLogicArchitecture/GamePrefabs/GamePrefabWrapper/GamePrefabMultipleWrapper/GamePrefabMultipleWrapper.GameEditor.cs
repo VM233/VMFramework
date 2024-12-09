@@ -34,13 +34,16 @@ namespace VMFramework.GameLogicArchitecture
 
         protected override IEnumerable<ToolbarButtonConfig> GetToolbarButtons()
         {
-            foreach (var gamePrefab in gamePrefabs)
+            if (gamePrefabs.IsNullOrEmpty() == false)
             {
-                if (gamePrefab is IGameEditorToolbarProvider provider)
+                foreach (var gamePrefab in gamePrefabs)
                 {
-                    foreach (var config in provider.GetToolbarButtons())
+                    if (gamePrefab is IGameEditorToolbarProvider provider)
                     {
-                        yield return config;
+                        foreach (var config in provider.GetToolbarButtons())
+                        {
+                            yield return config;
+                        }
                     }
                 }
             }

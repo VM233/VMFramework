@@ -4,72 +4,93 @@ using System.Runtime.CompilerServices;
 using VMFramework.Core;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using VMFramework.Core.Linq;
+using VMFramework.Core.Pools;
+using VMFramework.GameEvents;
 using VMFramework.GameLogicArchitecture;
+using VMFramework.Network;
 
 namespace VMFramework.Containers
 {
-    public abstract partial class Container : GameItem, IContainer
+    public partial class Container : UUIDGameItem, IContainer
     {
-        [ShowInInspector]
-        public IContainerOwner owner { get; private set; }
-
-        public bool isOpen { get; private set; } = false;
-
-        public abstract int size { get; }
-        
-        public abstract int totalItemCount { get; }
-
-        public int validItemsSize
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => validSlotIndices.Count;
-        }
-
-        [ShowInInspector]
-        public abstract bool isFull { get; }
-
-        [ShowInInspector]
-        public abstract bool isEmpty { get; }
-
-        protected readonly SortedSet<int> validSlotIndices = new();
-
-        public event IContainer.ItemChangedHandler OnBeforeItemChangedEvent;
-        public event IContainer.ItemChangedHandler OnAfterItemChangedEvent;
-
-        public IReadOnlyContainerItemChangedEvent<ContainerItemAddedEvent> ItemAddedEvent => itemAddedEvent;
-
-        public IReadOnlyContainerItemChangedEvent<ContainerItemRemovedEvent> ItemRemovedEvent =>
-            itemRemovedEvent;
+        protected IContainerConfig ContainerConfig => (IContainerConfig)GamePrefab;
         
         [ShowInInspector]
-        private ContainerItemAddedEvent itemAddedEvent;
+        public IContainerOwner Owner { get; private set; }
+
+        public bool IsOpen { get; private set; } = false;
+
+        public int Count => items.Count;
+
+        public int? Capacity { get; private set; }
+
+        public int ValidCount => validItemsLookup.Count;
 
         [ShowInInspector]
-        private ContainerItemRemovedEvent itemRemovedEvent;
+        public virtual bool IsFull => Capacity.HasValue && ValidCount >= Capacity;
+
+        [ShowInInspector]
+        public virtual bool IsEmpty => ValidCount == 0;
+
+        private readonly SortedDictionary<int, IContainerItem> validItemsLookup = new();
+
+        public event ItemChangedHandler OnBeforeItemChangedEvent;
+        public event ItemChangedHandler OnAfterItemChangedEvent;
+
+        public IReadOnlyParameterizedGameEvent<ContainerItemChangedParameter> ItemAddedEvent => itemAddedEvent;
+
+        public IReadOnlyParameterizedGameEvent<ContainerItemChangedParameter> ItemRemovedEvent => itemRemovedEvent;
+
+        [ShowInInspector]
+        private ContainerItemChangedEvent itemAddedEvent;
+
+        [ShowInInspector]
+        private ContainerItemChangedEvent itemRemovedEvent;
 
         public event Action<IContainer> OnOpenEvent;
         public event Action<IContainer> OnCloseEvent;
 
-        private readonly Dictionary<int, Action<IContainerItem, int, int>> itemCountChangedActions = new();
+        public event ItemCountChangedHandler OnItemCountChangedEvent;
+
+        public event SizeChangedHandler OnSizeChangedEvent;
         
-        public event IContainer.ItemCountChangedHandler OnItemCountChangedEvent;
+        private Action<IContainerItem, int, int> itemCountChangedFunc;
+        
+        [ShowInInspector]
+        private List<IContainerItem> items = new();
 
-        public event IContainer.SizeChangedHandler OnSizeChangedEvent;
+        public IReadOnlyCollection<int> ValidSlotIndices => validItemsLookup.Keys;
 
-        #region Interface Implementation
-
-        IReadOnlyCollection<int> IContainer.validSlotIndices => validSlotIndices;
-
-        #endregion
+        public IReadOnlyCollection<IContainerItem> ValidItems => validItemsLookup.Values;
 
         #region Pool Events
+
+        protected override void OnCreate()
+        {
+            base.OnCreate();
+            
+            itemCountChangedFunc = OnItemCountChanged;
+
+            Capacity = ContainerConfig.Capacity;
+
+            if (Capacity.HasValue)
+            {
+                for (var i = items.Count; i < Capacity.Value; i++)
+                {
+                    items.Add(null);
+                }
+            }
+            
+            itemAddedEvent =
+                GameItemManager.Get<ContainerItemChangedEvent>(ContainerItemChangedEventConfig.ADDED_EVENT_ID);
+            itemRemovedEvent =
+                GameItemManager.Get<ContainerItemChangedEvent>(ContainerItemChangedEventConfig.REMOVED_EVENT_ID);
+        }
 
         protected override void OnGet()
         {
             base.OnGet();
-            
-            itemAddedEvent = GameItemManager.Get<ContainerItemAddedEvent>(ContainerItemAddedEventConfig.ID);
-            itemRemovedEvent = GameItemManager.Get<ContainerItemRemovedEvent>(ContainerItemRemovedEventConfig.ID);
 
             using var containerCreateEvent = ContainerCreateEvent.Get();
             containerCreateEvent.SetContainer(this);
@@ -79,19 +100,27 @@ namespace VMFramework.Containers
         protected override void OnReturn()
         {
             base.OnReturn();
-            
-            if (isDebugging)
+
+            if (IsDebugging)
             {
                 Debugger.LogWarning($"{this} is Destroyed");
             }
-            
+
             using var containerDestroyEvent = ContainerDestroyEvent.Get();
             containerDestroyEvent.SetContainer(this);
             containerDestroyEvent.Propagate();
             
+            itemAddedEvent.Reset();
+            itemRemovedEvent.Reset();
+        }
+
+        protected override void OnClear()
+        {
+            base.OnClear();
+            
             GameItemManager.Return(itemAddedEvent);
             GameItemManager.Return(itemRemovedEvent);
-            
+
             itemAddedEvent = null;
             itemRemovedEvent = null;
         }
@@ -100,15 +129,10 @@ namespace VMFramework.Containers
 
         #region Owner
 
-        public void SetOwner(IContainerOwner newOwner)
+        public bool SetOwner(IContainerOwner newOwner)
         {
-            if (owner != null)
-            {
-                Debug.LogWarning("试图修改已经生成的容器所有者");
-                return;
-            }
-
-            owner = newOwner;
+            Owner = this.SetClassValue(Owner, newOwner, out bool result, nameof(Owner));
+            return result;
         }
 
         #endregion
@@ -117,25 +141,25 @@ namespace VMFramework.Containers
 
         public void Open()
         {
-            if (isDebugging)
+            if (IsDebugging)
             {
-                Debug.LogWarning($"打开容器：{this}");
+                Debug.LogWarning($"Opening：{this}");
             }
 
-            isOpen = true;
-            
+            IsOpen = true;
+
             OnOpenEvent?.Invoke(this);
         }
 
         public void Close()
         {
-            if (isDebugging)
+            if (IsDebugging)
             {
-                Debug.LogWarning($"关闭容器：{this}");
+                Debug.LogWarning($"Closing：{this}");
             }
 
-            isOpen = false;
-            
+            IsOpen = false;
+
             OnCloseEvent?.Invoke(this);
         }
 
@@ -143,54 +167,47 @@ namespace VMFramework.Containers
 
         #region IContainerItem Event
 
+        private void OnItemCountChanged(IContainerItem item, int previousCount, int currentCount)
+        {
+            if (currentCount <= 0)
+            {
+                SetItem(item.SlotIndex, null);
+
+                GameItemManager.Return(item);
+            }
+            else
+            {
+                OnItemCountChangedEvent?.Invoke(this, item.SlotIndex, item, previousCount, currentCount);
+            }
+        }
+
         protected void OnItemAdded(int slotIndex, IContainerItem item)
         {
-            item.sourceContainer = this;
-            
-            validSlotIndices.Add(slotIndex);
-            
-            itemCountChangedActions[slotIndex] = ItemChangedAction;
+            item.SourceContainer = this;
 
-            item.OnCountChangedEvent += ItemChangedAction;
+            validItemsLookup.Add(slotIndex, item);
 
-            item.OnAddToContainer(this);
-            
-            itemAddedEvent.SetParameters(this, slotIndex, item);
-            itemAddedEvent.Propagate();
+            item.OnCountChangedEvent += itemCountChangedFunc;
 
-            return;
+            item.OnAddedToContainer(this, slotIndex);
 
-            void ItemChangedAction(IContainerItem item, int previousCount, int currentCount)
-            {
-                if (currentCount <= 0)
-                {
-                    SetItem(slotIndex, null);
-                    
-                    GameItemManager.Return(item);
-                }
-                else
-                {
-                    OnItemCountChangedEvent?.Invoke(this, slotIndex, item, previousCount,
-                        currentCount);
-                }
-            }
+            itemAddedEvent.Propagate(new(this, slotIndex, item));
         }
 
         protected void OnItemRemoved(int slotIndex, IContainerItem item)
         {
-            item.OnCountChangedEvent -= itemCountChangedActions[slotIndex];
+            item.OnCountChangedEvent -= itemCountChangedFunc;
 
-            validSlotIndices.Remove(slotIndex);
+            validItemsLookup.Remove(slotIndex);
 
-            if (item.sourceContainer == this)
+            if (item.SourceContainer == this)
             {
-                item.sourceContainer = null;
+                item.SourceContainer = null;
             }
-            
-            item.OnRemoveFromContainer(this);
-            
-            itemRemovedEvent.SetParameters(this, slotIndex, item);
-            itemRemovedEvent.Propagate();
+
+            item.OnRemovedFromContainer(this);
+
+            itemRemovedEvent.Propagate(new(this, slotIndex, item));
         }
 
         protected void OnBeforeItemChanged(int slotIndex, IContainerItem item)
@@ -207,59 +224,56 @@ namespace VMFramework.Containers
 
         #region Size Event
 
-        protected void OnSizeChanged()
+        protected void OnCountChanged()
         {
-            OnSizeChangedEvent?.Invoke(this, size);
+            OnSizeChangedEvent?.Invoke(this, Count);
 
-            if (isDebugging)
+            if (IsDebugging)
             {
-                Debug.LogWarning($"{this}容器Size改变为:{size}");
+                Debugger.LogWarning($"This size of {this} has changed to {Count}");
             }
         }
 
         #endregion
 
-        #region Get Item
-        
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public abstract bool TryGetItem(int index, out IContainerItem item);
+        #region Query Items
+
+        public void CheckIndex(int index)
+        {
+            if (index < 0 || index >= items.Count)
+            {
+                throw new IndexOutOfRangeException(
+                    $"Index {index} is out of range [{0}, {items.Count - 1}] for container {this}.");
+            }
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public abstract IContainerItem GetItem(int index);
+        public IContainerItem GetItem(int index) => items[index];
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public abstract IContainerItem GetItemWithoutCheck(int index);
-
-        #endregion
-
-        #region Get All Items
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public abstract IEnumerable<IContainerItem> GetAllItems();
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public abstract IContainerItem[] GetItemArray();
+        public IReadOnlyList<IContainerItem> GetAllItems() => items;
 
         #endregion
 
         #region Try Merge
         
-        public bool TryMergeItem(int index, IContainerItem newItem)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryMergeItem(int slotIndex, IContainerItem newItem, int preferredCount, out int mergedCount)
         {
-            var itemInContainer = GetItem(index);
+            var itemInContainer = GetItem(slotIndex);
 
             itemInContainer.AssertIsNotNull(nameof(itemInContainer));
 
             if (itemInContainer.IsMergeableWith(newItem) == false)
             {
+                mergedCount = 0;
                 return false;
             }
 
-            OnBeforeItemChanged(index, itemInContainer);
+            OnBeforeItemChanged(slotIndex, itemInContainer);
 
-            itemInContainer.MergeWith(newItem);
+            mergedCount = itemInContainer.MergeWith(newItem, preferredCount);
 
-            OnAfterItemChanged(index, itemInContainer);
+            OnAfterItemChanged(slotIndex, itemInContainer);
 
             return true;
         }
@@ -267,32 +281,230 @@ namespace VMFramework.Containers
         #endregion
 
         #region Set Item
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SetItem(int index, IContainerItem item)
+        {
+            var targetItem = item;
 
-        public abstract void SetItem(int index, IContainerItem item);
+            if (targetItem is { Count: <= 0 })
+            {
+                targetItem = null;
+            }
+
+            if (item is { SourceContainer: not null })
+            {
+                item.SourceContainer.SetItem(item.SlotIndex, null);
+            }
+
+            var oldItem = items[index];
+
+            items[index] = targetItem;
+            
+            if (oldItem != null)
+            {
+                OnItemRemoved(index, oldItem);
+            }
+
+            OnBeforeItemChanged(index, oldItem);
+
+            if (targetItem != null)
+            {
+                OnItemAdded(index, targetItem);
+            }
+
+            OnAfterItemChanged(index, targetItem);
+        }
 
         #endregion
 
         #region Add Item
-        
-        public virtual bool TryAddItem(IContainerItem item)
+
+        public virtual bool TryAddItem(IContainerItem item, int preferredCount, out int addedCount)
         {
-            return TryAddItem(item, int.MinValue, int.MaxValue);
+            return TryAddItem(item, int.MinValue, int.MaxValue, preferredCount, out addedCount);
         }
-        
-        public abstract bool TryAddItem(IContainerItem item, int startIndex, int endIndex);
 
-        #endregion
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryAddItem(IContainerItem item, int startIndex, int endIndex, int preferredCount,
+            out int addedCount)
+        {
+            if (IsDebugging)
+            {
+                Debugger.LogWarning($"Trying to add {item} to {this} in slots range: [{startIndex}, {endIndex}]" +
+                                    $"with preferred count: {preferredCount}");
+            }
 
-        #region Pop Item
-        
-        public abstract bool TryPopItemByPreferredCount(int preferredCount, out IContainerItem item, 
-            out int slotIndex);
+            addedCount = 0;
+            
+            if (item == null)
+            {
+                return true;
+            }
+
+            if (item.IsDestroyed)
+            {
+                throw new InvalidOperationException($"Cannot add destroyed item {item} to {this}.");
+            }
+
+            if (item.Count <= 0)
+            {
+                return true;
+            }
+
+            if (preferredCount <= 0)
+            {
+                return true;
+            }
+
+            if (startIndex > endIndex)
+            {
+                return false;
+            }
+
+            var clampedStartIndex = startIndex.ClampMin(0);
+            var clampedEndIndex = endIndex.ClampMax(items.Count - 1);
+
+            int leftCount = preferredCount.Min(item.Count);
+
+            for (var slotIndex = clampedStartIndex; slotIndex <= clampedEndIndex; slotIndex++)
+            {
+                var itemInContainer = items[slotIndex];
+
+                if (itemInContainer == null)
+                {
+                    continue;
+                }
+
+                if (TryMergeItem(slotIndex, item, leftCount, out var mergedCount))
+                {
+                    leftCount -= mergedCount;
+                    addedCount += mergedCount;
+
+                    if (leftCount <= 0)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            for (var slotIndex = clampedStartIndex; slotIndex <= clampedEndIndex; slotIndex++)
+            {
+                var itemInContainer = items[slotIndex];
+                if (itemInContainer != null)
+                {
+                    continue;
+                }
+
+                bool shouldReturn;
+
+                if (item.Count <= item.MaxStackCount)
+                {
+                    AddCountLessThanMaxStack(slotIndex, out var addedCountOnce);
+                    addedCount += addedCountOnce;
+
+                    shouldReturn = true;
+                }
+                else
+                {
+                    AddCountGreaterThanMaxStack(slotIndex, out shouldReturn, out var addedCountOnce);
+                    addedCount += addedCountOnce;
+                }
+
+                if (shouldReturn)
+                {
+                    return true;
+                }
+            }
+
+            var addTimes = 0;
+            while (true)
+            {
+                if (items.Count >= endIndex || (Capacity.HasValue && items.Count >= Capacity))
+                {
+                    return false;
+                }
+
+                if (item.Count <= item.MaxStackCount)
+                {
+                    AddNull(1);
+
+                    AddCountLessThanMaxStack(items.Count - 1, out var addedCountOnce);
+
+                    addedCount += addedCountOnce;
+
+                    break;
+                }
+                else
+                {
+                    AddNull(1);
+
+                    AddCountGreaterThanMaxStack(items.Count - 1, out var shouldReturn, out var addedCountOnce);
+                    addedCount += addedCountOnce;
+
+                    if (shouldReturn)
+                    {
+                        break;
+                    }
+
+                    addTimes++;
+
+                    if (addTimes >= 1000)
+                    {
+                        throw new NotSupportedException(
+                            $"Failed to add item {item} to {this}, exceeded maximum add times: {1000}");
+                    }
+                }
+            }
+
+            return true;
+
+            void AddCountLessThanMaxStack(int slotIndex, out int addedCountOnce)
+            {
+                if (item.IsSplittable(leftCount) == false)
+                {
+                    addedCountOnce = item.Count;
+                    SetItem(slotIndex, item);
+                }
+                else
+                {
+                    addedCountOnce = leftCount;
+
+                    var cloneItem = item.Split(leftCount);
+
+                    SetItem(slotIndex, cloneItem);
+                }
+            }
+
+            void AddCountGreaterThanMaxStack(int slotIndex, out bool shouldReturn, out int addedCountOnce)
+            {
+                if (item.MaxStackCount < leftCount)
+                {
+                    var cloneItem = item.Split(item.MaxStackCount);
+
+                    SetItem(slotIndex, cloneItem);
+
+                    leftCount -= item.MaxStackCount;
+                    addedCountOnce = item.MaxStackCount;
+
+                    shouldReturn = false;
+                }
+                else
+                {
+                    var cloneItem = item.Split(leftCount);
+
+                    SetItem(slotIndex, cloneItem);
+                    addedCountOnce = leftCount;
+
+                    shouldReturn = true;
+                }
+            }
+        }
 
         #endregion
 
         #region Stack Items
 
-        [Button("堆叠物品")]
         public virtual void StackItems()
         {
             this.StackItems(int.MinValue, int.MaxValue);
@@ -302,7 +514,6 @@ namespace VMFramework.Containers
 
         #region Compress Items
 
-        [Button("压缩物品")]
         public void Compress()
         {
             Compress(int.MinValue, int.MaxValue);
@@ -313,7 +524,30 @@ namespace VMFramework.Containers
         /// </summary>
         /// <param name="startIndex"></param>
         /// <param name="endIndex"></param>
-        public abstract void Compress(int startIndex, int endIndex);
+        public void Compress(int startIndex, int endIndex)
+        {
+            startIndex = startIndex.ClampMin(0);
+            endIndex = endIndex.ClampMax(Count - 1);
+            
+            var itemList = ListPool<IContainerItem>.Default.Get();
+            itemList.Clear();
+            itemList.AddRange(this.GetRangeItems(startIndex, endIndex));
+
+            itemList.RemoveAllNull();
+
+            for (var i = 0; i < itemList.Count; i++)
+            {
+                SetItem(startIndex + i, itemList[i]);
+            }
+
+            for (var i = endIndex; i >= startIndex + itemList.Count; i--)
+            {
+                items.RemoveAt(i);
+            }
+
+            itemList.ReturnToDefaultPool();
+            OnCountChanged();
+        }
 
         #endregion
 
@@ -321,25 +555,139 @@ namespace VMFramework.Containers
 
         public virtual void Sort(Comparison<IContainerItem> comparison)
         {
-            Sort(int.MinValue, int.MaxValue, comparison);
+            Sort(comparison, int.MinValue, int.MaxValue);
         }
 
-        public abstract void Sort(int startIndex, int endIndex, Comparison<IContainerItem> comparison);
+        public void Sort(Comparison<IContainerItem> comparison, int startIndex, int endIndex)
+        {
+            startIndex = startIndex.ClampMin(0);
+            endIndex = endIndex.ClampMax(Count - 1);
+            
+            this.StackItems(startIndex, endIndex);
+
+            var itemList = ListPool<IContainerItem>.Default.Get();
+            itemList.Clear();
+            itemList.AddRange(this.GetRangeItems(startIndex, endIndex));
+
+            itemList.RemoveAllNull();
+
+            itemList.Sort(comparison);
+
+            for (var i = 0; i < itemList.Count; i++)
+            {
+                SetItem(startIndex + i, itemList[i]);
+            }
+
+            for (var i = endIndex; i >= startIndex + itemList.Count; i--)
+            {
+                items.RemoveAt(i);
+            }
+
+            itemList.ReturnToDefaultPool();
+            OnCountChanged();
+        }
 
         #endregion
 
         #region String
 
-        protected override void OnGetStringProperties(ICollection<(string propertyID, string propertyContent)> collection)
+        protected override void OnGetStringProperties(
+            ICollection<(string propertyID, string propertyContent)> collection)
         {
             base.OnGetStringProperties(collection);
-            
-            collection.Add((nameof(validItemsSize), validItemsSize.ToString()));
+
+            collection.Add((nameof(ValidCount), ValidCount.ToString()));
         }
 
         #endregion
 
-        public abstract void LoadFromItemArray<TItem>(TItem[] itemsArray)
-            where TItem : IContainerItem;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected void AddNull(int count)
+        {
+            for (var i = 0; i < count; i++)
+            {
+                items.Add(null);
+            }
+            
+            OnCountChanged();
+        }
+        
+        public void ExpandTo(int newCount)
+        {
+            if (newCount > Capacity)
+            {
+                Debugger.LogError($"Cannot expand container {this} to {newCount} because it has a capacity of {Capacity}");
+                newCount = Capacity.Value;
+            }
+            
+            if (newCount <= items.Count)
+            {
+                return;
+            }
+
+            for (var i = items.Count; i < newCount; i++)
+            {
+                items.Add(null);
+            }
+
+            OnCountChanged();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ClearAllItems()
+        {
+            for (var i = 0; i < items.Count; i++)
+            {
+                SetItem(i, null);
+            }
+
+            items.Clear();
+            OnCountChanged();
+        }
+
+        #region Array Operations
+
+        public void LoadFromItemsArray<TItem>(TItem[] itemsArray)
+            where TItem : IContainerItem
+        {
+            ClearAllItems();
+
+            for (var i = 0; i < itemsArray.Length; i++)
+            {
+                items.Add(null);
+            }
+
+            OnCountChanged();
+
+            for (var i = 0; i < itemsArray.Length; i++)
+            {
+                SetItem(i, itemsArray[i]);
+            }
+        }
+
+        public void CopyAllItemsToArray<TItem>(TItem[] itemsArray)
+            where TItem : IContainerItem
+        {
+            for (var i = 0; i < items.Count; i++)
+            {
+                itemsArray[i] = (TItem)items[i];
+            }
+        }
+
+        #endregion
+
+        public void Shuffle()
+        {
+            var itemList = items.ToListDefaultPooled();
+
+            itemList.Shuffle();
+
+            foreach (var (slotIndex, item) in itemList.Enumerate())
+            {
+                SetItem(slotIndex, item);
+            }
+            
+            itemList.ReturnToDefaultPool();
+        }
     }
 }

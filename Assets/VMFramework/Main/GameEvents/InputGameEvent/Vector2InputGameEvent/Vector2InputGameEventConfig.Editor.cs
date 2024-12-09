@@ -16,8 +16,8 @@ namespace VMFramework.GameEvents
             yNegativeActionGroups??= new();
         }
         
-        [Button("快速添加WASD输入动作组", ButtonSizes.Medium), TabGroup(TAB_GROUP_NAME, INPUT_MAPPING_CATEGORY)]
-        private void AddWASDActionGroupGUI()
+        [Button(ButtonSizes.Medium), TabGroup(TAB_GROUP_NAME, INPUT_MAPPING_CATEGORY)]
+        private void QuickSetupWASD()
         {
             isXFromAxis = false;
             isYFromAxis = false;

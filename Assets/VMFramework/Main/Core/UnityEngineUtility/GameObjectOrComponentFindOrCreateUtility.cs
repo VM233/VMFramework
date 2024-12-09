@@ -97,7 +97,7 @@ namespace VMFramework.Core
         public static T FindOrCreateUniqueComponent<T>([NotNull] this GameObject attachedObject)
             where T : Component
         {
-#if UNITY_2023
+#if UNITY_2023 || UNITY_6000
             return FindOrCreateComponent(Object.FindFirstObjectByType<T>, attachedObject.AddComponent<T>);
 #else
             return FindOrCreateComponent(Object.FindObjectOfType<T>, attachedObject.FindOrCreateComponent<T>);

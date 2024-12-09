@@ -4,7 +4,12 @@ namespace VMFramework.Editor
     public enum GameItemBaseType
     {
         GameItem,
-        VisualGameItem
+        ControllerGameItem,
+        VisualGameItem,
+#if FISHNET
+        UUIDGameItem,
+        UUIDVisualGameItem
+#endif
     }
 }
 #endif

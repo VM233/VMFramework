@@ -106,7 +106,7 @@ namespace VMFramework.Configuration
 
         public override string ToString()
         {
-            return configs.Select(config => config.name).Join(",");
+            return configs.Select(config => config.Name).Join(",");
         }
 
         #endregion

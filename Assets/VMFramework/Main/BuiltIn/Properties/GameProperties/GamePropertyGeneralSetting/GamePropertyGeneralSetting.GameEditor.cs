@@ -8,7 +8,7 @@ namespace VMFramework.Properties
 {
     public partial class GamePropertyGeneralSetting : IGameEditorMenuTreeNode
     {
-        string INameOwner.name => "Game Property";
+        string INameOwner.Name => "Game Property";
 
         Icon IGameEditorMenuTreeNode.Icon => SdfIconType.JournalText;
     }

@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.ResourceManagement.Exceptions;
 using VMFramework.Core;
 using VMFramework.Core.Pools;
+using VMFramework.GameEvents;
+using VMFramework.GameLogicArchitecture;
 
 namespace VMFramework.Maps
 {
-    public abstract class DynamicGridMap : IGridMap
+    public abstract partial class DynamicGridMap : IGridMap
     {
         private readonly INormalPool<IGridChunk> chunkPool;
         
@@ -16,10 +19,12 @@ namespace VMFramework.Maps
         private readonly Dictionary<Vector3Int, IGridChunk> chunks = new();
 
         public Vector3Int ChunkSize => config.chunkSize;
+        
+        public IReadOnlyParameterizedGameEvent<IGridChunk> ChunkCreatedEvent => chunkCreatedEvent;
+        public IReadOnlyParameterizedGameEvent<IGridChunk> ChunkDestructedEvent => chunkDestructedEvent;
 
-        public event Action<IGridChunk> OnChunkCreated;
-
-        public event Action<IGridChunk> OnChunkDestroyed;
+        private readonly GridChunkChangedEvent chunkCreatedEvent;
+        private readonly GridChunkChangedEvent chunkDestructedEvent;
 
         #region Constructors
 
@@ -34,66 +39,97 @@ namespace VMFramework.Maps
                 chunkPool = info.ChunkPool;
             }
 
-            chunkPool ??= new CreatablePoolItemsPool<IGridChunk, IGridMap>(this, gridMap => new GridChunk(), 70);
+            chunkPool ??= CreateDefaultChunkPool();
+
+            chunkCreatedEvent = GameItemManager.Get<GridChunkChangedEvent>(GridChunkChangedEventConfig.ID);
+            chunkDestructedEvent = GameItemManager.Get<GridChunkChangedEvent>(GridChunkChangedEventConfig.ID);
         }
 
         #endregion
+
+        protected virtual INormalPool<IGridChunk> CreateDefaultChunkPool()
+        {
+            return new CreatablePoolItemsPool<IGridChunk, IGridMap>(this, gridMap => new GridChunk(), 70);
+        }
 
         #region Chunk
 
         #region Creations and Destructions
 
-        public IGridChunk CreateChunk(Vector3Int position)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryCreateChunk(Vector3Int position, out IGridChunk chunk)
         {
+            if (config.chunkBounds.Contains(position) == false)
+            {
+                Debugger.LogError($"Position {position} is outside the chunk bounds: {config.chunkBounds}. " +
+                                  $"Cannot create new chunk.");
+                chunk = null;
+                return false;
+            }
+            
             if (chunks.ContainsKey(position))
             {
-                throw new OperationException($"Chunk at position {position} already exists. Cannot create new chunk.");
+                Debugger.LogError($"Chunk at position {position} already exists. Cannot create new chunk.");
+                chunk = null;
+                return false;
             }
-
-            var chunk = chunkPool.Get();
+            
+            chunk = chunkPool.Get();
             chunk.Place(new(position));
             chunks[position] = chunk;
             
-            OnChunkCreated?.Invoke(chunk);
+            chunkCreatedEvent.Propagate(chunk);
             
-            return chunk;
+            return true;
         }
 
-        public void DestroyChunk(Vector3Int position)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void DestructChunk(Vector3Int position)
         {
             if (chunks.TryGetValue(position, out var chunk) == false)
             {
                 throw new OperationException($"Chunk at position {position} does not exist. Cannot destroy chunk.");
             }
             
-            OnChunkDestroyed?.Invoke(chunk);
+            chunkDestructedEvent.Propagate(chunk);
             
             chunkPool.Return(chunk);
+            
+            chunks.Remove(position);
         }
 
         #endregion
-        
+
+        #region Query
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool HasValidChunk(Vector3Int position)
         {
             return chunks.ContainsKey(position);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetChunk(Vector3Int chunkPosition, out IGridChunk chunk)
         {
             return chunks.TryGetValue(chunkPosition, out chunk);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IGridChunk GetChunk(Vector3Int chunkPosition)
         {
             return chunks.GetValueOrDefault(chunkPosition);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IEnumerable<IGridChunk> GetAllChunks() => chunks.Values;
+
+        #endregion
 
         #endregion
 
         #region Tile
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IEnumerable<Vector3Int> GetAllPoints()
         {
             foreach (var tile in GetAllTiles())
@@ -102,6 +138,7 @@ namespace VMFramework.Maps
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IEnumerable<IGridTile> GetAllTiles()
         {
             foreach (var chunk in chunks.Values)
@@ -114,7 +151,7 @@ namespace VMFramework.Maps
         }
 
         #endregion
-
+        
         public virtual void ClearMap()
         {
             foreach (var chunk in chunks.Values)

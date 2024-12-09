@@ -4,8 +4,21 @@ using System.Linq;
 
 namespace VMFramework.Configuration
 {
-    public partial class DictionaryConfigs<TID, TConfig> : IEnumerable<KeyValuePair<TID, TConfig>>
+    public partial class DictionaryConfigs<TID, TConfig> : IReadOnlyCollection<KeyValuePair<TID, TConfig>>
     {
+        public int Count
+        {
+            get
+            {
+                if (initDone)
+                {
+                    return configsRuntime.Count;
+                }
+                
+                return configs.Count;
+            }
+        }
+
         public IEnumerator<KeyValuePair<TID, TConfig>> GetEnumerator()
         {
             if (initDone)

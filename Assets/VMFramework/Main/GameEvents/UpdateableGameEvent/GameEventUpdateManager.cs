@@ -22,7 +22,7 @@ namespace VMFramework.GameEvents
         {
             foreach (var updateableGameEvent in updateableGameEvents)
             {
-                if (updateableGameEvent.isEnabled == false)
+                if (updateableGameEvent.IsEnabled == false)
                 {
                     continue;
                 }

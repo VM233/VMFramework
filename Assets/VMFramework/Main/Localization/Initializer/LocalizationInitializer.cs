@@ -13,9 +13,9 @@ namespace VMFramework.Localization
     [Preserve]
     public sealed class LocalizationInitializer : IGameInitializer
     {
-        IEnumerable<InitializationAction> IInitializer.GetInitializationActions()
+        void IInitializer.GetInitializationActions(ICollection<InitializationAction> actions)
         {
-            yield return new(InitializationOrder.Init, OnInit, this);
+            actions.Add(new(InitializationOrder.Init, OnInit, this));
         }
 
         private static async void OnInit(Action onDone)

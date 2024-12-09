@@ -13,7 +13,7 @@ namespace VMFramework.Editor.BatchProcessor
     {
         private const float LABEL_WIDTH = 100;
         
-        protected override string processButtonName => "Query Derived Types";
+        protected override string ProcessButtonName => "Query Derived Types";
 
         [LabelWidth(LABEL_WIDTH), HorizontalGroup("1")]
         [SerializeField]
@@ -35,7 +35,7 @@ namespace VMFramework.Editor.BatchProcessor
         [SerializeField]
         private bool leafTypesOnly = true;
 
-        public override bool IsValid(IList<object> selectedObjects)
+        public override bool IsValid(IReadOnlyList<object> selectedObjects)
         {
             if (selectedObjects.IsNullOrEmpty())
             {

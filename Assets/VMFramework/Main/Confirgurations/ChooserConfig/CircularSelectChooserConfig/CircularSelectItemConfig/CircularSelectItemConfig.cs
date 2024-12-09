@@ -27,8 +27,8 @@ namespace VMFramework.Configuration
             };
         }
 
-        T ICircularSelectItem<T>.value => value;
+        T ICircularSelectItem<T>.Value => value;
 
-        int ICircularSelectItem<T>.times => times;
+        int ICircularSelectItem<T>.Times => times;
     }
 }

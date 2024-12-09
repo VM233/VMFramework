@@ -28,17 +28,21 @@ namespace FishNet.Managing.Client
     public partial class ClientObjects : ManagedObjects
     {
         #region Internal.
+
         /// <summary>
         /// NetworkObjects which are currently active on the local client.
         /// </summary>
         internal List<NetworkObject> LocalClientSpawned = new List<NetworkObject>();
+
         #endregion
 
         #region Private.
+
         /// <summary>
         /// NetworkObjects which are cached to be spawned or despawned.
         /// </summary>
         private ClientObjectCache _objectCache;
+
         #endregion
 
         internal ClientObjects(NetworkManager networkManager)
@@ -94,10 +98,11 @@ namespace FishNet.Managing.Client
                 {
                     foreach (NetworkObject n in Spawned.Values)
                     {
-                        n.InvokeStopCallbacks(false);
+                        n.InvokeStopCallbacks(false, true);
                         n.SetInitializedStatus(false, false);
                     }
                 }
+
                 /* Clear spawned and scene objects as they will be rebuilt.
                  * Spawned would have already be cleared if DespawnSpawned
                  * was called but it won't hurt anything clearing an empty collection. */
@@ -166,8 +171,8 @@ namespace FishNet.Managing.Client
             networkObject.Initialize(false, true);
 
             PooledWriter writer = WriterPool.Retrieve();
-            WriteSpawn_Client(networkObject, writer);
-            base.NetworkManager.TransportManager.SendToServer((byte)Channel.Reliable, writer.GetArraySegment());
+            if (WriteSpawn_Client(networkObject, writer))
+                base.NetworkManager.TransportManager.SendToServer((byte)Channel.Reliable, writer.GetArraySegment());
             writer.Store();
         }
 
@@ -175,10 +180,18 @@ namespace FishNet.Managing.Client
         /// Writes a predicted spawn.
         /// </summary>
         /// <param name="nob"></param>
-        internal void WriteSpawn_Client(NetworkObject nob, Writer writer)
+        internal bool WriteSpawn_Client(NetworkObject nob, Writer writer)
         {
             PooledWriter headerWriter = WriterPool.Retrieve();
-            headerWriter.WritePacketId(PacketId.ObjectSpawn);
+            headerWriter.WritePacketIdUnpacked(PacketId.ObjectSpawn);
+
+            /* Get position after packetId. The rest is the content for the spawn.
+             * This is also where to insert bytes. */
+            int writerStartPosition = writer.Position;
+
+            const int reservedLengthBytes = 2;
+            headerWriter.Skip(reservedLengthBytes);
+
             headerWriter.WriteNetworkObjectForSpawn(nob);
             headerWriter.WriteNetworkConnection(nob.Owner);
 
@@ -189,16 +202,16 @@ namespace FishNet.Managing.Client
                 st |= SpawnType.Scene;
             else
                 st |= (nob.IsGlobal) ? SpawnType.InstantiatedGlobal : SpawnType.Instantiated;
-            headerWriter.WriteByte((byte)st);
+            headerWriter.WriteUInt8Unpacked((byte)st);
 
             //ComponentIndex for the nob. 0 is root but more appropriately there's a IsNested boolean as shown above.
-            headerWriter.WriteByte(nob.ComponentIndex);
+            headerWriter.WriteUInt8Unpacked(nob.ComponentIndex);
             //Properties on the transform which diff from serialized value.
             base.WriteChangedTransformProperties(nob, sceneObject, false, headerWriter);
             /* Writing a scene object. */
             if (sceneObject)
             {
-                headerWriter.WriteUInt64(nob.SceneId, AutoPackType.Unpacked);
+                headerWriter.WriteUInt64Unpacked(nob.SceneId);
 #if DEVELOPMENT
                 base.CheckWriteSceneObjectDetails(nob, headerWriter);
 #endif
@@ -207,7 +220,7 @@ namespace FishNet.Managing.Client
             else
             {
                 //Nested predicted spawning will be added later.
-                headerWriter.WriteByte((byte)SpawnParentType.Unset);
+                headerWriter.WriteUInt8Unpacked((byte)SpawnParentType.Unset);
                 headerWriter.WriteNetworkObjectId(nob.PrefabId);
             }
 
@@ -218,9 +231,25 @@ namespace FishNet.Managing.Client
             base.WritePayload(NetworkManager.EmptyConnection, nob, tempWriter);
             writer.WriteArraySegmentAndSize(tempWriter.GetArraySegment());
 
+            const int maxContentLength = ushort.MaxValue;
+            int writtenCount = (writer.Position - writerStartPosition);
+            //Too much content; this really should absolutely never happen.
+            if (writtenCount > maxContentLength)
+            {
+                NetworkManager.LogError($"A single predicted spawns may not exceed {maxContentLength} bytes in length. This predicted spawn for {nob.name} will not occur.");
+                return false;
+            }
+            //Not too large.
+            else
+            {
+                writer.InsertUInt16Unpacked((ushort)writtenCount, writerStartPosition);
+            }
+
+
             //Dispose of writers created in this method.
             headerWriter.Store();
             tempWriter.Store();
+            return true;
         }
 
 
@@ -243,7 +272,7 @@ namespace FishNet.Managing.Client
         /// </summary>
         public void WriteDepawn(NetworkObject nob, Writer writer)
         {
-            writer.WritePacketId(PacketId.ObjectDespawn);
+            writer.WritePacketIdUnpacked(PacketId.ObjectDespawn);
             writer.WriteNetworkObject(nob);
         }
 
@@ -263,7 +292,7 @@ namespace FishNet.Managing.Client
         private void RegisterAndDespawnSceneObjects(Scene s)
         {
             List<NetworkObject> nobs = CollectionCaches<NetworkObject>.RetrieveList();
-            Scenes.GetSceneNetworkObjects(s, false, true, ref nobs);
+            Scenes.GetSceneNetworkObjects(s, false, true, true, ref nobs);
 
             int nobsCount = nobs.Count;
             for (int i = 0; i < nobsCount; i++)
@@ -304,7 +333,7 @@ namespace FishNet.Managing.Client
             NetworkObject nob = reader.ReadNetworkObject();
             NetworkConnection newOwner = reader.ReadNetworkConnection();
             if (nob != null && nob.IsSpawned)
-                nob.GiveOwnership(newOwner, false);
+                nob.GiveOwnership(newOwner, asServer: false, includeNested: false);
             else
                 NetworkManager.LogWarning($"NetworkBehaviour could not be found when trying to parse OwnershipChange packet.");
         }
@@ -385,6 +414,7 @@ namespace FishNet.Managing.Client
             else
                 SkipDataLength((ushort)PacketId.ObserversRpc, reader, dataLength);
         }
+
         /// <summary>
         /// Parses a TargetRpc.
         /// </summary>
@@ -411,8 +441,8 @@ namespace FishNet.Managing.Client
             ushort collectionId;
             int objectId = reader.ReadNetworkObjectForSpawn(out initializeOrder, out collectionId, out _);
             int ownerId = reader.ReadNetworkConnectionId();
-            SpawnType st = (SpawnType)reader.ReadByte();
-            byte componentIndex = reader.ReadByte();
+            SpawnType st = (SpawnType)reader.ReadUInt8Unpacked();
+            byte componentIndex = reader.ReadUInt8Unpacked();
 
             //Read transform values which differ from serialized values.
             Vector3? localPosition;
@@ -420,9 +450,9 @@ namespace FishNet.Managing.Client
             Vector3? localScale;
             base.ReadTransformProperties(reader, out localPosition, out localRotation, out localScale);
 
-            bool nested = SpawnTypeEnum.Contains(st, SpawnType.Nested);
+            bool nested = SpawnTypeEnum.FastContains(st, SpawnType.Nested);
             int rootObjectId = (nested) ? reader.ReadNetworkObjectId() : 0;
-            bool sceneObject = SpawnTypeEnum.Contains(st, SpawnType.Scene);
+            bool sceneObject = SpawnTypeEnum.FastContains(st, SpawnType.Scene);
 
             int? parentObjectId = null;
             byte? parentComponentIndex = null;
@@ -434,8 +464,9 @@ namespace FishNet.Managing.Client
             if (sceneObject)
             {
                 ReadSceneObject(reader, out sceneId);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                base.CheckReadSceneObjectDetails(reader, ref sceneName, ref objectName);
+#if DEVELOPMENT
+                if (NetworkManager.ClientManager.IsServerDevelopment)
+                    base.CheckReadSceneObjectDetails(reader, ref sceneName, ref objectName);
 #endif
             }
             else
@@ -450,7 +481,7 @@ namespace FishNet.Managing.Client
             /* If the objectId can be found as already spawned then check if it's predicted.
              * Should the spawn be predicted then no need to continue. Later on however
              * we may want to apply synctypes.
-             * 
+             *
              * Only check if not server, since if server the client doesnt need
              * to predicted spawn. */
             if (!base.NetworkManager.IsServerOnlyStarted && base.Spawned.TryGetValue(objectId, out NetworkObject nob))
@@ -467,12 +498,14 @@ namespace FishNet.Managing.Client
                     ApplyRpcLinks(nob, linkReader);
                     linkReader.Store();
                 }
+
                 //No further initialization needed when predicting.
                 return;
             }
 
             _objectCache.AddSpawn(base.NetworkManager, collectionId, objectId, initializeOrder, ownerId, st, componentIndex, rootObjectId, parentObjectId, parentComponentIndex, prefabId, localPosition, localRotation, localScale, sceneId, sceneName, objectName, payload, rpcLinks, syncValues);
         }
+
         /// <summary>
         /// Caches a received despawn to be processed after all spawns and despawns are received for the tick.
         /// </summary>
@@ -519,7 +552,8 @@ namespace FishNet.Managing.Client
             }
 
             NetworkObject nob = null;
-            List<NetworkObject> childNobs = rootNob.NestedRootNetworkBehaviours;
+            List<NetworkObject> childNobs = rootNob.SerializedNestedNetworkObjects;
+
             //Find nob with component index.
             for (int i = 0; i < childNobs.Count; i++)
             {
@@ -529,6 +563,7 @@ namespace FishNet.Managing.Client
                     break;
                 }
             }
+
             //If child nob was not found.
             if (nob == null)
             {
@@ -559,12 +594,13 @@ namespace FishNet.Managing.Client
                         //RpcHash.
                         reader.ReadUInt16(),
                         //ObserverRpc.
-                        (RpcType)reader.ReadByte());
+                        (RpcType)reader.ReadUInt8Unpacked());
                     //Add to links.
                     SetRpcLink(linkIndex, link);
                     rpcLinkIndexes.Add(linkIndex);
                 }
             }
+
             nob.SetRpcLinkIndexes(rpcLinkIndexes);
         }
 
@@ -630,6 +666,7 @@ namespace FishNet.Managing.Client
                             {
                                 NetworkObject prefab = prefabObjects.GetObject(false, prefabId);
                                 networkManager.LogError($"NetworkBehaviour on index {componentIndex} could nto be found within NetworkObject {nob.name} with ObjectId {objectId}. Prefab {prefab.name} will be instantiated without parent synchronization.");
+                                hasParent = false;
                             }
                         }
                         //The networkObject is the parent.
@@ -640,11 +677,15 @@ namespace FishNet.Managing.Client
                     }
                 }
 
-                result = networkManager.GetPooledInstantiated(prefabId, collectionId, parentTransform, cnob.LocalPosition
-                    , cnob.LocalRotation, cnob.LocalScale, makeActive: true, asServer: false);
+                ObjectPoolRetrieveOption retrieveOptions = ObjectPoolRetrieveOption.MakeActive;
+                if (hasParent)
+                    retrieveOptions |= ObjectPoolRetrieveOption.LocalSpace;
+
+                result = networkManager.GetPooledInstantiated(prefabId, collectionId, retrieveOptions, parentTransform, cnob.Position
+                    , cnob.Rotation, cnob.Scale, asServer: false);
 
                 //Only need to set IsGlobal also if not host.
-                bool isGlobal = SpawnTypeEnum.Contains(cnob.SpawnType, SpawnType.InstantiatedGlobal);
+                bool isGlobal = SpawnTypeEnum.FastContains(cnob.SpawnType, SpawnType.InstantiatedGlobal);
                 result.SetIsGlobal(isGlobal);
             }
             //If host then find server instantiated object.
@@ -692,7 +733,7 @@ namespace FishNet.Managing.Client
         /// </summary>
         private void ReadSceneObject(PooledReader reader, out ulong sceneId)
         {
-            sceneId = reader.ReadUInt64(AutoPackType.Unpacked);
+            sceneId = reader.ReadUInt64Unpacked();
         }
 
         /// <summary>
@@ -700,8 +741,9 @@ namespace FishNet.Managing.Client
         /// </summary>
         private void ReadSpawnedObject(PooledReader reader, out int? parentObjectId, out byte? parentComponentIndex, out int? prefabId)
         {
+            //TODO: parentChange. If has parent then read local space, otherwise world.
             //Parent.
-            SpawnParentType spt = (SpawnParentType)reader.ReadByte();
+            SpawnParentType spt = (SpawnParentType)reader.ReadUInt8Unpacked();
             //Defaults.
             parentObjectId = null;
             parentComponentIndex = null;
@@ -724,7 +766,5 @@ namespace FishNet.Managing.Client
 
             prefabId = (ushort)reader.ReadNetworkObjectId();
         }
-
     }
-
 }

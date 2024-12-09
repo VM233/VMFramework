@@ -5,10 +5,10 @@ namespace VMFramework.Core
     [Flags]
     public enum FlipType2D
     {
-        None = 0,
-        X = 1,
-        Y = 2,
-        XY = 4,
-        ALL = X | Y | XY
+        NonFlipped = 1,
+        X = 2,
+        Y = 4,
+        XY = 8,
+        ALL_FLIP = X | Y | XY
     }
 }

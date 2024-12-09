@@ -8,11 +8,14 @@ namespace VMFramework.Procedure
     [Preserve]
     public sealed class ManagerBehaviourInitializer : IGameInitializer
     {
-        IEnumerable<InitializationAction> IInitializer.GetInitializationActions()
+        void IInitializer.GetInitializationActions(ICollection<InitializationAction> actions)
         {
             var managerBehaviours = ManagerBehaviourCollector.Collect().ToList();
 
-            return managerBehaviours.SelectMany(managerBehaviour => managerBehaviour.GetInitializationActions());
+            foreach (var managerBehaviour in managerBehaviours)
+            {
+                managerBehaviour.GetInitializationActions(actions);
+            }
         }
     }
 }

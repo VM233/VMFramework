@@ -6,7 +6,7 @@ namespace VMFramework.ResourcesManagement
 {
     public partial class SpritePreset : IGameEditorMenuTreeNode
     {
-        public Icon Icon => preloadFlipXPreview;
+        public Icon Icon => sprite;
     }
 }
 #endif

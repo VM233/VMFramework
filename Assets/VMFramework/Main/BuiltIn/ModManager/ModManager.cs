@@ -7,7 +7,7 @@ using VMFramework.Procedure;
 [ManagerCreationProvider(ManagerType.ResourcesCore)]
 public class ModManager : ManagerBehaviour<ModManager>
 {
-    public static string modFolderPath => CommonFolders.persistentDataPath.PathCombine("Mods");
+    public static string modFolderPath => CommonFolders.PersistentDataPath.PathCombine("Mods");
 
     private void Start()
     {

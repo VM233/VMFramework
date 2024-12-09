@@ -7,15 +7,13 @@ namespace VMFramework.Configuration
 {
     public partial class ColorRangeConfig : KCubeFloatConfig<Color>
     {
-        protected override string pointName => "颜色";
-
         protected override bool requireCheckSize => false;
 
         public override Color Size => max - min;
 
         public override Color Pivot => (min + max) / 2f;
 
-        public override Color extents => (max - min) / 2f;
+        public override Color Extents => (max - min) / 2f;
 
         #region Constructor
 
@@ -64,7 +62,7 @@ namespace VMFramework.Configuration
         public override Color ClampMax(Color pos) => pos.ClampMax(max);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override Color GetRandomPoint(Random random) => random.Range(min, max);
+        public override Color GetRandomItem(Random random) => random.Range(min, max);
 
         #endregion
 

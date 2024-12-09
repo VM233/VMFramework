@@ -1,23 +1,24 @@
 ﻿#if UNITY_EDITOR
 using VMFramework.Core.Editor;
+using VMFramework.Tools.Editor;
 
 namespace VMFramework.Editor
 {
     public sealed class GamePrefabScriptExtraInfo : ScriptCreationExtraInfo
     {
-        public string parentClassName { get; init; }
+        public string ParentClassName { get; init; }
         
-        public bool enableParentInterfaceRegion { get; init; }
+        public bool EnableParentInterfaceRegion { get; init; }
         
-        public string parentInterfaceName { get; init; }
+        public string ParentInterfaceName { get; init; }
         
-        public bool enableIDSuffixOverrideRegion { get; init; }
+        public bool EnableIDSuffixOverrideRegion { get; init; }
         
-        public string idSuffix { get; init; }
+        public string IDSuffix { get; init; }
         
-        public bool enableGameItemTypeOverrideRegion { get; init; }
+        public bool EnableGameItemTypeOverrideRegion { get; init; }
         
-        public string gameItemType { get; init; }
+        public string GameItemType { get; init; }
     }
 }
 #endif

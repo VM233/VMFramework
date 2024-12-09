@@ -10,7 +10,7 @@ namespace VMFramework.Editor
         [EnumToggleButtons]
         public ProcedureLoadingType loadingType = ProcedureLoadingType.OnEnter;
 
-        protected override string nameSuffix => loadingType switch
+        protected override string NameSuffix => loadingType switch
         {
             ProcedureLoadingType.OnEnter => "Initializer",
             ProcedureLoadingType.OnExit => "Deinitializer",

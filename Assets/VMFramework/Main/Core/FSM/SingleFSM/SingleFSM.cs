@@ -1,43 +1,142 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Sirenix.OdinInspector;
 
 namespace VMFramework.Core.FSM
 {
     [HideDuplicateReferenceBox]
-    public class SingleFSM<TID, TOwner> : ISingleFSM<TID, TOwner>
+    public sealed class SingleFSM<TID, TOwner> : ISingleFSM<TID, TOwner>
     {
-        [LabelText("当前状态")]
         [ShowInInspector]
-        public ISingleFSMState<TID, TOwner> currentState { get; private set; }
+        public ISingleFSMState<TID, TOwner> CurrentState { get; private set; }
         
-        [LabelText("是否初始化完成")]
         [ShowInInspector]
-        public bool initDone { get; private set; }
+        public bool InitDone { get; private set; }
         
-        [LabelText("Owner")]
         [ShowInInspector]
-        public TOwner owner { get; private set; }
+        public TOwner Owner { get; private set; }
 
-        TOwner ISingleFSM<TID, TOwner>.owner
+        [ShowInInspector]
+        private readonly Dictionary<TID, ISingleFSMState<TID, TOwner>> states = new();
+
+        public IReadOnlyDictionary<TID, ISingleFSMState<TID, TOwner>> States => states;
+
+        public void Init(TOwner owner, TID initialStateID)
         {
-            get => owner;
-            set => owner = value;
+            if (InitDone)
+            {
+                throw new InvalidOperationException("FSM already initialized.");
+            }
+
+            this.Owner = owner;
+
+            foreach (var state in states.Values)
+            {
+                state.Init(this);
+            }
+
+            if (states.TryGetValue(initialStateID, out var initialState) == false)
+            {
+                throw new KeyNotFoundException($"initialStateID: {initialStateID} not found.");
+            }
+            
+            CurrentState = initialState;
+
+            InitDone = true;
         }
 
-        bool ISingleFSM<TID, TOwner>.initDone
+        public void Update()
         {
-            get => initDone;
-            set => initDone = value;
+            foreach (var state in states.Values)
+            {
+                if (state.id.Equals(CurrentState.id))
+                {
+                    state.Update(true);
+                }
+                else
+                {
+                    state.Update(false);
+                }
+            }
         }
 
-        [LabelText("状态字典")]
-        [ShowInInspector]
-        Dictionary<TID, ISingleFSMState<TID, TOwner>> ISingleFSM<TID, TOwner>._states { get; set; }
-
-        ISingleFSMState<TID, TOwner> ISingleFSM<TID, TOwner>.currentState
+        public void FixedUpdate()
         {
-            get => currentState;
-            set => currentState = value;
+            foreach (var state in states.Values)
+            {
+                if (state.id.Equals(CurrentState.id))
+                {
+                    state.FixedUpdate(true);
+                }
+                else
+                {
+                    state.FixedUpdate(false);
+                }
+            }
+        }
+
+        public void AddState(ISingleFSMState<TID, TOwner> fsmState)
+        {
+            if (InitDone)
+            {
+                throw new InvalidOperationException("FSM已经初始化");
+            }
+
+            if (states.TryAdd(fsmState.id, fsmState) == false)
+            {
+                throw new ArgumentException($"Duplicate state ID: {fsmState.id}");
+            }
+        }
+        
+        public bool CanEnterState(TID stateID)
+        {
+            if (CurrentState.id.Equals(stateID))
+            {
+                return true;
+            }
+
+            if (this.TryGetState(stateID, out var state) == false)
+            {
+                throw new KeyNotFoundException($"State ID: {stateID} not found.");
+            }
+
+            if (CurrentState.CanExitTo(state) == false)
+            {
+                return false;
+            }
+            
+            return state.CanEnterFrom(CurrentState);
+        }
+
+        public bool EnterState(TID stateID)
+        {
+            if (CurrentState.id.Equals(stateID))
+            {
+                return true;
+            }
+
+            if (this.TryGetState(stateID, out var state) == false)
+            {
+                throw new KeyNotFoundException($"State ID: {stateID} not found.");
+            }
+
+            if (CurrentState.CanExitTo(state) == false)
+            {
+                return false;
+            }
+
+            if (state.CanEnterFrom(CurrentState) == false)
+            {
+                return false;
+            }
+            
+            var oldState = CurrentState;
+            CurrentState = state;
+            
+            oldState.OnExitTo(CurrentState);
+            CurrentState.OnEnterFrom(oldState);
+            
+            return true;
         }
     }
 }

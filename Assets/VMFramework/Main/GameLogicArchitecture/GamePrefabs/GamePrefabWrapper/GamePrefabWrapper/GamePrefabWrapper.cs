@@ -1,13 +1,16 @@
 using System.Collections.Generic;
+using VMFramework.Core;
 
 namespace VMFramework.GameLogicArchitecture
 {
-    public abstract partial class GamePrefabWrapper : GameEditorScriptableObject, INameOwner
+    public abstract partial class GamePrefabWrapper : GameEditorScriptableObject, IGamePrefabProvider, INameOwner, IIDOwner<string>
     {
-        public abstract IEnumerable<IGamePrefab> GetGamePrefabs();
+        public abstract void GetGamePrefabs(ICollection<IGamePrefab> gamePrefabsCollection);
         
-        public abstract void InitGamePrefabs(IEnumerable<IGamePrefab> gamePrefabs);
+        public abstract void InitGamePrefabs(IReadOnlyCollection<IGamePrefab> gamePrefabs);
 
-        string INameOwner.name => this == null ? "Null" : name;
+        string INameOwner.Name => this == null ? "Null" : name;
+
+        public abstract string id { get; }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Sirenix.OdinInspector;
+using UnityEngine.Serialization;
 using VMFramework.GameLogicArchitecture;
 
 namespace VMFramework.UI
@@ -16,9 +17,10 @@ namespace VMFramework.UI
         [Required]
         public UIPanelProcedureGeneralSetting uiPanelProcedureGeneralSetting;
 
+        [FormerlySerializedAs("debugUIPanelGeneralSetting")]
         [TabGroup(TAB_GROUP_NAME, UI_CATEGORY)]
         [Required]
-        public DebugUIPanelGeneralSetting debugUIPanelGeneralSetting;
+        public DebugPanelGeneralSetting debugPanelGeneralSetting;
 
         [TabGroup(TAB_GROUP_NAME, UI_CATEGORY)]
         [Required]
@@ -27,5 +29,9 @@ namespace VMFramework.UI
         [TabGroup(TAB_GROUP_NAME, UI_CATEGORY)]
         [Required]
         public ContextMenuGeneralSetting contextMenuGeneralSetting;
+        
+        [TabGroup(TAB_GROUP_NAME, UI_CATEGORY)]
+        [Required]
+        public ContainerUIGeneralSetting containerUIGeneralSetting;
     }
 }

@@ -4,16 +4,8 @@ using VMFramework.Core;
 
 namespace VMFramework.Configuration
 {
-    public partial class ColorRangeChooserConfig : ColorRangeConfig, ISingleRangeChooserConfig<Color>
+    public partial class ColorRangeChooserConfig : ColorRangeConfig, ISingleKCubeChooserConfig<Color, ColorRange>
     {
-        [ShowInInspector, HideInEditorMode]
-        IChooser<Color> ISingleChooserConfig<Color>.objectChooser { get; set; }
         
-        protected override void OnInit()
-        {
-            base.OnInit();
-            
-            this.RegenerateObjectChooser();
-        }
     }
 }

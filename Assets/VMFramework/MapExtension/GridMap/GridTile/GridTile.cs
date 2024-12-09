@@ -5,7 +5,7 @@ using VMFramework.GameLogicArchitecture;
 
 namespace VMFramework.Maps
 {
-    public abstract class GridTile : VisualGameItem, IGridTile
+    public abstract class GridTile : GeneralVisualGameItem, IGridTile
     {
         private IGridChunk chunk;
 

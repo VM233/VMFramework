@@ -21,6 +21,6 @@ MonoBehaviour:
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
     SerializationNodes: []
-  gameTypeGeneralSetting: {fileID: 11400000, guid: bb2a04439ee1eb140a0bea77cd389a26, type: 2}
+  gameTagGeneralSetting: {fileID: 11400000, guid: 1435e2a7789ac8045924a3e9d937cffe, type: 2}
   gameEventGeneralSetting: {fileID: 11400000, guid: b3781047277b1ac4b80abdfba38a04d1, type: 2}
   colliderMouseEventGeneralSetting: {fileID: 11400000, guid: f1e492e9b12bc10449b83344cc0bda7e, type: 2}

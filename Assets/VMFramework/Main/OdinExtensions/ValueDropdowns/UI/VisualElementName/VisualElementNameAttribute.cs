@@ -1,11 +1,14 @@
 ﻿#if ODIN_INSPECTOR
 using System;
-using UnityEngine;
+using System.Diagnostics;
 using UnityEngine.UIElements;
 using VMFramework.Core;
+using Debug = UnityEngine.Debug;
 
 namespace VMFramework.OdinExtensions
 {
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Parameter)]
+    [Conditional("UNITY_EDITOR")]
     public sealed class VisualElementNameAttribute : GeneralValueDropdownAttribute
     {
         public Type[] VisualElementTypes { get; }
@@ -28,6 +31,11 @@ namespace VMFramework.OdinExtensions
         {
             foreach (var type in VisualElementTypes)
             {
+                if (type.IsInterface)
+                {
+                    continue;
+                }
+                
                 if (type.IsDerivedFrom<VisualElement>(true) == false)
                 {
                     Debug.LogError($"Type {type.Name} is not a derived class of VisualElement.");

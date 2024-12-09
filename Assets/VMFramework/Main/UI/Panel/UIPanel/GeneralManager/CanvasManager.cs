@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using VMFramework.Core;
 using VMFramework.Procedure;
+using VMFramework.Tools;
 
 namespace VMFramework.UI
 {
@@ -22,7 +23,7 @@ namespace VMFramework.UI
         {
             base.OnBeforeInitStart();
             
-            canvasContainer = UISetting.UIPanelGeneralSetting.container;
+            canvasContainer = ContainerTransform.Get(UISetting.UIPanelGeneralSetting.containerName);
         }
 
         public static Canvas GetCanvas(int sortingOrder)

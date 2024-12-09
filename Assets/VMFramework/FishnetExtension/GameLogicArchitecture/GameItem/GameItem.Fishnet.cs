@@ -12,38 +12,38 @@ namespace VMFramework.GameLogicArchitecture
     {
         #region Properties
 
-        public bool isServer
+        public static bool IsServer
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => InstanceFinder.IsServerStarted;
         }
 
-        public bool isClient
+        public static bool IsClient
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => InstanceFinder.IsClientStarted;
         }
 
-        public bool isHost
+        public static bool IsHost
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => InstanceFinder.IsHostStarted;
         }
 
-        public bool isServerOnly
+        public static bool IsServerOnly
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => InstanceFinder.IsServerOnlyStarted;
         }
 
-        public bool isClientOnly
+        public static bool IsClientOnly
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => InstanceFinder.IsClientOnlyStarted;
         }
 
-        public ServerManager serverManager => InstanceFinder.ServerManager;
-        public ClientManager clientManager => InstanceFinder.ClientManager;
+        public static ServerManager ServerManager => InstanceFinder.ServerManager;
+        public static ClientManager ClientManager => InstanceFinder.ClientManager;
 
         #endregion
         

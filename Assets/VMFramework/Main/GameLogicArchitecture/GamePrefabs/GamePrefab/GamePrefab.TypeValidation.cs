@@ -10,12 +10,12 @@ namespace VMFramework.GameLogicArchitecture
     {
         public IEnumerable<ValidationResult> GetValidationResults(GUIContent label)
         {
-            if (isIDStartsWithPrefix == false)
+            if (IsIDStartsWithPrefix == false)
             {
-                yield return new($"ID should start with prefix : {idPrefix}", ValidateType.Warning);
+                yield return new($"ID should start with prefix : {IDPrefix}", ValidateType.Warning);
             }
 
-            if (isIDEndsWithSuffix == false)
+            if (IsIDEndsWithSuffix == false)
             {
                 yield return new($"ID should end with suffix : {IDSuffix}", ValidateType.Warning);
             }

@@ -6,7 +6,7 @@ using UnityEngine;
 namespace VMFramework.OdinExtensions
 {
     [DrawerPriority(0, 0.0, 5000)]
-    public sealed class HideIfNullAttributeDrawer : OdinAttributeDrawer<HideIfNullAttribute>
+    internal sealed class HideIfNullAttributeDrawer : OdinAttributeDrawer<HideIfNullAttribute>
     {
         public override bool CanDrawTypeFilter(Type type) => type.IsClass;
 

@@ -9,6 +9,8 @@ namespace VMFramework.GameLogicArchitecture
     public partial class GameEditorScriptableObject
         : IGameEditorMenuTreeNode, IGameEditorToolbarProvider, IGameEditorContextMenuProvider
     {
+        public string Name => name;
+
         protected virtual IEnumerable<ToolbarButtonConfig> GetToolbarButtons()
         {
             yield return new(EditorNames.SELECT_ASSET_PATH, this.SelectObject);

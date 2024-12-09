@@ -4,7 +4,7 @@ using VMFramework.Procedure;
 namespace VMFramework.UI
 {
     [ManagerCreationProvider(ManagerType.UICore)]
-    public class LocalizedUIPanelManager : ManagerBehaviour<LocalizedUIPanelManager>
+    public sealed class LocalizedUIPanelManager : ManagerBehaviour<LocalizedUIPanelManager>
     {
         protected override void OnBeforeInitStart()
         {
@@ -13,19 +13,19 @@ namespace VMFramework.UI
             UIPanelManager.OnPanelCreatedEvent += OnUIPanelCreated;
         }
 
-        private void OnUIPanelCreated(IUIPanelController uiPanelController)
+        private void OnUIPanelCreated(IUIPanel uiPanelController)
         {
-            if (uiPanelController is ILocalizedUIPanelController)
+            if (uiPanelController is ILocalizedUIPanel)
             {
                 uiPanelController.OnOpenEvent += OnUIPanelOpen;
-                uiPanelController.OnCloseEvent += OnUIPanelClose;
+                uiPanelController.OnPostCloseEvent += OnUIPanelClose;
                 uiPanelController.OnDestructEvent += OnUIPanelDestruct;
             }
         }
 
-        private void OnUIPanelOpen(IUIPanelController uiPanelController)
+        private void OnUIPanelOpen(IUIPanel uiPanelController)
         {
-            if (uiPanelController is ILocalizedUIPanelController localizedUIPanelController)
+            if (uiPanelController is ILocalizedUIPanel localizedUIPanelController)
             {
                 localizedUIPanelController.OnCurrentLanguageChanged(LocalizationSettings.SelectedLocale);
 
@@ -34,18 +34,18 @@ namespace VMFramework.UI
             }
         }
 
-        private void OnUIPanelClose(IUIPanelController uiPanelController)
+        private void OnUIPanelClose(IUIPanel uiPanelController)
         {
-            if (uiPanelController is ILocalizedUIPanelController localizedUIPanelController)
+            if (uiPanelController is ILocalizedUIPanel localizedUIPanelController)
             {
                 LocalizationSettings.SelectedLocaleChanged -=
                     localizedUIPanelController.OnCurrentLanguageChanged;
             }
         }
 
-        private void OnUIPanelDestruct(IUIPanelController uiPanelController)
+        private void OnUIPanelDestruct(IUIPanel uiPanelController)
         {
-            if (uiPanelController is ILocalizedUIPanelController localizedUIPanelController)
+            if (uiPanelController is ILocalizedUIPanel localizedUIPanelController)
             {
                 LocalizationSettings.SelectedLocaleChanged -=
                     localizedUIPanelController.OnCurrentLanguageChanged;

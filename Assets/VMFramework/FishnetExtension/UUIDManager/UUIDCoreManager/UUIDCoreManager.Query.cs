@@ -23,7 +23,7 @@ namespace VMFramework.Network
                 return false;
             }
             
-            return TryGetInfo(owner.uuid, out info);
+            return TryGetInfo(owner.UUID, out info);
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -113,6 +113,17 @@ namespace VMFramework.Network
 
         #endregion
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool HasOwner<TUUIDOwner>(Guid uuid) where TUUIDOwner : IUUIDOwner
+        {
+            if (uuidInfos.TryGetValue(uuid, out var info))
+            {
+                return info.owner is TUUIDOwner;
+            }
+            
+            return false;
+        }
+
         #region Has UUID
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -154,11 +165,39 @@ namespace VMFramework.Network
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryGetAllObserversID<TCollection>(Guid uuid, out IReadOnlyCollection<int> observers)
+        {
+            if (TryGetInfo(uuid, out var info))
+            {
+                observers = info.observers;
+                return true;
+            }
+            
+            observers = null;
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryGetAllObservers<TCollection>(Guid uuid, TCollection observers)
+            where TCollection : ICollection<NetworkConnection>
+        {
+            if (TryGetInfo(uuid, out var info))
+            {
+                foreach (var id in info.observers)
+                {
+                    observers.Add(Instance.ServerManager.Clients[id]);
+                }
+                return true;
+            }
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IEnumerable<NetworkConnection> GetAllObservers(Guid uuid)
         {
             if (TryGetInfo(uuid, out var info))
             {
-                return info.observers.Select(id => instance.ServerManager.Clients[id]);
+                return info.observers.Select(id => Instance.ServerManager.Clients[id]);
             }
 
             return null;

@@ -8,13 +8,13 @@ namespace VMFramework.OdinExtensions
         public bool? IsUnique = null;
 
         public UIPresetIDAttribute(params Type[] uiPrefabTypes) : base(uiPrefabTypes.Length == 0
-            ? new[] { typeof(IUIPanelPreset) }
+            ? new[] { typeof(IUIPanelConfig) }
             : uiPrefabTypes)
         {
 
         }
 
-        public UIPresetIDAttribute() : this(typeof(IUIPanelPreset))
+        public UIPresetIDAttribute() : this(typeof(IUIPanelConfig))
         {
             
         }

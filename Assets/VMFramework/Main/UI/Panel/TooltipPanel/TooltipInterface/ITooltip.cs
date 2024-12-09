@@ -1,8 +1,8 @@
 ﻿namespace VMFramework.UI
 {
-    public interface ITooltip : IUIPanelController
+    public interface ITooltip : IUIPanel
     {
-        public void Open(ITooltipProvider tooltipProvider, IUIPanelController source, TooltipOpenInfo info);
+        public void Open(ITooltipProvider tooltipProvider, IUIPanel source, TooltipOpenInfo info);
 
         public void Close(ITooltipProvider tooltipProvider);
     }

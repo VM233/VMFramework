@@ -9,10 +9,10 @@ namespace VMFramework.Cameras
         [SerializeField]
         private Camera _mainCamera;
 
-        public static Camera mainCamera => Instance._mainCamera;
+        public static Camera MainCamera => Instance._mainCamera;
 
-        public static CameraController mainCameraController =>
-            mainCamera.GetComponent<CameraController>();
+        public static CameraController MainCameraController =>
+            MainCamera.GetComponent<CameraController>();
 
         protected override void OnBeforeInitStart()
         {

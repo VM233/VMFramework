@@ -8,7 +8,7 @@ namespace VMFramework.GameEvents
 {
     public partial class GameEventGeneralSetting : IGameEditorMenuTreeNode
     {
-        string INameOwner.name => "Game Event";
+        string INameOwner.Name => "Game Event";
 
         Icon IGameEditorMenuTreeNode.Icon => new(SdfIconType.Dpad);
     }

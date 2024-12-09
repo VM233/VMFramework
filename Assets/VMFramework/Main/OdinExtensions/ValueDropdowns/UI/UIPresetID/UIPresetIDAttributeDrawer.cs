@@ -10,12 +10,12 @@ namespace VMFramework.OdinExtensions
     {
         protected override IEnumerable<ValueDropdownItem> GetValues()
         {
-            foreach (var uiPreset in GamePrefabManager.GetGamePrefabsByTypes<IUIPanelPreset>(Attribute
+            foreach (var uiPreset in GamePrefabManager.GetGamePrefabsByTypes<IUIPanelConfig>(Attribute
                          .GamePrefabTypes))
             {
                 if (Attribute.IsUnique != null)
                 {
-                    if (uiPreset.isUnique != Attribute.IsUnique)
+                    if (uiPreset.IsUnique != Attribute.IsUnique)
                     {
                         continue;
                     }

@@ -26,7 +26,7 @@ namespace VMFramework.Examples
 
             // 用RectangleInteger.unit快速创建一个[0, 1]x[0, 1]的整数矩形
             // Create a rectangle with size [0, 1]x[0, 1] using RectangleInteger.unit
-            var d = RectangleInteger.unit;
+            var d = RectangleInteger.Unit;
 
             // [0, 2]x[0, 3]与(3, 4)相加，得到一个[3, 6]x[3, 7]的整数矩形
             // Add a vector to a rectangle to get a new rectangle with shifted coordinates
@@ -40,8 +40,8 @@ namespace VMFramework.Examples
 
             // 创建一个[0, 2]x[0, 3]的整数矩形，即从坐标(0, 0)到(2, 3)的矩形
             // Create a [0, 2]x[0, 3] rectangle with minimum value (0, 0) and maximum value (2, 3)
-            var rangeX = RangeInteger.unit * 2;
-            var rangeY = RangeInteger.unit * 3;
+            var rangeX = RangeInteger.Unit * 2;
+            var rangeY = RangeInteger.Unit * 3;
             var rectangle = rangeX * rangeY;
 
             // 获取[0, 2]x[0, 3]这个矩形上所有边界上的整数点
@@ -67,7 +67,7 @@ namespace VMFramework.Examples
             {
                 Debug.Log(point);
             }
-            randomPoints.ReturnToPool();
+            randomPoints.ReturnToDefaultPool();
         }
     }
 }

@@ -25,7 +25,7 @@ MonoBehaviour:
   tooltipPropertyGeneralSetting: {fileID: 11400000, guid: 50c656be71f2c904eb23a0b7990a0107, type: 2}
   cameraGeneralSetting: {fileID: 11400000, guid: 517847eb944a6a8448d31b32d000d69f, type: 2}
   containerGeneralSetting: {fileID: 11400000, guid: 7d40ac45e20cf10478f8c0a6ad5671ad, type: 2}
-  recipeGeneralSetting: {fileID: 11400000, guid: ba00b7c8b596a6643ae4ce58b5571b90, type: 2}
-  mapCoreGeneralSetting: {fileID: 11400000, guid: 97ff2ca2d44d25e46b8885a3ce535707, type: 2}
-  gridMapGeneralSetting: {fileID: 0}
+  gridMapGeneralSetting: {fileID: 11400000, guid: b184eddc9f21cea4cba0eb9c4be779cd, type: 2}
   extendedRuleTileGeneralSetting: {fileID: 11400000, guid: e95bf21a40f23874cbe7ee8a3b1ea6e8, type: 2}
+  tileBaseConfigGeneralSetting: {fileID: 11400000, guid: 3699868f2f529e74284a1dd985394e9b, type: 2}
+  shadowCaster2DGeneralSetting: {fileID: 11400000, guid: df097a19efa3a8448bd601a1d6d763b2, type: 2}

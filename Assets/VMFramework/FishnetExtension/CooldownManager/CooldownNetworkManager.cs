@@ -17,11 +17,11 @@ namespace VMFramework.Network
             UUIDCoreManager.OnUUIDOwnerObserved += OnUUIDOwnerObserved;
         }
 
-        private void OnUUIDOwnerObserved(IUUIDOwner owner, bool isDirty, NetworkConnection connection)
+        private void OnUUIDOwnerObserved(IUUIDOwner owner, NetworkConnection connection)
         {
             if (owner is IUUIDCooldownProvider cooldownProvider)
             {
-                ReconcileCooldown(connection, owner.uuid, cooldownProvider.cooldown);
+                ReconcileCooldown(connection, owner.UUID, cooldownProvider.cooldown);
             }
         }
         
@@ -49,7 +49,7 @@ namespace VMFramework.Network
                 return;
             }
 
-            instance.ReconcileCooldown(connection, cooldownProvider.uuid, cooldownProvider.cooldown);
+            Instance.ReconcileCooldown(connection, cooldownProvider.UUID, cooldownProvider.cooldown);
         }
 
         [TargetRpc(ExcludeServer = true)]

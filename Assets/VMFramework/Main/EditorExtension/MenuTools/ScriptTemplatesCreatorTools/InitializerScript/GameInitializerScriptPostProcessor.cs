@@ -1,4 +1,5 @@
 ﻿#if UNITY_EDITOR
+using NPOI.SS.Formula.Functions;
 using VMFramework.Procedure;
 
 namespace VMFramework.Editor

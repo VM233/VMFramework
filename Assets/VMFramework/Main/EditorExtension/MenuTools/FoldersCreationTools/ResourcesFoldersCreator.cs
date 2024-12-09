@@ -9,7 +9,7 @@ namespace VMFramework.Editor
         [MenuItem(UnityMenuItemNames.FOLDERS_CREATION_TOOLS + "Create Resources Folders")]
         private static void CreateResourcesFolders()
         {
-            var resourcesPath = CommonFolders.resourcesFolderPath;
+            var resourcesPath = CommonFolders.ResourcesFolderPath;
 
             resourcesPath.CreateDirectory();
 

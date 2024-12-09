@@ -1,4 +1,7 @@
-﻿using FishNet.Connection;
+﻿#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#define DEVELOPMENT
+#endif
+using FishNet.Connection;
 using FishNet.Managing.Timing;
 using FishNet.Object;
 using FishNet.Serializing;
@@ -180,7 +183,7 @@ namespace FishNet.Managing.Transporting
             InitializeToServerBundles();
             if (_intermediateLayer != null)
                 _intermediateLayer.InitializeOnce(this);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if DEVELOPMENT
             _latencySimulator.Initialize(manager, Transport);
 #endif
         }
@@ -509,16 +512,6 @@ namespace FishNet.Managing.Transporting
         /// Sends data to observers.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void SendToClients(byte channelId, ArraySegment<byte> segment, HashSet<NetworkConnection> observers, NetworkConnection excludedConnection = null, bool splitLargeMessages = true, DataOrderType orderType = DataOrderType.Default)
-        {
-            _networkConnectionHashSet.Clear();
-            _networkConnectionHashSet.Add(excludedConnection);
-            SendToClients(channelId, segment, observers, _networkConnectionHashSet, splitLargeMessages, orderType);
-        }
-        /// <summary>
-        /// Sends data to observers.
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void SendToClients(byte channelId, ArraySegment<byte> segment, HashSet<NetworkConnection> observers, HashSet<NetworkConnection> excludedConnections = null, bool splitLargeMessages = true, DataOrderType orderType = DataOrderType.Default)
         {
             SetSplitValues(channelId, segment, splitLargeMessages, out int requiredMessages, out int maxSplitMessageSize);
@@ -661,7 +654,7 @@ namespace FishNet.Managing.Transporting
 
             byte channelId = (byte)Channel.Reliable;
             PooledWriter headerWriter = WriterPool.Retrieve();
-            headerWriter.WritePacketId(PacketId.Split);
+            headerWriter.WritePacketIdUnpacked(PacketId.Split);
             headerWriter.WriteInt32(requiredMessages);
             ArraySegment<byte> headerSegment = headerWriter.GetArraySegment();
 
@@ -722,7 +715,7 @@ namespace FishNet.Managing.Transporting
             OnIterateOutgoingStart?.Invoke();
             int channelCount = CHANNEL_COUNT;
             ulong sentBytes = 0;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if DEVELOPMENT
             bool latencySimulatorEnabled = LatencySimulator.CanSimulate;
 #endif
             /* If sending to the client. */
@@ -760,7 +753,7 @@ namespace FishNet.Managing.Transporting
                                         ArraySegment<byte> segment = new ArraySegment<byte>(bb.Data, 0, bb.Length);
                                         if (HasIntermediateLayer)
                                             segment = ProcessIntermediateOutgoing(segment, false);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if DEVELOPMENT
                                         if (latencySimulatorEnabled)
                                             _latencySimulator.AddOutgoing(channel, segment, false, conn.ClientId);
                                         else
@@ -833,7 +826,7 @@ namespace FishNet.Managing.Transporting
                                     ArraySegment<byte> segment = new ArraySegment<byte>(bb.Data, 0, bb.Length);
                                     if (HasIntermediateLayer)
                                         segment = ProcessIntermediateOutgoing(segment, true);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if DEVELOPMENT
                                     if (latencySimulatorEnabled)
                                         _latencySimulator.AddOutgoing(channel, segment);
                                     else
@@ -851,7 +844,7 @@ namespace FishNet.Managing.Transporting
                 _networkManager.StatisticsManager.NetworkTraffic.LocalClientSentData(sentBytes);
             }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if DEVELOPMENT
             if (latencySimulatorEnabled)
                 _latencySimulator.IterateOutgoing(toServer);
 #endif

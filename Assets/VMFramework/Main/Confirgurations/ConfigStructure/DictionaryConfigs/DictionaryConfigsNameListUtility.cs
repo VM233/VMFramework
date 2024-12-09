@@ -14,12 +14,12 @@ namespace VMFramework.Configuration
             this IDictionaryConfigs<TID, TConfig> dictionaryConfigs)
             where TConfig : IConfig, IIDOwner<TID>
         {
-            foreach (var config in dictionaryConfigs.GetAllConfigs())
+            foreach (var config in dictionaryConfigs.GetAllConfigsEditor())
             {
                 string text;
                 if (config is INameOwner nameOwner)
                 {
-                    text = nameOwner.name;
+                    text = nameOwner.Name;
                 }
                 else
                 {

@@ -6,22 +6,13 @@ using VMFramework.Localization;
 
 namespace VMFramework.UI
 {
-    public class BasicVisualElement : VisualElement
+    [UxmlElement]
+    public partial class BasicVisualElement : VisualElement
     {
-        [Preserve]
-        public new class UxmlFactory : UxmlFactory<BasicVisualElement, UxmlTraits>
-        {
-        }
-
-        public new class UxmlTraits : VisualElement.UxmlTraits
-        {
-
-        }
-
         [ShowInInspector]
         protected ITooltipProvider tooltipProvider { get; private set; }
 
-        protected UIPanelController source;
+        protected UIPanel source;
 
         public event Action OnMouseEnter;
         public event Action OnMouseLeave;
@@ -59,7 +50,7 @@ namespace VMFramework.UI
             tooltipProvider = new TempTooltipProvider(newTooltip);
         }
 
-        public void SetSource(UIPanelController source)
+        public void SetSource(UIPanel source)
         {
             //if (this.source != null)
             //{

@@ -10,7 +10,7 @@ using VMFramework.Core.Editor;
 namespace VMFramework.OdinExtensions
 {
     internal sealed class ColorChooserConfigContextMenuDrawer<T> : OdinValueDrawer<T>, IDefinesGenericMenuItems
-        where T : IChooserConfig<Color>
+        where T : IWrapperChooserConfig<Color, Color>
     {
         private const float COLOR_ALPHA_THRESHOLD = 0.3f;
         

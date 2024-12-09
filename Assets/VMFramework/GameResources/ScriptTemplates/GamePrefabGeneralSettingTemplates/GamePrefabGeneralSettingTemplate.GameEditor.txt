@@ -6,7 +6,7 @@ using VMFramework.GameLogicArchitecture;
 #NAMESPACE_BEGIN#
     public partial class #CLASS_NAME# : IGameEditorMenuTreeNode
     {
-        string INameOwner.name => "#NAME_IN_GAME_EDITOR#";
+        string INameOwner.Name => "#NAME_IN_GAME_EDITOR#";
 
         Icon IGameEditorMenuTreeNode.Icon => Icon.None;
     }

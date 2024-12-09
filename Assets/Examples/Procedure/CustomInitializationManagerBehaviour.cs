@@ -9,10 +9,11 @@ namespace VMFramework.Examples
     public sealed class CustomInitializationManagerBehaviour
         : ManagerBehaviour<CustomInitializationManagerBehaviour>
     {
-        protected override IEnumerable<InitializationAction> GetInitializationActions()
+        protected override void GetInitializationActions(ICollection<InitializationAction> actions)
         {
-            return base.GetInitializationActions()
-                .Concat(new InitializationAction(InitializationOrder.InitComplete, OnInitComplete, this));
+            base.GetInitializationActions(actions);
+            
+            actions.Add(new InitializationAction(InitializationOrder.InitComplete, OnInitComplete, this));
         }
 
         private void OnInitComplete(Action onDone)

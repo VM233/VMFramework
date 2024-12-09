@@ -4,9 +4,9 @@ using VMFramework.GameLogicArchitecture;
 
 namespace VMFramework.Examples 
 {
-    public partial class EntityConfig : LocalizedGameTypedGamePrefab, IEntityConfig
+    public partial class EntityConfig : LocalizedGamePrefab, IEntityConfig
     {
-        protected override string IDSuffix => "entity";
+        public override string IDSuffix => "entity";
         
         public override Type GameItemType => typeof(Entity);
     }

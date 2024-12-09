@@ -8,9 +8,9 @@ namespace VMFramework.Editor.BatchProcessor
 {
     public sealed class OpenScriptOfTypeUnit : SingleButtonBatchProcessorUnit
     {
-        protected override string processButtonName => "Open Script";
+        protected override string ProcessButtonName => "Open Script";
 
-        public override bool IsValid(IList<object> selectedObjects)
+        public override bool IsValid(IReadOnlyList<object> selectedObjects)
         {
             return selectedObjects.Any(obj => obj is Type);
         }

@@ -1,0 +1,18 @@
+{
+    "name": "VMCore.Editor",
+    "rootNamespace": "VMFramework",
+    "references": [
+        "GUID:f5b42f5d067c7814d9b2dbeddfb9cb99"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -8,20 +8,18 @@ namespace FishNet.Serializing
 {
 
     /// <summary>
-    /// Used for write references to generic types.
+    /// Used to write generic types.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
     [APIExclude]
     public static class GenericWriter<T>
     {
         public static Action<Writer, T> Write { get; private set; }
-        public static Action<Writer, T, AutoPackType> WriteAutoPack { get; private set; }
         /// <summary>
         /// True if this type has a custom writer.
         /// </summary>
         private static bool _hasCustomSerializer;
 
-        public static void SetWriteUnpacked(Action<Writer, T> value)
+        public static void SetWrite(Action<Writer, T> value)
         {
             /* If a custom serializer has already been set then exit method
              * to not overwrite serializer. */
@@ -29,13 +27,8 @@ namespace FishNet.Serializing
                 return;
 
             //Set has custom serializer if value being used is not a generated method.
-            _hasCustomSerializer = !(value.Method.Name.StartsWith(UtilityConstants.GENERATED_WRITER_PREFIX));
+            _hasCustomSerializer = !(value.Method.Name.StartsWith(UtilityConstants.GeneratedWriterPrefix));
             Write = value;
-        }
-
-        public static void SetWriteAutoPacked(Action<Writer, T, AutoPackType> value)
-        {
-            WriteAutoPack = value;
         }
     }
 

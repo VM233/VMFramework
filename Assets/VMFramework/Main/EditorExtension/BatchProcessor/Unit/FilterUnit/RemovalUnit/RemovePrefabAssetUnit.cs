@@ -8,9 +8,9 @@ namespace VMFramework.Editor.BatchProcessor
 {
     public sealed class RemovePrefabAssetUnit : SingleButtonBatchProcessorUnit
     {
-        protected override string processButtonName => "Remove Prefab Asset";
+        protected override string ProcessButtonName => "Remove Prefab Asset";
 
-        public override bool IsValid(IList<object> selectedObjects)
+        public override bool IsValid(IReadOnlyList<object> selectedObjects)
         {
             return selectedObjects.Any(o =>
                 o is GameObject gameObject && gameObject.IsPrefabAsset());

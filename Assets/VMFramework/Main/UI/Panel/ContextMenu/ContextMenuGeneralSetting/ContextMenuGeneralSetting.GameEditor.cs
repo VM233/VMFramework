@@ -8,7 +8,7 @@ namespace VMFramework.UI
 {
     public partial class ContextMenuGeneralSetting : IGameEditorMenuTreeNode
     {
-        string INameOwner.name => "Context Menu";
+        string INameOwner.Name => "Context Menu";
 
         Icon IGameEditorMenuTreeNode.Icon => SdfIconType.BorderStyle;
     }

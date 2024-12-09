@@ -7,9 +7,9 @@ using VMFramework.Procedure.Editor;
 #NAMESPACE_BEGIN#
     internal sealed class #CLASS_NAME# : IEditorInitializer
     {
-        IEnumerable<InitializationAction> IInitializer.GetInitializationActions()
+        void IInitializer.GetInitializationActions(ICollection<InitializationAction> actions)
         {
-            yield return new(InitializationOrder.#INITIALIZATION_ORDER_NAME#, On#INITIALIZATION_ORDER_NAME#, this);
+            actions.Add(new(InitializationOrder.#INITIALIZATION_ORDER_NAME#, On#INITIALIZATION_ORDER_NAME#, this));
         }
 
         private static void On#INITIALIZATION_ORDER_NAME#(Action onDone)

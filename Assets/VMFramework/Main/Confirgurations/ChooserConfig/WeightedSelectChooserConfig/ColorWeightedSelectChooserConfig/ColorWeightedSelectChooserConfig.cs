@@ -7,11 +7,10 @@ namespace VMFramework.Configuration
 {
     public class ColorWeightedSelectChooserConfig : WeightedSelectChooserConfig<Color>
     {
-        [LabelText("颜色显示格式")]
         [EnumToggleButtons]
         public ColorStringFormat colorStringFormat = ColorStringFormat.Name;
 
-        protected override string ValueToString(Color value)
+        protected override string WrapperToString(Color value)
         {
             return value.ToLocalizedString(colorStringFormat);
         }

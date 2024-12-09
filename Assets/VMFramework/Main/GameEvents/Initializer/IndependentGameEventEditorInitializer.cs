@@ -9,9 +9,9 @@ namespace VMFramework.GameEvents
 {
     internal sealed class IndependentGameEventEditorInitializer : IEditorInitializer
     {
-        IEnumerable<InitializationAction> IInitializer.GetInitializationActions()
+        void IInitializer.GetInitializationActions(ICollection<InitializationAction> actions)
         {
-            yield return new(InitializationOrder.BeforeInitStart, OnBeforeInitStart, this);
+            actions.Add(new(InitializationOrder.BeforeInitStart, OnBeforeInitStart, this));
         }
 
         private static void OnBeforeInitStart(Action onDone)

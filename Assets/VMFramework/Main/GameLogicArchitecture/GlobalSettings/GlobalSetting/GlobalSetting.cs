@@ -44,5 +44,7 @@ namespace VMFramework.GameLogicArchitecture
         }
 
         IGlobalSettingFile IGlobalSetting.GlobalSettingFile => GlobalSettingFile;
+
+        string INameOwner.Name => name;
     }
 }

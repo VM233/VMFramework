@@ -23,6 +23,7 @@ MonoBehaviour:
     SerializationNodes: []
   uiPanelGeneralSetting: {fileID: 11400000, guid: f509f95c5aeeedc4da4817da7e686923, type: 2}
   uiPanelProcedureGeneralSetting: {fileID: 11400000, guid: e812b862132d28549808fb29ab3c6f51, type: 2}
-  debugUIPanelGeneralSetting: {fileID: 11400000, guid: 6bf79c83c07b6504b881f225569b8ded, type: 2}
+  debugPanelGeneralSetting: {fileID: 11400000, guid: 6bf79c83c07b6504b881f225569b8ded, type: 2}
   tooltipGeneralSetting: {fileID: 11400000, guid: fa26d3fdb64fa9149b0afdc6e1c3f817, type: 2}
   contextMenuGeneralSetting: {fileID: 11400000, guid: 05e93a476eba2b44c86b2f7a8dfaccd7, type: 2}
+  containerUIGeneralSetting: {fileID: 11400000, guid: 026a6b20fb69e90478ef4c06fcbc9419, type: 2}

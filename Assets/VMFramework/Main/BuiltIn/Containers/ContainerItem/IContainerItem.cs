@@ -1,15 +1,18 @@
 ﻿using System;
+using VMFramework.Core;
 using VMFramework.GameLogicArchitecture;
 
 namespace VMFramework.Containers
 {
     public interface IContainerItem : IGameItem
     {
-        public Container sourceContainer { get; set; }
+        public IContainer SourceContainer { get; set; }
 
-        public int maxStackCount { get; }
+        public int MaxStackCount { get; }
 
-        public int count { get; set; }
+        public int Count { get; set; }
+        
+        public int SlotIndex { get; }
         
         public delegate void CountChangedEventHandler(IContainerItem containerItem, int oldCount, int newCount);
 
@@ -19,54 +22,56 @@ namespace VMFramework.Containers
         {
             {
                 if (other == null) return false;
-                if (count >= maxStackCount) return false;
+                if (Count >= MaxStackCount) return false;
 
                 return other.id == id;
             }
         }
 
-        public void MergeWith(IContainerItem other)
+        /// <summary>
+        /// 将此物品与另一个物品合并。
+        /// </summary>
+        /// <param name="other"></param>
+        /// <param name="preferredCount">希望合并的最大数量</param>
+        /// <returns>实际合并的数量</returns>
+        public int MergeWith(IContainerItem other, int preferredCount = int.MaxValue)
         {
-            if (other.count == 0) return;
+            if (other.Count == 0) return 0;
 
-            int maxIncrease = maxStackCount - count;
+            int maxIncrease = MaxStackCount - Count;
+            maxIncrease = maxIncrease.Min(preferredCount);
 
-            if (maxIncrease > other.count)
+            if (maxIncrease > other.Count)
             {
-                count += other.count;
-                other.count = 0;
+                var otherCount = other.Count;
+                Count += otherCount;
+                other.Count = 0;
+                return otherCount;
             }
-            else
-            {
-                count = maxStackCount;
-                other.count -= maxIncrease;
-            }
+
+            Count += maxIncrease;
+            other.Count -= maxIncrease;
+            return maxIncrease;
         }
 
         public bool IsSplittable(int targetCount)
         {
-            return count > targetCount && count > 1;
+            return Count >= targetCount;
         }
 
         public IContainerItem Split(int targetCount)
         {
             var clone = this.GetClone();
 
-            clone.count = targetCount;
+            clone.Count = targetCount;
 
-            count -= targetCount;
+            Count -= targetCount;
 
             return clone;
         }
 
-        public void OnAddToContainer(IContainer container)
-        {
+        public void OnAddedToContainer(IContainer container, int slotIndex);
 
-        }
-
-        public void OnRemoveFromContainer(IContainer container)
-        {
-
-        }
+        public void OnRemovedFromContainer(IContainer container);
     }
 }

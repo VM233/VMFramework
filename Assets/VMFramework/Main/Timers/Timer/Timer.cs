@@ -46,7 +46,7 @@ namespace VMFramework.Timers
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void OnStopped(double stoppedTime)
+        void ITimer.OnStopped(double stoppedTime)
         {
             this.StoppedTime = stoppedTime;
             onStopped?.Invoke(this);

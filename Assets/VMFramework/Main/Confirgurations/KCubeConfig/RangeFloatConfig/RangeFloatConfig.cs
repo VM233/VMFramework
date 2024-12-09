@@ -6,15 +6,11 @@ namespace VMFramework.Configuration
 {
     public partial class RangeFloatConfig : KCubeFloatConfig<float>
     {
-        protected override string pointName => "值";
-
-        protected override string sizeName => "长度";
-
         public override float Size => max - min;
 
         public override float Pivot => (min + max) / 2f;
 
-        public override float extents => (max - min) / 2f;
+        public override float Extents => (max - min) / 2f;
 
         #region Constructor
 
@@ -55,7 +51,7 @@ namespace VMFramework.Configuration
         public override float ClampMax(float pos) => pos.ClampMax(max);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override float GetRandomPoint(Random random) => random.Range(min, max);
+        public override float GetRandomItem(Random random) => random.Range(min, max);
 
         #endregion
 

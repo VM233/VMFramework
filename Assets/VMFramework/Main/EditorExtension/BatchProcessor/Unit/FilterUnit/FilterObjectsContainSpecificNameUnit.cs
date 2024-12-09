@@ -14,7 +14,7 @@ namespace VMFramework.Editor.BatchProcessor
 
         public string specificName;
 
-        public override bool IsValid(IList<object> selectedObjects)
+        public override bool IsValid(IReadOnlyList<object> selectedObjects)
         {
             return selectedObjects.Any(o =>
                 o is Object);

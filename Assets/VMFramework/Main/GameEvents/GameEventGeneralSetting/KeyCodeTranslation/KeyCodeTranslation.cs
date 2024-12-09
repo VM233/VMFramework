@@ -13,7 +13,6 @@ namespace VMFramework.GameEvents
         [field: SerializeField]
         public KeyCode keyCode { get;private set; }
 
-        [field: LabelText("翻译")]
         [field: SerializeField]
         public LocalizedStringReference translation { get; private set; } = new();
 
@@ -36,7 +35,7 @@ namespace VMFramework.GameEvents
 
         KeyCode IIDOwner<KeyCode>.id => keyCode;
 
-        string INameOwner.name => keyCode.ToString();
+        string INameOwner.Name => keyCode.ToString();
 
         #endregion
     }

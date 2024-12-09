@@ -1,4 +1,3 @@
-using FishNet.Managing;
 using FishNet.Object;
 using GameKit.Dependencies.Utilities;
 using GameKit.Dependencies.Utilities.Types;
@@ -13,7 +12,6 @@ namespace FishNet.Component.Prediction
 
     public abstract class NetworkCollider : NetworkBehaviour
     {
-#if !PREDICTION_1
         #region Types.
         private struct ColliderData : IResettable
         {
@@ -78,6 +76,12 @@ namespace FishNet.Component.Prediction
         [Range(0f, 100f)]
         [SerializeField]
         private float _additionalSize = 0.1f;
+        /// <summary>
+        /// Layers to trace on. This is used when value is not nothing.
+        /// </summary>
+        [Tooltip("Layers to trace on. This is used when value is not nothing.")]
+        [SerializeField]
+        private LayerMask _layers = (LayerMask)0;
 
         /// <summary>
         /// The colliders on this object.
@@ -111,7 +115,8 @@ namespace FishNet.Component.Prediction
 
         protected virtual void Awake()
         {
-            _colliderDataHistory = ResettableCollectionCaches<ColliderData>.RetrieveRingBuffer();
+            //_colliderDataHistory = ResettableCollectionCaches<ColliderData>.RetrieveRingBuffer();
+            _colliderDataHistory = new();
             _hits = CollectionCaches<Collider>.RetrieveArray();
             if (_hits.Length < _maximumSimultaneousHits)
                 _hits = new Collider[_maximumSimultaneousHits];
@@ -119,8 +124,8 @@ namespace FishNet.Component.Prediction
 
         private void OnDestroy()
         {
-            ResettableCollectionCaches<ColliderData>.StoreAndDefault(ref _colliderDataHistory);
-            CollectionCaches<Collider>.StoreAndDefault(ref _hits, -_hits.Length);
+            //ResettableCollectionCaches<ColliderData>.StoreAndDefault(ref _colliderDataHistory);
+            CollectionCaches<Collider>.StoreAndDefault(ref _hits, _hits.Length);
         }
 
         public override void OnStartNetwork()
@@ -261,11 +266,20 @@ namespace FishNet.Component.Prediction
             // The rotation of the object for box colliders.
             Quaternion rotation = transform.rotation;
 
-            //If layer changed then get new interactableLayers.
-            if (_lastGameObjectLayer != gameObject.layer)
+            //If layers are specified then do not use GOs layers, use specified.
+            if (_layers != (LayerMask)0)
             {
-                _lastGameObjectLayer = gameObject.layer;
-                _interactableLayers = Layers.GetInteractableLayersValue(_lastGameObjectLayer);
+                _interactableLayers = _layers;
+            }
+            //Use GOs layers.
+            else
+            {
+                int currentLayer = gameObject.layer;
+                if (_lastGameObjectLayer != currentLayer)
+                {
+                    _lastGameObjectLayer = currentLayer;
+                    _interactableLayers = Layers.GetInteractableLayersValue(currentLayer);
+                }
             }
 
             // Check each collider for triggers.
@@ -425,7 +439,7 @@ namespace FishNet.Component.Prediction
         {
             sphereCollider.GetSphereOverlapParams(out Vector3 center, out float radius);
             radius += GetAdditionalSize();
-            return Physics.OverlapSphereNonAlloc(center, radius, _hits, layerMask);
+            return gameObject.scene.GetPhysicsScene().OverlapSphere(center, radius, _hits, layerMask, QueryTriggerInteraction.UseGlobal);
         }
 
         /// <summary>
@@ -436,7 +450,7 @@ namespace FishNet.Component.Prediction
         {
             capsuleCollider.GetCapsuleCastParams(out Vector3 start, out Vector3 end, out float radius);
             radius += GetAdditionalSize();
-            return Physics.OverlapCapsuleNonAlloc(start, end, radius, _hits, layerMask);
+            return gameObject.scene.GetPhysicsScene().OverlapCapsule(start, end, radius, _hits, layerMask, QueryTriggerInteraction.UseGlobal);
         }
 
         /// <summary>
@@ -449,7 +463,7 @@ namespace FishNet.Component.Prediction
             boxCollider.GetBoxOverlapParams(out Vector3 center, out Vector3 halfExtents);
             Vector3 additional = (Vector3.one * GetAdditionalSize());
             halfExtents += additional;
-            return Physics.OverlapBoxNonAlloc(center, halfExtents, _hits, rotation, layerMask);
+            return gameObject.scene.GetPhysicsScene().OverlapBox(center, halfExtents, _hits, rotation, layerMask, QueryTriggerInteraction.UseGlobal);
         }
 
         /// <summary>
@@ -484,7 +498,6 @@ namespace FishNet.Component.Prediction
                 cd.ResetState();
             _colliderDataHistory.Clear();
         }
-#endif
     }
 
 

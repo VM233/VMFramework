@@ -30,3 +30,5 @@ MonoBehaviour:
   detectLayerMask:
     serializedVersion: 2
     m_Bits: 4294967295
+  includingDefaultPhysicsScene3D: 1
+  includingDefaultPhysicsScene2D: 1

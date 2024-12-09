@@ -6,7 +6,7 @@ namespace VMFramework.Properties
 {
     public partial class TooltipPropertyGeneralSetting : IGameEditorMenuTreeNode
     {
-        string INameOwner.name => "Property Tooltip";
+        string INameOwner.Name => "Property Tooltip";
     }
 }
 #endif

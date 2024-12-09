@@ -4,6 +4,7 @@ using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using VMFramework.Core;
 
 namespace VMFramework.Configuration.Animation
 {
@@ -31,8 +32,8 @@ namespace VMFramework.Configuration.Animation
         {
             await base.Run(target, token);
             
-            await target.DOLocalJump(target.localPosition + leapEndOffset.GetValue(),
-                    leapPower.GetValue(), leapTimes.GetValue(), leapDuration, false)
+            await target.DOLocalJump(target.localPosition + leapEndOffset.GetRandomItem(),
+                    leapPower.GetRandomItem(), leapTimes.GetRandomItem(), leapDuration, false)
                 .AwaitForComplete(cancellationToken: token);
         }
 

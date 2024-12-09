@@ -5,28 +5,9 @@ using UnityEngine.UIElements;
 
 namespace VMFramework.UI
 {
-    public class ToggleVisualElement : BasicVisualElement
+    [UxmlElement]
+    public partial class ToggleVisualElement : BasicVisualElement
     {
-        [Preserve]
-        public new class UxmlFactory : UxmlFactory<ToggleVisualElement, UxmlTraits>
-        {
-        }
-
-        public new class UxmlTraits : BasicVisualElement.UxmlTraits
-        {
-            UxmlBoolAttributeDescription _isChecked = new() { name = "IsChecked" };
-
-            public override void Init(VisualElement ve, IUxmlAttributes bag,
-                CreationContext cc)
-            {
-                base.Init(ve, bag, cc);
-
-                var toggleVisualElement = ve as ToggleVisualElement;
-
-                toggleVisualElement.isChecked = _isChecked.GetValueFromBag(bag, cc);
-            }
-        }
-
         protected const string ussClassName = "toggle";
 
         protected const string borderUssClassName = ussClassName + "Border";
@@ -39,6 +20,7 @@ namespace VMFramework.UI
 
         private bool _isChecked;
 
+        [UxmlAttribute]
         public bool isChecked
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

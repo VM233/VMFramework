@@ -11,14 +11,14 @@ namespace VMFramework.Examples
         private double expectedTime;
 
         [ShowInInspector]
-        public float cooldown
+        public float Cooldown
         {
             get => (float)(expectedTime - TimerManager.currentTime).ClampMin(0);
             set
             {
                 if (value <= 0)
                 {
-                    if (cooldown > 0)
+                    if (Cooldown > 0)
                     {
                         TimerManager.Stop(this);
                     }

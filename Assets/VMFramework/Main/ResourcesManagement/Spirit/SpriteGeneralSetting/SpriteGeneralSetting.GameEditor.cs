@@ -8,7 +8,7 @@ namespace VMFramework.ResourcesManagement
 {
     public partial class SpriteGeneralSetting : IGameEditorMenuTreeNode
     {
-        string INameOwner.name => "Sprite Preset";
+        string INameOwner.Name => "Sprite Preset";
 
         Icon IGameEditorMenuTreeNode.Icon => SdfIconType.CardImage;
     }

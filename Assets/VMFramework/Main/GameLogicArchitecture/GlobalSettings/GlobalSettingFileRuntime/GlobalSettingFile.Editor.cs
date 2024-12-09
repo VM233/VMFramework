@@ -14,6 +14,7 @@ namespace VMFramework.GameLogicArchitecture
         [Button(ButtonSizes.Medium), TabGroup(TAB_GROUP_NAME, DEBUGGING_CATEGORY)]
         public void AutoFindSettings()
         {
+            bool valuesChanged = false;
             foreach (var fieldInfo in GetAllGeneralSettingsFields())
             {
                 if (fieldInfo.GetValue(this).IsUnityNull() == false)
@@ -26,10 +27,14 @@ namespace VMFramework.GameLogicArchitecture
                 if (result != null)
                 {
                     fieldInfo.SetValue(this, result);
+                    valuesChanged = true;
                 }
             }
 
-            this.EnforceSave();
+            if (valuesChanged)
+            {
+                this.EnforceSave();
+            }
         }
 
         [Button(ButtonSizes.Medium), TabGroup(TAB_GROUP_NAME, DEBUGGING_CATEGORY)]
@@ -39,6 +44,7 @@ namespace VMFramework.GameLogicArchitecture
 
             var folderPath = EditorSetting.GeneralSettingsAssetFolderPath;
             
+            bool valuesChanged = false;
             foreach (var fieldInfo in GetAllGeneralSettingsFields())
             {
                 if (fieldInfo.GetValue(this).IsUnityNull() == false)
@@ -62,10 +68,14 @@ namespace VMFramework.GameLogicArchitecture
                 if (result != null)
                 {
                     fieldInfo.SetValue(this, result);
+                    valuesChanged = true;
                 }
             }
 
-            this.EnforceSave();
+            if (valuesChanged)
+            {
+                this.EnforceSave();
+            }
         }
 
         [Button(ButtonSizes.Medium), TabGroup(TAB_GROUP_NAME, DEBUGGING_CATEGORY)]

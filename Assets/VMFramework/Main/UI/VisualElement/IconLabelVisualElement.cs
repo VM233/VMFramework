@@ -5,77 +5,56 @@ using UnityEngine.UIElements;
 
 namespace VMFramework.UI
 {
-    public sealed class IconLabelVisualElement : VisualElement
+    [UxmlElement]
+    public sealed partial class IconLabelVisualElement : VisualElement
     {
-        [Preserve]
-        public new class UxmlFactory : UxmlFactory<IconLabelVisualElement, UxmlTraits>
-        {
-        }
-
-        public new class UxmlTraits : VisualElement.UxmlTraits
-        {
-            UxmlBoolAttributeDescription _iconAlwaysDisplay =
-                new() { name = "IconAlwaysDisplay" };
-
-
-            public override void Init(VisualElement ve, IUxmlAttributes bag,
-                CreationContext cc)
-            {
-                base.Init(ve, bag, cc);
-
-                var iconLabel = ve as IconLabelVisualElement;
-
-                iconLabel.iconAlwaysDisplay =
-                    _iconAlwaysDisplay.GetValueFromBag(bag, cc);
-            }
-        }
-
         [ShowInInspector]
-        public bool iconAlwaysDisplay { get; set; } = false;
+        [UxmlAttribute]
+        public bool IconAlwaysDisplay { get; set; } = false;
 
-        public VisualElement icon { get; }
-        public Label label { get; }
+        public VisualElement Icon { get; }
+        public Label Label { get; }
 
         public IconLabelVisualElement() : base()
         {
-            icon = new VisualElement
+            Icon = new VisualElement
             {
                 name = "Icon"
             };
-            icon.AddToClassList("icon");
-            Add(icon);
+            Icon.AddToClassList("icon-label-icon");
+            Add(Icon);
 
-            label = new Label
+            Label = new Label
             {
                 name = "Content",
                 text = "Content"
             };
-            label.AddToClassList("content");
-            Add(label);
+            Label.AddToClassList("icon-label-content");
+            Add(Label);
             
-            AddToClassList("iconLabel");
+            AddToClassList("icon-label");
         }
 
         public void SetIcon(Sprite icon)
         {
-            if (iconAlwaysDisplay == false)
+            if (IconAlwaysDisplay == false)
             {
                 if (icon == null)
                 {
-                    this.icon.style.display = DisplayStyle.None;
+                    this.Icon.style.display = DisplayStyle.None;
                 }
                 else
                 {
-                    this.icon.style.display = DisplayStyle.Flex;
+                    this.Icon.style.display = DisplayStyle.Flex;
                 }
             }
 
-            this.icon.style.backgroundImage = new StyleBackground(icon);
+            this.Icon.style.backgroundImage = new StyleBackground(icon);
         }
 
         public void SetContent(string content)
         {
-            label.text = content;
+            Label.text = content;
         }
     }
 }

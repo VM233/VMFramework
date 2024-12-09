@@ -6,10 +6,10 @@ namespace VMFramework.Maps
     public interface IGridMap : IClearableMap
     {
         public Vector3Int ChunkSize { get; }
+        
+        public bool TryCreateChunk(Vector3Int position, out IGridChunk chunk);
 
-        public IGridChunk CreateChunk(Vector3Int position);
-
-        public void DestroyChunk(Vector3Int position);
+        public void DestructChunk(Vector3Int position);
 
         public bool HasValidChunk(Vector3Int position);
         

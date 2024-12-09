@@ -19,10 +19,10 @@ namespace VMFramework.Network
                 return false;
             }
             
-            if (TryGetOwnerWithWarning(owner.uuid, out TUUIDOwner existedOwner) ==
+            if (TryGetOwnerWithWarning(owner.UUID, out TUUIDOwner existedOwner) ==
                 false)
             {
-                Debugger.LogWarning($"不存在此{owner.uuid}对应的{typeof(TUUIDOwner)}");
+                Debugger.LogWarning($"不存在此{owner.UUID}对应的{typeof(TUUIDOwner)}");
                 return false;
             }
 

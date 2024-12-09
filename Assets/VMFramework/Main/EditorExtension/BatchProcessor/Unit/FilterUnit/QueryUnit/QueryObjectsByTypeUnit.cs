@@ -11,7 +11,7 @@ namespace VMFramework.Editor.BatchProcessor
 {
     public sealed class QueryObjectsByTypeUnit : SingleButtonBatchProcessorUnit
     {
-        protected override string processButtonName => "Query by Type";
+        protected override string ProcessButtonName => "Query by Type";
 
         [HideLabel]
         [ValueDropdown(nameof(GetTypesNameList), DropdownWidth = 400)]
@@ -36,7 +36,7 @@ namespace VMFramework.Editor.BatchProcessor
 
         #endregion
 
-        public override bool IsValid(IList<object> selectedObjects)
+        public override bool IsValid(IReadOnlyList<object> selectedObjects)
         {
             return selectedObjects.Any();
         }

@@ -8,13 +8,13 @@ namespace VMFramework.Containers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IEnumerable<IContainerItem> GetValidOutputs(this IOutputsContainer outputsContainer)
         {
-            return outputsContainer.GetRangeValidItems(outputsContainer.outputsRange);
+            return outputsContainer.GetValidItems(outputsContainer.OutputsRange);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryAddOutput(this IOutputsContainer outputsContainer, IContainerItem item)
         {
-            return outputsContainer.TryAddItem(item, outputsContainer.outputsRange);
+            return outputsContainer.TryAddItem(item, outputsContainer.OutputsRange);
         }
     }
 }

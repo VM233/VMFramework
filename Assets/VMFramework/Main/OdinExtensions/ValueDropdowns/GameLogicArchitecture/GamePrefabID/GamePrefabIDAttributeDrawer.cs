@@ -4,6 +4,7 @@ using Sirenix.OdinInspector;
 using Sirenix.Utilities.Editor;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Profiling;
 using VMFramework.Editor;
 using VMFramework.Editor.GameEditor;
 using VMFramework.GameLogicArchitecture;
@@ -47,27 +48,28 @@ namespace VMFramework.OdinExtensions
         protected override void DrawCustomButtons()
         {
             base.DrawCustomButtons();
-
+            
             if (Property.ValueEntry.WeakSmartValue is not string id)
-            {
-                return;
-            }
-
-            if (GamePrefabWrapperQueryTools.TryGetGamePrefabWrapper(id, out var wrapper) == false)
             {
                 return;
             }
 
             if (Button(EditorNames.OPEN_ASSET_IN_NEW_INSPECTOR, SdfIconType.PencilSquare))
             {
-                GUIHelper.OpenInspectorWindow(wrapper);
+                if (GamePrefabWrapperQueryTools.TryGetGamePrefabWrapper(id, out var wrapper))
+                {
+                    GUIHelper.OpenInspectorWindow(wrapper);
+                }
             }
 
             if (Button(GameEditorNames.JUMP_TO_GAME_EDITOR, SdfIconType.Search))
             {
-                var gameEditor = EditorWindow.GetWindow<GameEditor>();
+                if (GamePrefabWrapperQueryTools.TryGetGamePrefabWrapper(id, out var wrapper))
+                {
+                    var gameEditor = EditorWindow.GetWindow<GameEditor>();
                 
-                gameEditor.SelectValue(wrapper);
+                    gameEditor.SelectValue(wrapper);
+                }
             }
         }
     }

@@ -14,75 +14,41 @@ namespace VMFramework.GameEvents
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void AddCallback(string id, Action<BoolInputGameEvent> callback, int priority)
+        public static void AddCallback(string id, Action callback, int priority)
         {
-            var gameEvent = GetGameEventStrictly<BoolInputGameEvent>(id);
+            var gameEvent = GetGameEventStrictly<IParameterlessGameEvent>(id);
 
             gameEvent.AddCallback(callback, priority);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void AddCallback(string id, Action<FloatInputGameEvent> callback, int priority)
+        public static void AddCallback<TArgument>(string id, Action<TArgument> callback, int priority)
         {
-            var gameEvent = GetGameEventStrictly<FloatInputGameEvent>(id);
+            var gameEvent = GetGameEventStrictly<IParameterizedGameEvent<TArgument>>(id);
 
             gameEvent.AddCallback(callback, priority);
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void AddCallback(string id, Action<Vector2InputGameEvent> callback, int priority)
-        {
-            var gameEvent = GetGameEventStrictly<Vector2InputGameEvent>(id);
-
-            gameEvent.AddCallback(callback, priority);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void AddCallback<TGameEvent>(string id, Action<TGameEvent> callback, int priority)
-            where TGameEvent : GameEvent<TGameEvent>
-        {
-            var gameEvent = GetGameEventStrictly<TGameEvent>(id);
-
-            gameEvent.AddCallback(callback, priority);
-        }
-
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void RemoveCallback(string id, Delegate callback)
         {
             var gameEvent = GetGameEventStrictly(id);
+        
+            gameEvent.RemoveCallback(callback);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void RemoveCallback(string id, Action callback)
+        {
+            var gameEvent = GetGameEventStrictly<IParameterlessGameEvent>(id);
 
             gameEvent.RemoveCallback(callback);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void RemoveCallback(string id, Action<BoolInputGameEvent> callback)
+        public static void RemoveCallback<TArgument>(string id, Action<TArgument> callback)
         {
-            var gameEvent = GetGameEventStrictly<BoolInputGameEvent>(id);
-
-            gameEvent.RemoveCallback(callback);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void RemoveCallback(string id, Action<FloatInputGameEvent> callback)
-        {
-            var gameEvent = GetGameEventStrictly<FloatInputGameEvent>(id);
-
-            gameEvent.RemoveCallback(callback);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void RemoveCallback(string id, Action<Vector2InputGameEvent> callback)
-        {
-            var gameEvent = GetGameEventStrictly<Vector2InputGameEvent>(id);
-
-            gameEvent.RemoveCallback(callback);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void RemoveCallback<TGameEvent>(string id, Action<TGameEvent> callback)
-            where TGameEvent : GameEvent<TGameEvent>
-        {
-            var gameEvent = GetGameEventStrictly<TGameEvent>(id);
+            var gameEvent = GetGameEventStrictly<IParameterizedGameEvent<TArgument>>(id);
 
             gameEvent.RemoveCallback(callback);
         }

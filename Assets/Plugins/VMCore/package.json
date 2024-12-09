@@ -1,0 +1,11 @@
+{
+  "name": "com.vm233.vmcore",
+  "version": "1.0.1",
+  "displayName": "VMCore",
+  "description": "Most Common Utilities",
+  "unity": "2022.3",
+  "author": {
+    "name": "TTR(VM233)"
+  },
+  "type": "tool"
+}

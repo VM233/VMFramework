@@ -9,19 +9,18 @@ namespace VMFramework.Editor.BatchProcessor
     public abstract class SingleButtonBatchProcessorUnit : BatchProcessorUnit
     {
         protected const string BUTTON_GROUP = "ProcessButton";
-        
-        protected abstract string processButtonName { get; }
 
-        protected virtual Color buttonColor => Color.white;
+        protected abstract string ProcessButtonName { get; }
 
-        [Button("@" + nameof(processButtonName)), HorizontalGroup(BUTTON_GROUP)]
-        [GUIColor(nameof(buttonColor))]
+        protected virtual Color ButtonColor => Color.white;
+
+        [Button("@" + nameof(ProcessButtonName)), HorizontalGroup(BUTTON_GROUP)]
+        [GUIColor(nameof(ButtonColor))]
         public void Process()
         {
             var selectedObjects = container.GetSelectedObjects().ToList();
 
-            container.SetSelectedObjects(
-                OnProcess(selectedObjects));
+            container.SetSelectedObjects(OnProcess(selectedObjects));
         }
 
         protected abstract IEnumerable<object> OnProcess(IReadOnlyList<object> selectedObjects);

@@ -13,12 +13,25 @@ MonoBehaviour:
   m_Name: Default Local Group
   m_EditorClassIdentifier: 
   m_GroupName: Default Local Group
-  m_Data:
-    m_SerializedData: []
   m_GUID: 0918122c0d5559e4d97297830c1a0243
   m_SerializeEntries:
-  - m_GUID: 65583dd72365a5047bdea1058db814ba
-    m_Address: GameSettingFile
+  - m_GUID: 10698b17f03b24c46b404db7ba805904
+    m_Address: Assets/GameResources/Configurations/GamePrefabs
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 140cc52a228d00448a3bcadace768858
+    m_Address: CoreSettingFile
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1de34f7bc4ef92a49be55f1bdf59438b
+    m_Address: NetworkSettingFile
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2135541753f364a4d87a38329957c56d
+    m_Address: ResourcesManagementSettingFile
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -27,38 +40,23 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 10698b17f03b24c46b404db7ba805904
-    m_Address: Assets/GameResources/Configurations/GamePrefabs
+  - m_GUID: 65583dd72365a5047bdea1058db814ba
+    m_Address: GameSettingFile
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 17a5cfac1f622334098ca3a06e9f2e73
-    m_Address: NetworkSettingFile
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 5f37b0e342f7ef347adca0c637e2ed94
-    m_Address: UISettingFile
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 1ba0699f6a04a4d478984b2e35ed5c01
+  - m_GUID: a295e203c7f62544cbb1ae1e9ac4915c
     m_Address: BuiltInModulesSettingFile
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 2915e3fc604bd6c4794a98fc1750eccf
-    m_Address: CoreSettingFile
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 2872a44e45aea604ca4a56adb8c00688
-    m_Address: ResourcesManagementSettingFile
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 4f1f25e60b79d0e429944484f5c1c0b5
+  - m_GUID: c0e394b04c5499e44be7aaa043d08806
     m_Address: EditorSettingFile
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cda932244f327ba46af75ef07d1b27ce
+    m_Address: UISettingFile
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -66,5 +64,5 @@ MonoBehaviour:
   m_Settings: {fileID: 11400000, guid: 883e806589921be4cb07e7277d1f7009, type: 2}
   m_SchemaSet:
     m_Schemas:
-    - {fileID: 11400000, guid: 93b17f15bf55f5a458afeb2c661be029, type: 2}
     - {fileID: 11400000, guid: 46cfc26bbc5cabd489dff7a87984b4e0, type: 2}
+    - {fileID: 11400000, guid: 93b17f15bf55f5a458afeb2c661be029, type: 2}

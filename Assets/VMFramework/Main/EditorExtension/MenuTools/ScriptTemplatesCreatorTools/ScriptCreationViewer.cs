@@ -2,6 +2,7 @@
 using Sirenix.OdinInspector;
 using UnityEngine;
 using VMFramework.Configuration;
+using VMFramework.Core;
 using VMFramework.GameLogicArchitecture;
 using VMFramework.OdinExtensions;
 
@@ -13,15 +14,25 @@ namespace VMFramework.Editor
         public string assetFolderPath;
         
         [IsClassName]
-        [SuffixLabel("@" + nameof(nameSuffix))]
+        [SuffixLabel("@" + nameof(NameSuffix))]
         public string name;
         
         [Namespace]
         public string namespaceName;
 
-        protected virtual string nameSuffix => string.Empty;
+        protected virtual string NameSuffix => string.Empty;
 
-        public string ClassName => name + nameSuffix;
+        public string ClassName => name + NameSuffix;
+        
+        protected override void OnInspectorInit()
+        {
+            base.OnInspectorInit();
+
+            if (name.IsNullOrEmpty())
+            {
+                name = assetFolderPath.GetFileNameWithoutExtensionFromPath();
+            }
+        }
 
         #region Interface Implementation
 
@@ -31,7 +42,7 @@ namespace VMFramework.Editor
             set => assetFolderPath = value;
         }
 
-        string INameOwner.name => name;
+        string INameOwner.Name => name;
 
         string IScriptCreationViewer.NamespaceName => namespaceName;
 

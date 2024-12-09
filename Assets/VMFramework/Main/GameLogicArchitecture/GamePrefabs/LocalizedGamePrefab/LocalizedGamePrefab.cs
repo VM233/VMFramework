@@ -17,7 +17,7 @@ namespace VMFramework.GameLogicArchitecture
 
         #region Interface Implementations
 
-        string INameOwner.name => name;
+        string INameOwner.Name => name;
 
         IReadOnlyLocalizedStringReference ILocalizedNameOwner.NameReference => name;
 

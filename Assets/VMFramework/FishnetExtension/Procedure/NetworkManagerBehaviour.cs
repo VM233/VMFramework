@@ -13,19 +13,19 @@ namespace VMFramework.Procedure
         where TInstance : NetworkManagerBehaviour<TInstance>
     {
         [ShowInInspector]
-        [HideInEditorMode]
-        protected static TInstance instance { get; private set; }
+        [ReadOnly]
+        protected static TInstance Instance { get; private set; }
         
         void IManagerBehaviour.SetInstance()
         {
-            if (instance != null)
+            if (Instance != null)
             {
                 Debug.LogError($"Instance of {typeof(TInstance)} already exists!");
                 return;
             }
             
-            instance = (TInstance)this;
-            instance.AssertIsNotNull(nameof(instance));
+            Instance = (TInstance)this;
+            Instance.AssertIsNotNull(nameof(Instance));
         }
 
         protected virtual void OnBeforeInitStart()
@@ -33,14 +33,14 @@ namespace VMFramework.Procedure
             
         }
         
-        protected virtual IEnumerable<InitializationAction> GetInitializationActions()
+        protected virtual void GetInitializationActions(ICollection<InitializationAction> actions)
         {
-            yield return new(InitializationOrder.BeforeInitStart, OnBeforeInitStartInternal, this);
+            actions.Add(new(InitializationOrder.BeforeInitStart, OnBeforeInitStartInternal, this));
         }
 
-        IEnumerable<InitializationAction> IInitializer.GetInitializationActions()
+        void IInitializer.GetInitializationActions(ICollection<InitializationAction> actions)
         {
-            return GetInitializationActions();
+            GetInitializationActions(actions);
         }
 
         private void OnBeforeInitStartInternal(Action onDone)

@@ -1,4 +1,6 @@
 ﻿#if UNITY_EDITOR
+using System;
+
 namespace VMFramework.GameLogicArchitecture
 {
     public partial interface IGlobalSettingFile

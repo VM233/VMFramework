@@ -6,9 +6,9 @@ namespace VMFramework.Editor.BatchProcessor
 {
     public sealed class RemoveNullUnit : SingleButtonBatchProcessorUnit
     {
-        protected override string processButtonName => "Remove Null";
+        protected override string ProcessButtonName => "Remove Null";
 
-        public override bool IsValid(IList<object> selectedObjects)
+        public override bool IsValid(IReadOnlyList<object> selectedObjects)
         {
             return selectedObjects.Any(o => o == null);
         }

@@ -5,7 +5,7 @@
         
     }
     
-    public interface ICircularSelectChooserConfig<TWrapper, TItem> : ICollectionChooserConfig<TWrapper, TItem>
+    public interface ICircularSelectChooserConfig<TWrapper, TItem> : ICollectionWrapperChooserConfig<TWrapper, TItem>
     {
         
     }

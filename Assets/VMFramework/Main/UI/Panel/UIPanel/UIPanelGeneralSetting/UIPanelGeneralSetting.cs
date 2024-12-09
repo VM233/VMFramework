@@ -19,14 +19,22 @@ namespace VMFramework.UI
 
         #endregion
 
-        #region MetaData;
+        #region MetaData
 
-        public override Type BaseGamePrefabType => typeof(UIPanelPreset);
+        public override Type BaseGamePrefabType => typeof(UIPanelConfig);
 
         #endregion
 
-        [HideLabel, TabGroup(TAB_GROUP_NAME, PANEL_SETTING_CATEGORY)]
-        public ContainerChooser container;
+        public const string DEFAULT_SORTING_ORDER_ID = "Default";
+
+        public const int DEFAULT_SORTING_ORDER = 0;
+        
+        public const string DEBUG_SORTING_ORDER_ID = "Debug";
+        
+        public const int DEBUG_SORTING_ORDER = 1000;
+
+        [TabGroup(TAB_GROUP_NAME, PANEL_SETTING_CATEGORY)]
+        public string containerName = "$UI";
 
         [TabGroup(TAB_GROUP_NAME, PANEL_SETTING_CATEGORY)]
         [Required]
@@ -44,6 +52,10 @@ namespace VMFramework.UI
         [TabGroup(TAB_GROUP_NAME, PANEL_SETTING_CATEGORY)]
         [JsonProperty]
         public Vector2Int defaultReferenceResolution = new(1920, 1080);
+        
+        [TabGroup(TAB_GROUP_NAME, PANEL_SETTING_CATEGORY)]
+        [JsonProperty]
+        public DictionaryConfigs<string, PriorityPreset> sortingOrderPresets = new();
 
         [TabGroup(TAB_GROUP_NAME, PANEL_SETTING_CATEGORY)]
         [ShowInInspector]
@@ -57,21 +69,35 @@ namespace VMFramework.UI
         [ShowIf(nameof(enableLanguageConfigs))]
         public DictionaryConfigs<string, UIPanelLanguageConfig> languageConfigs = new();
 
-        #region Init
+        #region Check & Init
 
+        public override void CheckSettings()
+        {
+            base.CheckSettings();
+            
+            sortingOrderPresets.CheckSettings();
+
+            if (enableLanguageConfigs)
+            {
+                languageConfigs.CheckSettings();
+            }
+        }
+        
         protected override void OnInit()
         {
             base.OnInit();
+            
+            sortingOrderPresets.Init();
             
             languageConfigs.Init();
 
             panelSettingsBySortingOrder.Clear();
 
-            foreach (var prefab in GamePrefabManager.GetAllGamePrefabs<IUIPanelPreset>())
+            foreach (var prefab in GamePrefabManager.GetAllGamePrefabs<IUIPanelConfig>())
             {
-                if (panelSettingsBySortingOrder.ContainsKey(prefab.sortingOrder) == false)
+                if (panelSettingsBySortingOrder.ContainsKey(prefab.SortingOrder) == false)
                 {
-                    panelSettingsBySortingOrder[prefab.sortingOrder] = CreateInstance<PanelSettings>();
+                    panelSettingsBySortingOrder[prefab.SortingOrder] = CreateInstance<PanelSettings>();
                 }
             }
 
@@ -88,21 +114,7 @@ namespace VMFramework.UI
         }
 
         #endregion
-
-        #region Check
-
-        public override void CheckSettings()
-        {
-            base.CheckSettings();
-
-            if (enableLanguageConfigs)
-            {
-                languageConfigs.CheckSettings();
-            }
-        }
-
-        #endregion
-
+        
         private IEnumerable<PanelSettings> GetAllPanelSettings()
         {
             return panelSettingsBySortingOrder.Values;

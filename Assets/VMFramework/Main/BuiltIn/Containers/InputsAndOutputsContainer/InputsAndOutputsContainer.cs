@@ -3,32 +3,32 @@ using VMFramework.Core;
 
 namespace VMFramework.Containers
 {
-    public class InputsAndOutputsContainer : GridContainer, IInputsContainer, IOutputsContainer
+    public class InputsAndOutputsContainer : Container, IInputsContainer, IOutputsContainer
     {
-        protected InputsAndOutputsContainerPreset inputsAndOutputsContainerPreset =>
-            (InputsAndOutputsContainerPreset)GamePrefab;
+        protected InputsAndOutputsContainerConfig InputsAndOutputsContainerConfig =>
+            (InputsAndOutputsContainerConfig)GamePrefab;
 
-        public RangeInteger inputsRange { get; private set; }
+        public RangeInteger InputsRange { get; private set; }
 
-        public RangeInteger outputsRange { get; private set; }
+        public RangeInteger OutputsRange { get; private set; }
 
-        IKCubeInteger<int> IInputsContainer.inputsRange => inputsRange;
+        RangeInteger IInputsContainer.InputsRange => InputsRange;
 
-        IKCubeInteger<int> IOutputsContainer.outputsRange => outputsRange;
+        RangeInteger IOutputsContainer.OutputsRange => OutputsRange;
 
         protected override void OnCreate()
         {
             base.OnCreate();
 
-            inputsRange = new(inputsAndOutputsContainerPreset.inputsRange);
-            outputsRange = new(inputsAndOutputsContainerPreset.outputsRange);
+            InputsRange = new(InputsAndOutputsContainerConfig.inputsRange);
+            OutputsRange = new(InputsAndOutputsContainerConfig.outputsRange);
         }
 
         #region Add
 
-        public override bool TryAddItem(IContainerItem item)
+        public override bool TryAddItem(IContainerItem item, int preferredCount, out int addedCount)
         {
-            return TryAddItem(item, inputsRange.min, inputsRange.max);
+            return TryAddItem(item, preferredCount, InputsRange.min, InputsRange.max, out addedCount);
         }
 
         #endregion
@@ -37,14 +37,14 @@ namespace VMFramework.Containers
 
         public override void StackItems()
         {
-            this.StackItems(inputsRange.min, inputsRange.max);
-            this.StackItems(outputsRange.min, outputsRange.max);
+            this.StackItems(InputsRange.min, InputsRange.max);
+            this.StackItems(OutputsRange.min, OutputsRange.max);
         }
 
         public override void Sort(Comparison<IContainerItem> comparison)
         {
-            Sort(inputsRange.min, inputsRange.max, comparison);
-            Sort(outputsRange.min, outputsRange.max, comparison);
+            Sort(comparison, InputsRange.min, InputsRange.max);
+            Sort(comparison, OutputsRange.min, OutputsRange.max);
         }
 
         #endregion

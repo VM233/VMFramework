@@ -6,13 +6,13 @@ namespace VMFramework.Configuration
 {
     public partial class KCubeConfig<TPoint>
     {
-        TPoint IKCubeConfig<TPoint>.min
+        TPoint IKCubeConfig<TPoint>.Min
         {
             get => min;
             set => min = value;
         }
 
-        TPoint IKCubeConfig<TPoint>.max
+        TPoint IKCubeConfig<TPoint>.Max
         {
             get => max;
             set => max = value;
@@ -43,6 +43,6 @@ namespace VMFramework.Configuration
         public abstract bool Contains(TPoint pos);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public abstract TPoint GetRandomPoint(Random random);
+        public abstract TPoint GetRandomItem(Random random);
     }
 }

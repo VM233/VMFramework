@@ -8,14 +8,11 @@ namespace VMFramework.GameLogicArchitecture
     [Preserve]
     public sealed class GamePrefabInitializer : IGameInitializer
     {
-        IEnumerable<InitializationAction> IInitializer.GetInitializationActions()
+        void IInitializer.GetInitializationActions(ICollection<InitializationAction> actions)
         {
             foreach (var gamePrefab in GamePrefabManager.GetAllGamePrefabs())
             {
-                foreach (var action in gamePrefab.GetInitializationActions())
-                {
-                    yield return action;
-                }
+                gamePrefab.GetInitializationActions(actions);
             }
         }
     }

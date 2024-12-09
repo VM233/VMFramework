@@ -3,6 +3,7 @@ using UnityEditor;
 using VMFramework.Core;
 using VMFramework.Core.Editor;
 using VMFramework.GameLogicArchitecture;
+using VMFramework.Tools.Editor;
 
 namespace VMFramework.Editor
 {
@@ -23,14 +24,14 @@ namespace VMFramework.Editor
                 ScriptCreator.CreateScriptAssets(ScriptTemplatesNames.GLOBAL_SETTING, info.ClassName,
                     info.assetFolderPath, extraInfo: new GlobalSettingScriptExtraInfo()
                     {
-                        namespaceName = info.namespaceName,
+                        NamespaceName = info.namespaceName,
                         globalSettingFileName = globalSettingFileName
                     }, postProcessor: settingPostProcessor);
 
                 ScriptCreator.CreateScriptAssets(ScriptTemplatesNames.GLOBAL_SETTING_FILE, globalSettingFileName,
                     info.assetFolderPath, extraInfo: new GlobalSettingFileScriptExtraInfo()
                     {
-                        namespaceName = info.namespaceName,
+                        NamespaceName = info.namespaceName,
                         folderPath = folderPath,
                         nameInGameEditor = '\"' + info.ClassName.ToPascalCase(" ") + '\"'
                     }, postProcessor: settingFilePostProcessor);

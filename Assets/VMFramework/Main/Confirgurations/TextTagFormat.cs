@@ -108,7 +108,7 @@ namespace VMFramework.Configuration
                 return "No Format Override";
             }
 
-            return strList.ToString(",");
+            return strList.ToFormattedString(",");
         }
 
         #endregion

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using EnumsNET;
 using VMFramework.Core;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -12,13 +13,18 @@ namespace VMFramework.ResourcesManagement
     [ManagerCreationProvider(ManagerType.ResourcesCore)]
     public sealed class SpriteManager : ManagerBehaviour<SpriteManager>
     {
-        [LabelText("Sprite缓存")]
         [ShowInInspector]
-        private static readonly Dictionary<int, Sprite> spriteCache = new();
+        private static readonly Dictionary<string, FlippedSprites> spriteCache = new();
         
-        [LabelText("SpriteID缓存")]
         [ShowInInspector]
         private static readonly Dictionary<Sprite, string> spriteIDLookup = new();
+
+        [Button]
+        public static void ClearCache()
+        {
+            spriteCache.Clear();
+            spriteIDLookup.Clear();
+        }
 
         #region Get Sprite
 
@@ -28,27 +34,37 @@ namespace VMFramework.ResourcesManagement
             {
                 return null;
             }
-
-            var id = HashCode.Combine(spritePresetID, flipType);
             
-            if (spriteCache.TryGetValue(id, out var existedSprite))
+            if (spriteCache.TryGetValue(spritePresetID, out var flippedSprites))
             {
-                return existedSprite;
-            }
-            
-            var spritePreset = GamePrefabManager.GetGamePrefab<SpritePreset>(spritePresetID);
+                if (flippedSprites.TryGetSprite(flipType, out var existedSprite))
+                {
+                    return existedSprite;
+                }
 
-            if (spritePreset == null)
+                var sprite = GamePrefabManager.GetGamePrefabStrictly<SpritePreset>(spritePresetID)
+                    .GenerateSprite(flipType);
+
+                var newFlippedSprites = flippedSprites.AddSprite(sprite, flipType);
+                
+                spriteCache[spritePresetID] = newFlippedSprites;
+                
+                return sprite;
+            }
+
+            if (GamePrefabManager.TryGetGamePrefab(spritePresetID, out SpritePreset spritePreset) == false)
             {
                 return null;
             }
             
-            var sprite = spritePreset.GenerateSprite(flipType);
+            var newSprite = spritePreset.GenerateSprite(flipType);
+
+            flippedSprites = new(newSprite, flipType);
             
-            spriteCache.Add(id, sprite);
-            spriteIDLookup.Add(sprite, spritePresetID);
+            spriteCache.Add(spritePresetID, flippedSprites);
+            spriteIDLookup.TryAdd(newSprite, spritePresetID);
             
-            return sprite;
+            return newSprite;
         }
 
         #endregion

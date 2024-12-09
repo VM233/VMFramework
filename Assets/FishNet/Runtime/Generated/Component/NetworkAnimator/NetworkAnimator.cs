@@ -1,3 +1,6 @@
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#define DEVELOPMENT
+#endif
 using FishNet.Component.Transforming;
 using FishNet.Connection;
 using FishNet.Documenting;
@@ -285,6 +288,12 @@ namespace FishNet.Component.Animating
         /// </summary>
         public Animator Animator { get { return _animator; } }
         /// <summary>
+        /// True to synchronize changes even when the animator component is disabled.
+        /// </summary>
+        [Tooltip("True to synchronize changes even when the animator component is disabled.")]
+        [SerializeField]
+        private bool _synchronizeWhenDisabled;
+        /// <summary>
         /// True to smooth float value changes for spectators.
         /// </summary>
         [Tooltip("True to smooth float value changes for spectators.")]
@@ -297,13 +306,6 @@ namespace FishNet.Component.Animating
         [Range(1, NetworkTransform.MAX_INTERPOLATION)]
         [SerializeField]
         private ushort _interpolation = 2;
-        ///// <summary>
-        ///// How often to synchronize this animator.
-        ///// </summary>
-        //[Tooltip("How often to synchronize this animator.")]
-        //[Range(0.01f, 0.5f)]
-        //[SerializeField]
-        //private float _synchronizeInterval = 0.1f;
         /// <summary>
         /// 
         /// </summary>
@@ -356,20 +358,21 @@ namespace FishNet.Component.Animating
         /// </summary>
         private List<byte[]> _toClientsBuffer = new List<byte[]>();
         /// <summary>
-        /// Returns if the animator is exist and is enabled.
+        /// Returns if the animator is exist and can be synchronized.
         /// </summary>
-        private bool _isAnimatorEnabled
+        private bool _canSynchronizeAnimator
         {
             get
             {
-                bool failedChecks = (!_isAnimatorValid || !_animator.enabled);
+                bool enabled = (_animator.enabled || _synchronizeWhenDisabled);
+                bool failedChecks = (!_isAnimatorSet || !enabled);
                 return !failedChecks;
             }
         }
         /// <summary>
         /// True if the animator is valid but not enabled.
         /// </summary>
-        private bool _isAnimatorValid
+        private bool _isAnimatorSet
         {
             get
             {
@@ -406,10 +409,6 @@ namespace FishNet.Component.Animating
         /// Layers which need to have their state synchronized. Key is the layer, Value is the state change information.
         /// </summary>
         private Dictionary<int, StateChange> _unsynchronizedLayerStates = new Dictionary<int, StateChange>();
-        /// <summary>
-        /// Layers which need to have their state blend synchronized. Key is ParameterIndex, Value is next state hash.
-        /// </summary>
-        //private Dictionary<int, int> _unsynchronizedLayerStates = new HashSet<int>();
         /// <summary>
         /// Last animator set.
         /// </summary>
@@ -480,7 +479,7 @@ namespace FishNet.Component.Animating
         [APIExclude]
         public override void OnSpawnServer(NetworkConnection connection)
         {
-            if (!_isAnimatorEnabled)
+            if (!_canSynchronizeAnimator)
                 return;
             if (AnimatorUpdated(out ArraySegment<byte> updatedBytes, true))
                 TargetAnimatorUpdated(connection, updatedBytes);
@@ -542,7 +541,7 @@ namespace FishNet.Component.Animating
         /// </summary>
         private void TimeManager_OnPreTick()
         {
-            if (!_isAnimatorEnabled)
+            if (!_canSynchronizeAnimator)
             {
                 _fromServerBuffer.Clear();
                 return;
@@ -576,7 +575,7 @@ namespace FishNet.Component.Animating
         private void TimeManager_OnPostTick()
         {
             //One check rather than per each method.
-            if (!_isAnimatorEnabled)
+            if (!_canSynchronizeAnimator)
                 return;
 
             CheckSendToServer();
@@ -585,7 +584,7 @@ namespace FishNet.Component.Animating
 
         private void Update()
         {
-            if (!_isAnimatorEnabled)
+            if (!_canSynchronizeAnimator)
                 return;
 
             if (base.IsClientStarted)
@@ -604,7 +603,7 @@ namespace FishNet.Component.Animating
             if (!ApplicationState.IsPlaying())
                 return;
 
-            if (!_isAnimatorEnabled)
+            if (!_canSynchronizeAnimator)
             {
                 //Debug.LogWarning("Animator is null or not enabled; unable to initialize for animator. Use SetAnimator if animator was changed or enable the animator.");
                 return;
@@ -825,10 +824,7 @@ namespace FishNet.Component.Animating
                     //If to not send to owner.
                     if (!_sendToOwner && nc == base.Owner)
                         continue;
-#if !DEVELOPMENT
-                    if (!nc.IsLocalClient)
-#endif
-                        TargetAnimatorUpdated(nc, data);
+                    TargetAnimatorUpdated(nc, data);
                 }
             }
         }
@@ -897,7 +893,7 @@ namespace FishNet.Component.Animating
                     //If changed.
                     if (forceAll || _bools[pd.TypeIndex] != next)
                     {
-                        _writer.WriteByte(parameterIndex);
+                        _writer.WriteUInt8Unpacked(parameterIndex);
                         _writer.WriteBoolean(next);
                         _bools[pd.TypeIndex] = next;
                     }
@@ -909,8 +905,8 @@ namespace FishNet.Component.Animating
                     //If changed.
                     if (forceAll || _floats[pd.TypeIndex] != next)
                     {
-                        _writer.WriteByte(parameterIndex);
-                        _writer.WriteSingle(next, AutoPackType.Packed);
+                        _writer.WriteUInt8Unpacked(parameterIndex);
+                        _writer.WriteSingle(next);
                         _floats[pd.TypeIndex] = next;
                     }
                 }
@@ -921,8 +917,8 @@ namespace FishNet.Component.Animating
                     //If changed.
                     if (forceAll || _ints[pd.TypeIndex] != next)
                     {
-                        _writer.WriteByte(parameterIndex);
-                        _writer.WriteInt32(next, AutoPackType.Packed);
+                        _writer.WriteUInt8Unpacked(parameterIndex);
+                        _writer.WriteInt32(next);
                         _ints[pd.TypeIndex] = next;
                     }
                 }
@@ -932,7 +928,7 @@ namespace FishNet.Component.Animating
              * they're one-shots. */
             for (int i = 0; i < _triggerUpdates.Count; i++)
             {
-                _writer.WriteByte(_triggerUpdates[i].ParameterIndex);
+                _writer.WriteUInt8Unpacked(_triggerUpdates[i].ParameterIndex);
                 _writer.WriteBoolean(_triggerUpdates[i].Setting);
             }
             _triggerUpdates.Clear();
@@ -969,25 +965,25 @@ namespace FishNet.Component.Animating
                     {
                         if (ReturnCurrentLayerState(out int stateHash, out float normalizedTime, layerIndex))
                         {
-                            _writer.WriteByte(STATE);
-                            _writer.WriteByte((byte)layerIndex);
+                            _writer.WriteUInt8Unpacked(STATE);
+                            _writer.WriteUInt8Unpacked((byte)layerIndex);
                             //Current hash will always be too large to compress.
-                            _writer.WriteInt32(stateHash);
-                            _writer.WriteSingle(normalizedTime, AutoPackType.Packed);
+                            _writer.WriteInt32Unpacked(stateHash);
+                            _writer.WriteSingle(normalizedTime);
                         }
                     }
                     //When it's a crossfade then send crossfade data.
                     else
                     {
-                        _writer.WriteByte(CROSSFADE);
-                        _writer.WriteByte((byte)layerIndex);
+                        _writer.WriteUInt8Unpacked(CROSSFADE);
+                        _writer.WriteUInt8Unpacked((byte)layerIndex);
                         //Current hash will always be too large to compress.
                         _writer.WriteInt32(sc.Hash);
                         _writer.WriteBoolean(sc.FixedTime);
                         //Times usually can be compressed.
-                        _writer.WriteSingle(sc.DurationTime, AutoPackType.Packed);
-                        _writer.WriteSingle(sc.OffsetTime, AutoPackType.Packed);
-                        _writer.WriteSingle(sc.NormalizedTransitionTime, AutoPackType.Packed);
+                        _writer.WriteSingle(sc.DurationTime);
+                        _writer.WriteSingle(sc.OffsetTime);
+                        _writer.WriteSingle(sc.NormalizedTransitionTime);
                     }
                 }
 
@@ -1006,9 +1002,9 @@ namespace FishNet.Component.Animating
                 float next = _animator.GetLayerWeight(layerIndex);
                 if (forceAll || _layerWeights[layerIndex] != next)
                 {
-                    _writer.WriteByte(LAYER_WEIGHT);
-                    _writer.WriteByte((byte)layerIndex);
-                    _writer.WriteSingle(next, AutoPackType.Packed);
+                    _writer.WriteUInt8Unpacked(LAYER_WEIGHT);
+                    _writer.WriteUInt8Unpacked((byte)layerIndex);
+                    _writer.WriteSingle(next);
                     _layerWeights[layerIndex] = next;
                 }
             }
@@ -1018,8 +1014,8 @@ namespace FishNet.Component.Animating
             float speedNext = _animator.speed;
             if (forceAll || _speed != speedNext)
             {
-                _writer.WriteByte(SPEED);
-                _writer.WriteSingle(speedNext, AutoPackType.Packed);
+                _writer.WriteUInt8Unpacked(SPEED);
+                _writer.WriteSingle(speedNext);
                 _speed = speedNext;
             }
 
@@ -1041,7 +1037,7 @@ namespace FishNet.Component.Animating
         /// <param name="changedParameters"></param>
         private void ApplyParametersUpdated(ref ArraySegment<byte> updatedParameters)
         {
-            if (!_isAnimatorEnabled)
+            if (!_canSynchronizeAnimator)
                 return;
             if (_layerWeights == null)
                 return;
@@ -1054,41 +1050,41 @@ namespace FishNet.Component.Animating
             {
                 while (reader.Remaining > 0)
                 {
-                    byte parameterIndex = reader.ReadByte();
+                    byte parameterIndex = reader.ReadUInt8Unpacked();
                     //Layer weight
                     if (parameterIndex == LAYER_WEIGHT)
                     {
-                        byte layerIndex = reader.ReadByte();
-                        float value = reader.ReadSingle(AutoPackType.Packed);
+                        byte layerIndex = reader.ReadUInt8Unpacked();
+                        float value = reader.ReadSingle();
                         _animator.SetLayerWeight((int)layerIndex, value);
                     }
                     //Speed.
                     else if (parameterIndex == SPEED)
                     {
-                        float value = reader.ReadSingle(AutoPackType.Packed);
+                        float value = reader.ReadSingle();
                         _animator.speed = value;
                     }
                     //State.
                     else if (parameterIndex == STATE)
                     {
-                        byte layerIndex = reader.ReadByte();
+                        byte layerIndex = reader.ReadUInt8Unpacked();
                         //Hashes will always be too large to compress.
-                        int hash = reader.ReadInt32();
-                        float normalizedTime = reader.ReadSingle(AutoPackType.Packed);
+                        int hash = reader.ReadInt32Unpacked();
+                        float normalizedTime = reader.ReadSingle();
                         //Play results.
                         _animator.Play(hash, layerIndex, normalizedTime);
                     }
                     //Crossfade.
                     else if (parameterIndex == CROSSFADE)
                     {
-                        byte layerIndex = reader.ReadByte();
+                        byte layerIndex = reader.ReadUInt8Unpacked();
                         //Hashes will always be too large to compress.
                         int hash = reader.ReadInt32();
                         bool useFixedTime = reader.ReadBoolean();
                         //Get time values.
-                        float durationTime = reader.ReadSingle(AutoPackType.Packed);
-                        float offsetTime = reader.ReadSingle(AutoPackType.Packed);
-                        float normalizedTransitionTime = reader.ReadSingle(AutoPackType.Packed);
+                        float durationTime = reader.ReadSingle();
+                        float offsetTime = reader.ReadSingle();
+                        float normalizedTransitionTime = reader.ReadSingle();
                         //If using fixed.
                         if (useFixedTime)
                             _animator.CrossFadeInFixedTime(hash, durationTime, layerIndex, offsetTime, normalizedTransitionTime);
@@ -1107,7 +1103,7 @@ namespace FishNet.Component.Animating
                         //Float.
                         else if (acpt == AnimatorControllerParameterType.Float)
                         {
-                            float value = reader.ReadSingle(AutoPackType.Packed);
+                            float value = reader.ReadSingle();
                             //If able to smooth floats.
                             if (_canSmoothFloats)
                             {
@@ -1169,7 +1165,7 @@ namespace FishNet.Component.Animating
             stateHash = 0;
             normalizedTime = 0f;
 
-            if (!_isAnimatorEnabled)
+            if (!_canSynchronizeAnimator)
                 return false;
 
             AnimatorStateInfo st = _animator.GetCurrentAnimatorStateInfo(layerIndex);
@@ -1230,7 +1226,7 @@ namespace FishNet.Component.Animating
         /// </summary>
         public void Play(int hash, int layer, float normalizedTime)
         {
-            if (!_isAnimatorEnabled)
+            if (!_canSynchronizeAnimator)
                 return;
             if (_animator.HasState(layer, hash) || hash == 0)
             {
@@ -1265,7 +1261,7 @@ namespace FishNet.Component.Animating
         /// </summary>
         public void PlayInFixedTime(int hash, int layer, float fixedTime)
         {
-            if (!_isAnimatorEnabled)
+            if (!_canSynchronizeAnimator)
                 return;
             if (_animator.HasState(layer, hash) || hash == 0)
             {
@@ -1298,7 +1294,7 @@ namespace FishNet.Component.Animating
         /// <param name="normalizedTransitionTime"></param>
         public void CrossFade(int hash, float normalizedTransitionDuration, int layer, float normalizedTimeOffset = 0.0f, float normalizedTransitionTime = 0.0f)
         {
-            if (!_isAnimatorEnabled)
+            if (!_canSynchronizeAnimator)
                 return;
             if (_animator.HasState(layer, hash) || hash == 0)
             {
@@ -1328,7 +1324,7 @@ namespace FishNet.Component.Animating
         /// <param name="normalizedTransitionTime"></param>
         public void CrossFadeInFixedTime(int hash, float fixedTransitionDuration, int layer, float fixedTimeOffset = 0.0f, float normalizedTransitionTime = 0.0f)
         {
-            if (!_isAnimatorEnabled)
+            if (!_canSynchronizeAnimator)
                 return;
             if (_animator.HasState(layer, hash) || hash == 0)
             {
@@ -1345,7 +1341,7 @@ namespace FishNet.Component.Animating
         /// <param name="hash"></param>
         public void SetTrigger(int hash)
         {
-            if (!_isAnimatorEnabled)
+            if (!_canSynchronizeAnimator)
                 return;
             UpdateTrigger(hash, true);
         }
@@ -1381,7 +1377,7 @@ namespace FishNet.Component.Animating
         /// <param name="set"></param>
         private void UpdateTrigger(int hash, bool set)
         {
-            if (!_isAnimatorEnabled)
+            if (!_canSynchronizeAnimator)
                 return;
 
             bool clientAuth = ClientAuthoritative;
@@ -1438,14 +1434,13 @@ namespace FishNet.Component.Animating
         [TargetRpc(ValidateTarget = false)]
         private void TargetAnimatorUpdated(NetworkConnection connection, ArraySegment<byte> data)
         {
-            if (!_isAnimatorEnabled)
+            if (!_canSynchronizeAnimator)
                 return;
 
-#if DEVELOPMENT
             //If receiver is client host then do nothing, clientHost need not process.
-            if (base.IsServer && conn.IsLocalClient)
+            if (base.IsServerInitialized && connection.IsLocalClient)
                 return;
-#endif
+
             bool clientAuth = ClientAuthoritative;
             bool isOwner = base.IsOwner;
             /* If set for client auth and owner then do not process.
@@ -1473,7 +1468,7 @@ namespace FishNet.Component.Animating
         [ServerRpc]
         private void ServerAnimatorUpdated(ArraySegment<byte> data)
         {
-            if (!_isAnimatorEnabled)
+            if (!_canSynchronizeAnimator)
                 return;
             if (!ClientAuthoritative)
             {

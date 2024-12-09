@@ -3,15 +3,11 @@ using UnityEngine;
 
 namespace FishNet.Demo.NetworkLod
 {
-
     public class MoveRandomly : NetworkBehaviour
     {
-
         //Colors green for client.
-        [SerializeField]
-        private Renderer _renderer;
-        [SerializeField]
-        private bool _updateRotation;
+        [SerializeField] private Renderer _renderer;
+        [SerializeField] private bool _updateRotation;
 
         //Time to move to new position.
         private const float _moveRate = 3f;
@@ -25,6 +21,9 @@ namespace FishNet.Demo.NetworkLod
         private Vector3 _startPosition;
 
 
+        public float RotationRate = 15f;
+
+        private Quaternion _lastRot;
 
         private void Update()
         {
@@ -37,9 +36,23 @@ namespace FishNet.Demo.NetworkLod
 
             transform.position = Vector3.MoveTowards(transform.position, _goalPosition, _moveRate * Time.deltaTime);
             if (_updateRotation)
-                transform.rotation = Quaternion.RotateTowards(transform.rotation, _goalRotation, 15f * Time.deltaTime);
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, _goalRotation, RotationRate * Time.deltaTime);
             if (transform.position == _goalPosition)
                 RandomizeGoal();
+
+            // if (InstanceFinder.TimeManager.FrameTicked)
+            // {
+            //     if (_lastRot != transform.rotation)
+            //     {
+            //         float x = transform.rotation.x - _lastRot.x;
+            //         float y = transform.rotation.y - _lastRot.y;
+            //         float z = transform.rotation.z - _lastRot.z;
+            //         float w = transform.rotation.w - _lastRot.w;
+            //
+            //         Debug.Log($"Differences: X {x}, Y {y}, Z {z}, W {w}.");
+            //         _lastRot = transform.rotation;
+            //     }
+            // }
         }
 
         public override void OnStartNetwork()
@@ -74,7 +87,5 @@ namespace FishNet.Demo.NetworkLod
                 }
             }
         }
-
     }
-
 }

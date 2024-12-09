@@ -7,9 +7,9 @@ namespace VMFramework.Editor.BatchProcessor
 {
     public sealed class QueryAllInterfacesUnit : SingleButtonBatchProcessorUnit
     {
-        protected override string processButtonName => "Get All Interfaces";
+        protected override string ProcessButtonName => "Get All Interfaces";
 
-        public override bool IsValid(IList<object> selectedObjects)
+        public override bool IsValid(IReadOnlyList<object> selectedObjects)
         {
             return selectedObjects.Any(obj => obj is Type);
         }

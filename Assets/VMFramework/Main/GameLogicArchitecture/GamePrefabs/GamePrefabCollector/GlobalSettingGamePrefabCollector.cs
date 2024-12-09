@@ -13,9 +13,9 @@ namespace VMFramework.GameLogicArchitecture
 
             foreach (var generalSetting in GlobalSettingCollector.GetAllGeneralSettings())
             {
-                if (generalSetting is IInitialGamePrefabProvider initialGamePrefabProvider)
+                if (generalSetting is IGamePrefabProvider provider)
                 {
-                    gamePrefabs.AddRange(initialGamePrefabProvider.GetInitialGamePrefabs());
+                    provider.GetGamePrefabs(gamePrefabs);
                 }
             }
 

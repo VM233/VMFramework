@@ -6,11 +6,6 @@ namespace VMFramework.GameLogicArchitecture
 {
     public partial class GeneralSetting
     {
-        [PropertyOrder(-100000)]
-        [OnInspectorInit(nameof(OnInspectorInit))]
-        [ShowInInspector]
-        private Type GeneralSettingType => GetType();
-
         protected override void OnInspectorInit()
         {
             base.OnInspectorInit();
@@ -18,7 +13,7 @@ namespace VMFramework.GameLogicArchitecture
             AutoConfigureLocalizedString(new()
             {
                 defaultTableName = DefaultLocalizationTableName,
-                save = true
+                save = false
             });
         }
     }

@@ -24,26 +24,43 @@ namespace VMFramework.Network
         public static event Action<IUUIDOwner> OnUUIDOwnerRegistered;
         public static event Action<IUUIDOwner> OnUUIDOwnerUnregistered;
 
-        public static event Action<IUUIDOwner, bool, NetworkConnection> OnUUIDOwnerObserved;
+        public static event Action<IUUIDOwner, NetworkConnection> OnUUIDOwnerObserved;
         public static event Action<IUUIDOwner, NetworkConnection> OnUUIDOwnerUnobserved;
 
         public override void OnStartServer()
         {
             base.OnStartServer();
             
-            GameItemEvents.OnGameItemCreated += OnGameItemCreated;
-            GameItemEvents.OnGameItemDestroyed += OnGameItemDestroyed;
+            GameItemEvents.OnGameItemCreated += OnGameItemCreatedOnServer;
+            GameItemEvents.OnGameItemDestroyed += OnGameItemDestroyedOnServer;
         }
 
         public override void OnStopServer()
         {
             base.OnStopServer();
             
-            GameItemEvents.OnGameItemCreated -= OnGameItemCreated;
-            GameItemEvents.OnGameItemDestroyed -= OnGameItemDestroyed;
+            GameItemEvents.OnGameItemCreated -= OnGameItemCreatedOnServer;
+            GameItemEvents.OnGameItemDestroyed -= OnGameItemDestroyedOnServer;
         }
 
-        private static void OnGameItemCreated(IGameItem gameItem)
+        public override void OnStartClient()
+        {
+            base.OnStartClient();
+
+            if (InstanceFinder.IsServerStarted == false)
+            {
+                GameItemEvents.OnGameItemDestroyed += OnGameItemDestroyedOnClient;
+            }
+        }
+
+        public override void OnStopClient()
+        {
+            base.OnStopClient();
+            
+            GameItemEvents.OnGameItemDestroyed -= OnGameItemDestroyedOnClient;
+        }
+
+        private static void OnGameItemCreatedOnServer(IGameItem gameItem)
         {
             if (gameItem is not IUUIDOwner owner)
             {
@@ -53,17 +70,26 @@ namespace VMFramework.Network
             owner.TrySetUUIDAndRegister(Guid.NewGuid());
         }
 
-        private static void OnGameItemDestroyed(IGameItem gameItem)
+        private static void OnGameItemDestroyedOnServer(IGameItem gameItem)
         {
             if (gameItem is not IUUIDOwner owner)
             {
                 return;
             }
 
-            if (Unregister(owner) == false)
+            Unregister(owner);
+
+            owner.SetUUID(Guid.Empty);
+        }
+
+        private static void OnGameItemDestroyedOnClient(IGameItem gameItem)
+        {
+            if (gameItem is not IUUIDOwner owner)
             {
                 return;
             }
+
+            Unregister(owner);
 
             owner.SetUUID(Guid.Empty);
         }
@@ -78,7 +104,7 @@ namespace VMFramework.Network
                 return false;
             }
             
-            var uuid = owner.uuid;
+            var uuid = owner.UUID;
             
             if (uuid == Guid.Empty)
             {
@@ -86,7 +112,7 @@ namespace VMFramework.Network
                 return false;
             }
 
-            if (uuidInfos.TryAdd(uuid, new UUIDInfo(owner, instance.IsServerInitialized)) == false)
+            if (uuidInfos.TryAdd(uuid, new UUIDInfo(owner, Instance.IsServerInitialized)) == false)
             {
                 var oldOwner = uuidInfos[uuid].owner;
                 
@@ -95,7 +121,7 @@ namespace VMFramework.Network
                 
                 Unregister(uuid);
                 
-                uuidInfos[uuid] = new UUIDInfo(owner, instance.IsServerInitialized);
+                uuidInfos[uuid] = new UUIDInfo(owner, Instance.IsServerInitialized);
             }
             
             OnUUIDOwnerRegistered?.Invoke(owner);
@@ -112,7 +138,7 @@ namespace VMFramework.Network
                 return false;
             }
 
-            if (Unregister(owner.uuid, out var existingOwner) == false)
+            if (Unregister(owner.UUID, out var existingOwner) == false)
             {
                 return false;
             }
@@ -162,22 +188,22 @@ namespace VMFramework.Network
         #region Observe
 
         [ServerRpc(RequireOwnership = false)]
-        private void _Observe(Guid uuid, bool isDirty, NetworkConnection connection = null)
+        private void _Observe(Guid uuid, NetworkConnection connection = null)
         {
             if (TryGetInfoWithWarning(uuid, out var info))
             {
-                ObserveInstantly(info, isDirty, connection);
+                ObserveInstantly(info, connection);
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void ObserveInstantly(UUIDInfo info, bool isDirty, NetworkConnection connection)
+        private static void ObserveInstantly(UUIDInfo info, NetworkConnection connection)
         {
-            info.owner.OnObserved(isDirty, connection);
+            info.owner.OnObserved(connection);
             
             info.observers.Add(connection.ClientId);
             
-            OnUUIDOwnerObserved?.Invoke(info.owner, isDirty, connection);
+            OnUUIDOwnerObserved?.Invoke(info.owner, connection);
         }
 
         public static void Observe(Guid uuid)
@@ -188,7 +214,7 @@ namespace VMFramework.Network
                 return;
             }
 
-            if (instance.IsClientStarted == false)
+            if (Instance.IsClientStarted == false)
             {
                 Debugger.LogWarning($"The client is not started yet, cannot observe {uuid}");
                 return;
@@ -199,13 +225,13 @@ namespace VMFramework.Network
                 return;
             }
             
-            if (instance.IsHostStarted)
+            if (Instance.IsHostStarted)
             {
-                ObserveInstantly(info, info.owner.isDirty, InstanceFinder.ClientManager.Connection);
+                ObserveInstantly(info, InstanceFinder.ClientManager.Connection);
             }
             else
             {
-                instance._Observe(uuid, info.owner.isDirty);
+                Instance._Observe(uuid);
             }
         }
 
@@ -218,7 +244,7 @@ namespace VMFramework.Network
                 return;
             }
             
-            Observe(owner.uuid);
+            Observe(owner.UUID);
         }
 
         #endregion
@@ -252,24 +278,24 @@ namespace VMFramework.Network
                 return;
             }
             
-            if (instance.IsClientStarted == false)
+            if (Instance.IsClientStarted == false)
             {
                 Debugger.LogWarning($"The client is not started yet, cannot unobserve {uuid}");
                 return;
             }
 
-            if (TryGetInfoWithWarning(uuid, out var info) == false)
+            if (TryGetInfo(uuid, out var info) == false)
             {
                 return;
             }
             
-            if (instance.IsHostStarted)
+            if (Instance.IsHostStarted)
             {
                 UnobserveInstantly(info, InstanceFinder.ClientManager.Connection);
             }
             else
             {
-                instance._Unobserve(uuid);
+                Instance._Unobserve(uuid);
             }
         }
         
@@ -282,7 +308,7 @@ namespace VMFramework.Network
                 return;
             }
             
-            Unobserve(owner.uuid);
+            Unobserve(owner.UUID);
         }
 
         #endregion

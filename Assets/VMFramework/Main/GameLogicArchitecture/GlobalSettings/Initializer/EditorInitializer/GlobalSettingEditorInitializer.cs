@@ -9,10 +9,10 @@ namespace VMFramework.GameLogicArchitecture.Editor
 {
     internal sealed class GlobalSettingEditorInitializer : IEditorInitializer
     {
-        IEnumerable<InitializationAction> IInitializer.GetInitializationActions()
+        void IInitializer.GetInitializationActions(ICollection<InitializationAction> actions)
         {
-            yield return new(InitializationOrder.BeforeInitStart, OnBeforeInitStart, this);
-            yield return new(InitializationOrder.InitStart, OnInitStart, this);
+            actions.Add(new(InitializationOrder.BeforeInitStart, OnBeforeInitStart, this));
+            actions.Add(new(InitializationOrder.InitStart, OnInitStart, this));
         }
 
         private static void OnBeforeInitStart(Action onDone)

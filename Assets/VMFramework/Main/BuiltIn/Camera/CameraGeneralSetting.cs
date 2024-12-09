@@ -1,7 +1,7 @@
 ﻿using Sirenix.OdinInspector;
 using VMFramework.GameLogicArchitecture;
 
-namespace VMFramework
+namespace VMFramework.Cameras
 {
     public sealed partial class CameraGeneralSetting : GeneralSetting
     {

@@ -16,10 +16,10 @@ namespace VMFramework.UI
 
         #region PanelOnMouseHover
 
-        private static IUIPanelController _panelOnMouseHover;
+        private static IUIPanel _panelOnMouseHover;
 
         [ShowInInspector]
-        protected static IUIPanelController panelOnMouseHover
+        protected static IUIPanel panelOnMouseHover
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => _panelOnMouseHover;
@@ -31,16 +31,16 @@ namespace VMFramework.UI
             }
         }
 
-        protected static event Action<IUIPanelController, IUIPanelController> OnPanelOnMouseHoverChanged;
+        protected static event Action<IUIPanel, IUIPanel> OnPanelOnMouseHoverChanged;
 
         #endregion
 
         #region PanelOnMouseClick
 
-        private static IUIPanelController _panelOnMouseClick;
+        private static IUIPanel _panelOnMouseClick;
 
         [ShowInInspector]
-        protected static IUIPanelController panelOnMouseClick
+        protected static IUIPanel panelOnMouseClick
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => _panelOnMouseClick;
@@ -52,7 +52,7 @@ namespace VMFramework.UI
             }
         }
 
-        public static event Action<IUIPanelController, IUIPanelController> OnPanelOnMouseClickChanged;
+        public static event Action<IUIPanel, IUIPanel> OnPanelOnMouseClickChanged;
 
         #endregion
         
@@ -73,72 +73,72 @@ namespace VMFramework.UI
             }
         }
 
-        private void OnPanelCreated(IUIPanelController panelController)
+        private void OnPanelCreated(IUIPanel panel)
         {
-            if (panelController is IUIPanelPointerEventProvider)
+            if (panel is IUIPanelPointerEventProvider)
             {
-                panelController.OnOpenEvent += OnPanelOpen;
-                panelController.OnCloseEvent += OnPanelClose;
-                panelController.OnDestructEvent += OnPanelDestruct;
+                panel.OnOpenEvent += OnPanelOpen;
+                panel.OnPostCloseEvent += OnPanelClose;
+                panel.OnDestructEvent += OnPanelDestruct;
             }
         }
 
-        private void OnPanelOpen(IUIPanelController panelController)
+        private void OnPanelOpen(IUIPanel panel)
         {
-            if (panelController is IUIPanelPointerEventProvider pointerEventProvider)
+            if (panel is IUIPanelPointerEventProvider pointerEventProvider)
             {
                 pointerEventProvider.AddPointerEvent(OnPointerEnter, OnPointerLeave);
             }
         }
 
-        private void OnPanelClose(IUIPanelController panelController)
+        private void OnPanelClose(IUIPanel panel)
         {
-            if (panelController is IUIPanelPointerEventProvider pointerEventProvider)
+            if (panel is IUIPanelPointerEventProvider pointerEventProvider)
             {
                 pointerEventProvider.RemovePointerEvent();
                 
-                OnPointerLeave(panelController);
+                OnPointerLeave(panel);
             }
         }
 
-        private void OnPanelDestruct(IUIPanelController panelController)
+        private void OnPanelDestruct(IUIPanel panel)
         {
-            if (panelController is IUIPanelPointerEventProvider pointerEventProvider)
+            if (panel is IUIPanelPointerEventProvider pointerEventProvider)
             {
                 pointerEventProvider.RemovePointerEvent();
                 
-                OnPointerLeave(panelController);
+                OnPointerLeave(panel);
             }
         }
 
-        private void OnPointerEnter(IUIPanelController panelController)
+        private void OnPointerEnter(IUIPanel panel)
         {
-            if (panelController == null)
+            if (panel == null)
             {
                 return;
             }
             
-            panelOnMouseHover = panelController;
+            panelOnMouseHover = panel;
 
             if (isDebugging)
             {
                 Debug.LogWarning($"{name}鼠标进入");
             }
 
-            if (panelController is IUIPanelPointerEventReceiver receiver)
+            if (panel is IUIPanelPointerEventReceiver receiver)
             {
                 receiver.OnPointerEnter();
             }
         }
 
-        private void OnPointerLeave(IUIPanelController panelController)
+        private void OnPointerLeave(IUIPanel panel)
         {
-            if (panelController == null)
+            if (panel == null)
             {
                 return;
             }
             
-            if (panelOnMouseHover != panelController)
+            if (panelOnMouseHover != panel)
             {
                 return;
             }
@@ -150,7 +150,7 @@ namespace VMFramework.UI
                 Debug.LogWarning($"{name}鼠标离开");
             }
 
-            if (panelController is IUIPanelPointerEventReceiver receiver)
+            if (panel is IUIPanelPointerEventReceiver receiver)
             {
                 receiver.OnPointerLeave();
             }

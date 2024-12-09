@@ -3,9 +3,9 @@ using VMFramework.OdinExtensions;
 
 namespace VMFramework.UI
 {
-    public sealed class ContextMenuBindConfig : GameTypeBasedConfigBase
+    public sealed class ContextMenuBindConfig : GameTagBasedConfigBase
     {
-        [UIPresetID(typeof(IContextMenuPreset))]
+        [UIPresetID(typeof(IContextMenuConfig))]
         [IsNotNullOrEmpty]
         public string contextMenuID;
     }

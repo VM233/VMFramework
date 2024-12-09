@@ -11,18 +11,25 @@ namespace VMFramework.UI
         {
             base.OnInspectorInit();
 
-            container ??= new();
-            
-            container.SetDefaultContainerID("$UI");
-
-            var testContainer = container.GetContainer();
-
-            testContainer.AssertIsNotNull(nameof(testContainer));
-
             // if (defaultTheme == null)
             // {
             //     defaultTheme = DEFAULT_THEME_STYLE_SHEET_NAME.FindAssetOfName<ThemeStyleSheet>();
             // }
+
+            languageConfigs ??= new();
+            sortingOrderPresets ??= new();
+
+            sortingOrderPresets.TryAddConfigEditor(new PriorityPreset()
+            {
+                presetID = DEFAULT_SORTING_ORDER_ID,
+                priority = DEFAULT_SORTING_ORDER
+            });
+
+            sortingOrderPresets.TryAddConfigEditor(new PriorityPreset()
+            {
+                presetID = DEBUG_SORTING_ORDER_ID,
+                priority = DEBUG_SORTING_ORDER
+            });
         }
     }
 }

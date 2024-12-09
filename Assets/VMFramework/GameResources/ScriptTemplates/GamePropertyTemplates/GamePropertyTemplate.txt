@@ -1,0 +1,21 @@
+﻿using System;
+using VMFramework.GameLogicArchitecture;
+using VMFramework.Properties;
+#USING_NAMESPACES#
+
+namespace TH.Properties
+{
+    [GamePrefabTypeAutoRegister(ID)]
+    public sealed class #CLASS_NAME# : GameProperty
+    {
+        public const string ID = "#GAME_PROPERTY_ID#";
+        
+        public override Type TargetType => typeof(#TARGET_TYPE#);
+
+        public override string GetValueString(object target)
+        {
+            #TARGET_TYPE# #TARGET_NAME# = (#TARGET_TYPE#)target;
+            
+        }
+    }
+}

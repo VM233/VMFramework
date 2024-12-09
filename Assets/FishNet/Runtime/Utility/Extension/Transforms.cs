@@ -1,5 +1,6 @@
 ﻿using FishNet.Documenting;
 using FishNet.Object;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace FishNet.Utility.Extension
@@ -13,6 +14,17 @@ namespace FishNet.Utility.Extension
         public static TransformProperties GetWorldProperties(this Transform t)
         {
             TransformProperties tp = new TransformProperties(t.position, t.rotation, t.localScale);
+            return tp;
+        }
+
+        /// <summary>
+        /// Sets values of TransformProperties to a transforms world properties.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static TransformProperties GetWorldProperties(this Transform t, TransformProperties offset)
+        {
+            TransformProperties tp = new TransformProperties(t.position, t.rotation, t.localScale);
+            tp.Add(offset);
             return tp;
         }
 
@@ -56,7 +68,7 @@ namespace FishNet.Utility.Extension
         }
 
         /// <summary>
-        /// Sets the offset values of target from a transform.
+        /// Gets the offset values by subtracting this from target.
         /// </summary>
         /// <param name="pos">Position offset result.</param>
         /// <param name="rot">Rotation offset result.</param>
@@ -69,7 +81,7 @@ namespace FishNet.Utility.Extension
         }
 
         /// <summary>
-        /// Gets the offset values of target from a transform.
+        /// Gets the offset values by subtracting this from target.
         /// </summary>
         public static TransformProperties GetTransformOffsets(this Transform t, Transform target)
         {
@@ -153,12 +165,35 @@ namespace FishNet.Utility.Extension
         }
 
         /// <summary>
+        /// Sets world position, rotation, and scale using nullables for a transform. If a value is null then that property is skipped.
+        /// </summary>
+        public static void SetWorldPositionRotationAndScale(this Transform t, Vector3? nullablePos, Quaternion? nullableRot, Vector3? nullableScale)
+        {
+            if (nullablePos.HasValue)
+                t.position = nullablePos.Value;
+            if (nullableRot.HasValue)
+                t.rotation = nullableRot.Value;
+            if (nullableScale.HasValue)
+                t.localScale = nullableScale.Value;
+        }
+
+        /// <summary>
         /// Oututs properties to use for a transform. When a nullable property has value that value is used, otherwise the transforms current property is used.
         /// </summary>
         public static void OutLocalPropertyValues(this Transform t, Vector3? nullablePos, Quaternion? nullableRot, Vector3? nullableScale, out Vector3 pos, out Quaternion rot, out Vector3 scale)
         {
             pos = (nullablePos == null) ? t.localPosition : nullablePos.Value;
             rot = (nullableRot == null) ? t.localRotation : nullableRot.Value;
+            scale = (nullableScale == null) ? t.localScale : nullableScale.Value;
+        }
+
+        /// <summary>
+        /// Oututs properties to use for a transform. When a nullable property has value that value is used, otherwise the transforms current property is used.
+        /// </summary>
+        public static void OutWorldPropertyValues(this Transform t, Vector3? nullablePos, Quaternion? nullableRot, Vector3? nullableScale, out Vector3 pos, out Quaternion rot, out Vector3 scale)
+        {
+            pos = (nullablePos == null) ? t.position : nullablePos.Value;
+            rot = (nullableRot == null) ? t.rotation : nullableRot.Value;
             scale = (nullableScale == null) ? t.localScale : nullableScale.Value;
         }
     }

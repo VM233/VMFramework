@@ -5,6 +5,7 @@ using FishNet.Serializing;
 
 namespace VMFramework.GameLogicArchitecture
 {
+    [NotSerializer]
     public static class GameItemSerializationUtility
     {
         /// <summary>
@@ -33,7 +34,7 @@ namespace VMFramework.GameLogicArchitecture
         /// </summary>
         [NotSerializer]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static TGameItem ReadGameItem<TGameItem>(this Reader reader) where TGameItem : IGameItem
+        public static TGameItem ReadGameItem<TGameItem>(Reader reader) where TGameItem : IGameItem
         {
             var id = reader.ReadString();
 

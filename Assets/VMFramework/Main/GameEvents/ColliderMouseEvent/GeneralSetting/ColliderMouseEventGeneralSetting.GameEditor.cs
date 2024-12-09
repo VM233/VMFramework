@@ -8,7 +8,7 @@ namespace VMFramework.GameEvents
 {
     public partial class ColliderMouseEventGeneralSetting : IGameEditorMenuTreeNode
     {
-        string INameOwner.name => "Mouse Event";
+        string INameOwner.Name => "Mouse Event";
 
         Icon IGameEditorMenuTreeNode.Icon => new(SdfIconType.Mouse2);
     }

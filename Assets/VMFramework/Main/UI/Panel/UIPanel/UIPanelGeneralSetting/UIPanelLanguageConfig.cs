@@ -8,7 +8,7 @@ using VMFramework.OdinExtensions;
 
 namespace VMFramework.UI
 {
-    public class UIPanelLanguageConfig : BaseConfig, IIDOwner, INameOwner
+    public class UIPanelLanguageConfig : BaseConfig, IIDOwner<string>, INameOwner
     {
         [LocaleName]
         [IsNotNullOrEmpty]
@@ -33,7 +33,7 @@ namespace VMFramework.UI
 
         string IIDOwner<string>.id => localeCode;
 
-        string INameOwner.name => localeCode;
+        string INameOwner.Name => localeCode;
 
         #endregion
     }

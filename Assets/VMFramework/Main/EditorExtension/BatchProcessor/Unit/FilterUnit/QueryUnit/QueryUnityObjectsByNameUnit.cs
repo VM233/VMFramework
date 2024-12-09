@@ -7,12 +7,12 @@ namespace VMFramework.Editor.BatchProcessor
 {
     public sealed class QueryUnityObjectsByNameUnit : SingleButtonBatchProcessorUnit
     {
-        protected override string processButtonName => "Query By Name";
+        protected override string ProcessButtonName => "Query By Name";
 
         [SerializeField]
         private string queryContent;
 
-        public override bool IsValid(IList<object> selectedObjects)
+        public override bool IsValid(IReadOnlyList<object> selectedObjects)
         {
             return selectedObjects.Any(obj => obj is Object);
         }

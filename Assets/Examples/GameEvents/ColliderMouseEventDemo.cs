@@ -10,10 +10,11 @@ namespace VMFramework.Examples
     [ManagerCreationProvider("Demo")]
     public sealed class ColliderMouseEventDemo : ManagerBehaviour<ColliderMouseEventDemo>
     {
-        protected override IEnumerable<InitializationAction> GetInitializationActions()
+        protected override void GetInitializationActions(ICollection<InitializationAction> actions)
         {
-            return base.GetInitializationActions()
-                .Concat(new(InitializationOrder.InitComplete, OnInitComplete, this));
+            base.GetInitializationActions(actions);
+            
+            actions.Add(new InitializationAction(InitializationOrder.InitComplete, OnInitComplete, this));
         }
 
         private void OnInitComplete(Action onDone)
@@ -24,14 +25,14 @@ namespace VMFramework.Examples
             onDone();
         }
 
-        private void OnPointerEnter(ColliderMouseEvent gameEvent)
+        private void OnPointerEnter(ColliderMouseEventTrigger trigger)
         {
-            Debug.Log("Pointer Entered: " + gameEvent.trigger.name);
+            Debug.Log("Pointer Entered: " + trigger.name);
         }
         
-        private void OnPointerLeave(ColliderMouseEvent gameEvent)
+        private void OnPointerLeave(ColliderMouseEventTrigger trigger)
         {
-            Debug.Log("Pointer Left: " + gameEvent.trigger.name);
+            Debug.Log("Pointer Left: " + trigger.name);
         }
     }
 }

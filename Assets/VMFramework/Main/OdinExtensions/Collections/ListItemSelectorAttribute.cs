@@ -12,16 +12,15 @@ using UnityEditor;
 namespace VMFramework.OdinExtensions
 {
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
-        [Conditional("UNITY_EDITOR")]
-
+    [Conditional("UNITY_EDITOR")]
     public class ListItemSelectorAttribute : Attribute
     {
         public string OnSelectMethod;
         public Color ColorOnSelect => new(R, G, B, A);
         public float R, G, B, A;
 
-        public ListItemSelectorAttribute(string OnSelectMethod, float R = 0.3f,
-            float G = 0.5f, float B = 1f, float A = 0.5f)
+        public ListItemSelectorAttribute(string OnSelectMethod, float R = 0.3f, float G = 0.5f, float B = 1f,
+            float A = 0.5f)
         {
             this.OnSelectMethod = OnSelectMethod;
             this.R = R;
@@ -36,9 +35,7 @@ namespace VMFramework.OdinExtensions
 
 
     [DrawerPriority(0.01, 0, 0)]
-    public class
-        ListItemSelectorAttributeDrawer : OdinAttributeDrawer<
-            ListItemSelectorAttribute>
+    public class ListItemSelectorAttributeDrawer : OdinAttributeDrawer<ListItemSelectorAttribute>
     {
         private static readonly NamedValue[] onSelectMethodArgs =
         {
@@ -53,18 +50,14 @@ namespace VMFramework.OdinExtensions
 
         protected override void Initialize()
         {
-            isListElement = Property.Parent is
-                { ChildResolver: IOrderedCollectionResolver };
+            isListElement = Property.Parent is { ChildResolver: IOrderedCollectionResolver };
             var isList = !isListElement;
             var listProperty = isList ? Property : Property.Parent;
-            baseMemberProperty = listProperty.FindParent(
-                x => x.Info.PropertyType == PropertyType.Value, true);
+            baseMemberProperty = listProperty.FindParent(x => x.Info.PropertyType == PropertyType.Value, true);
             globalSelectedProperty = baseMemberProperty.Context.GetGlobal(
-                "selectedIndex" + baseMemberProperty.GetHashCode(),
-                (InspectorProperty)null);
+                "selectedIndex" + baseMemberProperty.GetHashCode(), (InspectorProperty)null);
 
-            onSelect = ActionResolver.Get(Property, Attribute.OnSelectMethod,
-                onSelectMethodArgs);
+            onSelect = ActionResolver.Get(Property, Attribute.OnSelectMethod, onSelectMethodArgs);
         }
 
         protected override void DrawPropertyLayout(GUIContent label)
@@ -99,8 +92,7 @@ namespace VMFramework.OdinExtensions
                     {
                         EditorGUI.DrawRect(rect, Attribute.ColorOnSelect);
                     }
-                    else if (t == EventType.MouseDown &&
-                             rect.Contains(Event.current.mousePosition))
+                    else if (t == EventType.MouseDown && rect.Contains(Event.current.mousePosition))
                     {
                         globalSelectedProperty.Value = Property;
                     }
@@ -123,10 +115,8 @@ namespace VMFramework.OdinExtensions
                         Select(selectedProperty.Index);
                     }
                     // Deselect when destroyed
-                    else if (selectedProperty != null &&
-                             selectedProperty.Index < Property.Children.Count &&
-                             selectedProperty !=
-                             Property.Children[selectedProperty.Index])
+                    else if (selectedProperty != null && selectedProperty.Index < Property.Children.Count &&
+                             selectedProperty != Property.Children[selectedProperty.Index])
                     {
                         var index = -1;
                         Select(index);

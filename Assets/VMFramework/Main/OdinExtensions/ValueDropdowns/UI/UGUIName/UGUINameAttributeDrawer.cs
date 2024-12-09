@@ -18,14 +18,14 @@ namespace VMFramework.OdinExtensions
             {
                 var value = parent?.ValueEntry?.WeakSmartValue;
 
-                if (value is IUGUIPanelPreset preset)
+                if (value is IUGUIAssetProvider)
                 {
                     return;
                 }
             }
 
             SirenixEditorGUI.ErrorMessageBox(
-                $"The property {Property.Name} is not a child of a {nameof(IUGUIPanelPreset)}.");
+                $"The property {Property.Name} is not a child of a {nameof(IUGUIAssetProvider)}.");
         }
 
         protected override IEnumerable<ValueDropdownItem> GetValues()
@@ -34,9 +34,14 @@ namespace VMFramework.OdinExtensions
             {
                 var value = parent?.ValueEntry?.WeakSmartValue;
 
-                if (value is IUGUIPanelPreset preset)
+                if (value is IUGUIAssetProvider provider)
                 {
-                    return preset.prefab.transform.GetAllChildrenNames(Attribute.UGUITypes, true)
+                    if (provider.UGUIAsset == null)
+                    {
+                        return Enumerable.Empty<ValueDropdownItem>();
+                    }
+                    
+                    return provider.UGUIAsset.transform.GetAllChildrenNames(Attribute.UGUITypes, true)
                         .ToValueDropdownItems();
                 }
             }

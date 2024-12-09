@@ -1,10 +1,11 @@
 ﻿using VMFramework.GameLogicArchitecture;
+using VMFramework.Network;
 
 #NAMESPACE_BEGIN#
     public class #CLASS_NAME# : #PARENT_CLASS_NAME#
 #PARENT_INTERFACE_REGION#@begin@, #PARENT_INTERFACE_NAME##PARENT_INTERFACE_REGION#@end@
     {
-        protected #GAME_PREFAB_INTERFACE_NAME# #GAME_PREFAB_FIELD_NAME# => (#GAME_PREFAB_INTERFACE_NAME#)gamePrefab;
+        protected #GAME_PREFAB_INTERFACE_NAME# #GAME_PREFAB_FIELD_NAME# => (#GAME_PREFAB_INTERFACE_NAME#)GamePrefab;
     
         #region Pool Events
     

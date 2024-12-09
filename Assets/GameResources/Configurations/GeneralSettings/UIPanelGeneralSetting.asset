@@ -21,13 +21,57 @@ MonoBehaviour:
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
     SerializationNodes:
-    - Name: languageConfigs
+    - Name: sortingOrderPresets
       Entry: 7
-      Data: 0|VMFramework.Configuration.DictionaryConfigs`2[[System.String, mscorlib],[VMFramework.UI.UIPanelLanguageConfig,
+      Data: 0|VMFramework.Configuration.DictionaryConfigs`2[[System.String, mscorlib],[VMFramework.UI.PriorityPreset,
         Assembly-CSharp]], Assembly-CSharp
     - Name: configs
       Entry: 7
-      Data: 1|System.Collections.Generic.List`1[[VMFramework.UI.UIPanelLanguageConfig,
+      Data: 1|System.Collections.Generic.List`1[[VMFramework.UI.PriorityPreset, Assembly-CSharp]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 7
+      Data: 2|VMFramework.UI.PriorityPreset, Assembly-CSharp
+    - Name: presetID
+      Entry: 1
+      Data: Default
+    - Name: priority
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 3|VMFramework.UI.PriorityPreset, Assembly-CSharp
+    - Name: presetID
+      Entry: 1
+      Data: Debug
+    - Name: priority
+      Entry: 3
+      Data: 1000
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: languageConfigs
+      Entry: 7
+      Data: 4|VMFramework.Configuration.DictionaryConfigs`2[[System.String, mscorlib],[VMFramework.UI.UIPanelLanguageConfig,
+        Assembly-CSharp]], Assembly-CSharp
+    - Name: configs
+      Entry: 7
+      Data: 5|System.Collections.Generic.List`1[[VMFramework.UI.UIPanelLanguageConfig,
         Assembly-CSharp]], mscorlib
     - Name: 
       Entry: 12
@@ -45,13 +89,8 @@ MonoBehaviour:
   defaultJSONFileSuffix: txt
   <DefaultLocalizationTableName>k__BackingField: 
   initialGamePrefabWrappers:
-  - {fileID: 11400000, guid: e70755e9b650ae64bbd2ae5d2e23b34c, type: 2}
-  - {fileID: 11400000, guid: 1689449efcec1084599a4642904e828a, type: 2}
-  - {fileID: 11400000, guid: 7f842ff2d9b4e4745aa4029a87c04cd0, type: 2}
-  <DefaultGameType>k__BackingField: 
-  container:
-    containerID: $UI
-    container: {fileID: 0}
+  - {fileID: 11400000, guid: 01e3998ab7ce70c48b439918fd83ef4d, type: 2}
+  containerName: $UI
   defaultTheme: {fileID: -4733365628477956816, guid: 574d6cd2e8db536479df6e0dd416436c, type: 3}
   defaultScreenMatchMode: 0
   defaultMatch: 0.5

@@ -2,7 +2,7 @@
 
 namespace VMFramework.GameEvents
 {
-    public interface IGameEventConfig : ILocalizedGameTypedGamePrefab
+    public interface IGameEventConfig : ILocalizedGamePrefab
     {
         
     }

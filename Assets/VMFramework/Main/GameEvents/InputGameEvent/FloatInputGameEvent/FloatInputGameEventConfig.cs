@@ -11,6 +11,10 @@ namespace VMFramework.GameEvents
 
         [TabGroup(TAB_GROUP_NAME, INPUT_MAPPING_CATEGORY)]
         [JsonProperty]
+        public bool reversed = false;
+        
+        [TabGroup(TAB_GROUP_NAME, INPUT_MAPPING_CATEGORY)]
+        [JsonProperty]
         public bool isFromAxis = false;
 
         [HideLabel, TabGroup(TAB_GROUP_NAME, INPUT_MAPPING_CATEGORY)]

@@ -10,7 +10,7 @@ namespace VMFramework.Editor.BatchProcessor
     [UnitSettings(UnitPriority.High)]
     public sealed class AddOrReplaceFromSelectionUnit : BatchProcessorUnit
     {
-        public override bool IsValid(IList<object> selectedObjects)
+        public override bool IsValid(IReadOnlyList<object> selectedObjects)
         {
             return Selection.objects.Length != 0;
         }

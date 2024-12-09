@@ -2,7 +2,7 @@
 
 namespace VMFramework.Configuration
 {
-    public interface IVectorChooserConfig<TVector> : IChooserConfig<TVector>
+    public interface IVectorChooserConfig<out TVector> : IChooserConfig<TVector>
         where TVector : struct, IEquatable<TVector>
     {
         

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using VMFramework.Core;
@@ -28,7 +29,13 @@ namespace VMFramework.GameLogicArchitecture
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IEnumerable<string> GetAllIDs<T>() where T : IGamePrefab
         {
-            return allGamePrefabsByGameType.Keys.Where(id => allGamePrefabsByGameType[id].Any(prefab => prefab is T));
+            foreach (var (id, prefab) in allGamePrefabsByID)
+            {
+                if (prefab is T)
+                {
+                    yield return id;
+                }
+            }
         }
 
         /// <summary>
@@ -74,6 +81,7 @@ namespace VMFramework.GameLogicArchitecture
         /// <param name="id"></param>
         /// <param name="targetPrefab"></param>
         /// <returns></returns>
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryGetGamePrefab(string id, out IGamePrefab targetPrefab)
         {
@@ -93,6 +101,7 @@ namespace VMFramework.GameLogicArchitecture
         /// <param name="targetPrefab"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryGetGamePrefab<T>(string id, out T targetPrefab)
             where T : IGamePrefab
@@ -121,6 +130,7 @@ namespace VMFramework.GameLogicArchitecture
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IGamePrefab GetGamePrefab(string id)
         {
@@ -138,6 +148,7 @@ namespace VMFramework.GameLogicArchitecture
         /// <param name="id"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T GetGamePrefab<T>(string id) where T : IGamePrefab
         {
@@ -166,6 +177,7 @@ namespace VMFramework.GameLogicArchitecture
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IGamePrefab GetActiveGamePrefab(string id)
         {
@@ -183,6 +195,7 @@ namespace VMFramework.GameLogicArchitecture
         /// <param name="id"></param>
         /// <param name="targetPrefab"></param>
         /// <returns></returns>
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryGetActiveGamePrefab(string id, out IGamePrefab targetPrefab)
         {
@@ -200,6 +213,7 @@ namespace VMFramework.GameLogicArchitecture
         /// <param name="id"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T GetActiveGamePrefab<T>(string id) where T : IGamePrefab
         {
@@ -223,6 +237,7 @@ namespace VMFramework.GameLogicArchitecture
         /// <param name="targetPrefab"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryGetActiveGamePrefab<T>(string id, out T targetPrefab) where T : IGamePrefab
         {
@@ -250,6 +265,7 @@ namespace VMFramework.GameLogicArchitecture
         /// 获取所有<see cref="IGamePrefab"/>
         /// </summary>
         /// <returns></returns>
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IEnumerable<IGamePrefab> GetAllGamePrefabs()
         {
@@ -261,6 +277,7 @@ namespace VMFramework.GameLogicArchitecture
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IEnumerable<T> GetAllGamePrefabs<T>() where T : IGamePrefab
         {
@@ -277,6 +294,7 @@ namespace VMFramework.GameLogicArchitecture
         /// 获取所有特定类型的<see cref="IGamePrefab"/>
         /// </summary>
         /// <returns></returns>
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IEnumerable<IGamePrefab> GetAllGamePrefabs(Type gamePrefabType)
         {
@@ -293,6 +311,7 @@ namespace VMFramework.GameLogicArchitecture
         /// 获取所有激活的<see cref="IGamePrefab"/>
         /// </summary>
         /// <returns></returns>
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IEnumerable<IGamePrefab> GetAllActiveGamePrefabs()
         {
@@ -310,6 +329,7 @@ namespace VMFramework.GameLogicArchitecture
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IEnumerable<T> GetAllActiveGamePrefabs<T>() where T : IGamePrefab
         {
@@ -330,6 +350,7 @@ namespace VMFramework.GameLogicArchitecture
         /// 获取随机的<see cref="IGamePrefab"/>
         /// </summary>
         /// <returns></returns>
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IGamePrefab GetRandomGamePrefab()
         {
@@ -341,6 +362,7 @@ namespace VMFramework.GameLogicArchitecture
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T GetRandomGamePrefab<T>() where T : IGamePrefab
         {
@@ -356,6 +378,7 @@ namespace VMFramework.GameLogicArchitecture
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ContainsGamePrefab(string id)
         {
@@ -373,6 +396,7 @@ namespace VMFramework.GameLogicArchitecture
         /// <param name="id"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ContainsGamePrefab<T>(string id) where T : IGamePrefab
         {
@@ -394,6 +418,7 @@ namespace VMFramework.GameLogicArchitecture
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ContainsActiveGamePrefab(string id)
         {
@@ -416,6 +441,7 @@ namespace VMFramework.GameLogicArchitecture
         /// <param name="id"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ContainsActiveGamePrefab<T>(string id) where T : IGamePrefab
         {
@@ -436,6 +462,8 @@ namespace VMFramework.GameLogicArchitecture
 
         #region Get Game Prefabs Count
 
+        [Pure]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetGamePrefabsCount()
         {
             return allGamePrefabsByID.Count;

@@ -3,7 +3,7 @@ using VMFramework.Core;
 
 namespace VMFramework.Configuration
 {
-    public interface IRangeChooserConfig<TVector> : IVectorChooserConfig<TVector>, IKCube<TVector> 
+    public interface IRangeChooserConfig<TVector> : IVectorChooserConfig<TVector>, IMinMaxOwner<TVector> 
         where TVector : struct, IEquatable<TVector>
     {
         

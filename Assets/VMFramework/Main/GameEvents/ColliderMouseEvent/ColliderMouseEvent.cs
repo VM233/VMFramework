@@ -2,21 +2,8 @@
 
 namespace VMFramework.GameEvents
 {
-    public sealed class ColliderMouseEvent : GameEvent<ColliderMouseEvent>
+    public sealed class ColliderMouseEvent : ParameterizedGameEvent<ColliderMouseEventTrigger>
     {
-        [ShowInInspector]
-        public ColliderMouseEventTrigger trigger;
         
-        public void SetTrigger(ColliderMouseEventTrigger trigger)
-        {
-            this.trigger = trigger;
-        }
-
-        protected override void OnPropagationStopped()
-        {
-            base.OnPropagationStopped();
-
-            trigger = null;
-        }
     }
 }

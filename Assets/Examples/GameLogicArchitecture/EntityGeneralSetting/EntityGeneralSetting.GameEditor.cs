@@ -7,7 +7,7 @@ namespace VMFramework.Examples
 {
     public partial class EntityGeneralSetting : IGameEditorMenuTreeNode
     {
-        string INameOwner.name => "Entity";
+        string INameOwner.Name => "Entity";
 
         Icon IGameEditorMenuTreeNode.Icon => Icon.None;
     }

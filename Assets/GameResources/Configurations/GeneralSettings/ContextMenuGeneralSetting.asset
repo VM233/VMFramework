@@ -23,7 +23,7 @@ MonoBehaviour:
     SerializationNodes:
     - Name: contextMenuIDBindConfigs
       Entry: 7
-      Data: 0|VMFramework.Configuration.GameTypeBasedConfigs`1[[VMFramework.UI.ContextMenuBindConfig,
+      Data: 0|VMFramework.Configuration.GameTagBasedConfigs`1[[VMFramework.UI.ContextMenuBindConfig,
         Assembly-CSharp]], Assembly-CSharp
     - Name: configs
       Entry: 7

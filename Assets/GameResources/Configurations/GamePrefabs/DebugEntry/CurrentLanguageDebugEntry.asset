@@ -33,6 +33,12 @@ MonoBehaviour:
     - Name: isDebugging
       Entry: 5
       Data: false
+    - Name: gameItemPrewarmCount
+      Entry: 3
+      Data: 0
+    - Name: gameTags
+      Entry: 6
+      Data: 
     - Name: name
       Entry: 7
       Data: 1|VMFramework.Localization.LocalizedStringReference, Assembly-CSharp

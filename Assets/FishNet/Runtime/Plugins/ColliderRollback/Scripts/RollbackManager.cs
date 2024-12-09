@@ -15,6 +15,7 @@ namespace FishNet.Component.ColliderRollback
     public class RollbackManager : MonoBehaviour
     {
         #region Internal.
+
         /// <summary>
         /// Cached value for bounding box layermask.
         /// </summary>
@@ -37,41 +38,47 @@ namespace FishNet.Component.ColliderRollback
                 return _boundingBoxLayerNumber;
             }
         }
+
         private int? _boundingBoxLayerNumber;
+
         #endregion
 
         #region Serialized.
+
         /// <summary>
         /// 
         /// </summary>
-        [Tooltip("Layer to use when creating and checking against bounding boxes. This should be different from any layer used.")]
-        [SerializeField]
+        [Tooltip("Layer to use when creating and checking against bounding boxes. This should be different from any layer used.")] [SerializeField]
         private LayerMask _boundingBoxLayer = 0;
+
         /// <summary>
         /// Layer to use when creating and checking against bounding boxes. This should be different from any layer used.
         /// </summary>
         internal LayerMask BoundingBoxLayer => _boundingBoxLayer;
+
         /// <summary>
         /// 
         /// </summary>
-        [Tooltip("Maximum time in the past colliders can be rolled back to.")]
-        [SerializeField]
+        [Tooltip("Maximum time in the past colliders can be rolled back to.")] [SerializeField]
         private float _maximumRollbackTime = 1.25f;
+
         /// <summary>
         /// Maximum time in the past colliders can be rolled back to.
         /// </summary>
         internal float MaximumRollbackTime => _maximumRollbackTime;
+
         /// <summary>
         /// 
         /// </summary>
-        [Tooltip("Interpolation value for the NetworkTransforms or objects being rolled back.")]
-        [Range(0, 250)]
-        [SerializeField]
+        [Tooltip("Interpolation value for the NetworkTransforms or objects being rolled back.")] [Range(0, 250)] [SerializeField]
         internal ushort Interpolation = 2;
+
         #endregion
 
         //PROSTART
+
         #region Private Pro.
+
         /// <summary>
         /// Physics used when rolling back.
         /// </summary>
@@ -92,7 +99,9 @@ namespace FishNet.Component.ColliderRollback
         /// Cache for raycast2d non-alloc hits.
         /// </summary>
         RaycastHit2D[] _hitsCache2d = new RaycastHit2D[50];
+
         #endregion
+
         //PROEND		
 
         //PROSTART        
@@ -119,8 +128,8 @@ namespace FishNet.Component.ColliderRollback
         {
             bool set = (BoundingBoxLayerNumber != null);
             if (!set && warn)
-                _networkManager?.LogWarning($"RollbackManager BoundingBoxLayer is unset or mixed. Bounding box rollbacks will not function. This value must be changed outside of play mode.");
-
+                _networkManager.LogWarning($"RollbackManager BoundingBoxLayer is unset or mixed. Bounding box rollbacks will not function. This value must be changed outside of play mode.");
+            
             return set;
         }
         //PROEND
@@ -178,6 +187,52 @@ namespace FishNet.Component.ColliderRollback
         }
         //PROEND
 
+        [Obsolete("Use Rollback(Vector3, Vector3, float, PreciseTick, RollbackPhysicsType.Physics, bool) instead.")] //Remove on V5
+        public void Rollback(Vector3 origin, Vector3 normalizedDirection, float distance, PreciseTick pt, bool asOwnerAndClientHost = false)
+        {
+            //PROSTART
+            Rollback(0, origin, normalizedDirection, distance, pt, RollbackPhysicsType.Physics, asOwnerAndClientHost);
+            //PROEND
+        }
+
+        [Obsolete("Use Rollback(Scene, Vector3, Vector3, float, PreciseTick, RollbackPhysicsType.Physics, bool) instead.")] //Remove on V5
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Rollback(Scene scene, Vector3 origin, Vector3 normalizedDirection, float distance, PreciseTick pt, bool asOwnerAndClientHost = false)
+        {
+            //PROSTART
+            Rollback(scene.handle, origin, normalizedDirection, distance, pt, RollbackPhysicsType.Physics, asOwnerAndClientHost);
+            //PROEND
+        }
+
+        [Obsolete("Use Rollback(int, Vector3, Vector3, float, PreciseTick, RollbackPhysicsType.Physics, bool) instead.")] //Remove on V5
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Rollback(int sceneHandle, Vector3 origin, Vector3 normalizedDirection, float distance, PreciseTick pt, bool asOwnerAndClientHost = false)
+        {
+            //PROSTART
+            Rollback(sceneHandle, origin, normalizedDirection, distance, pt, RollbackPhysicsType.Physics, asOwnerAndClientHost);
+            //PROEND
+        }
+
+
+        [Obsolete("Use Rollback(Scene, Vector3, Vector3, float, PreciseTick, RollbackPhysicsType.Physics2D, bool) instead.")] //Remove on V5
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Rollback(Scene scene, Vector2 origin, Vector2 normalizedDirection, float distance, PreciseTick pt, bool asOwnerAndClientHost = false)
+        {
+            //PROSTART
+            Rollback(scene.handle, origin, normalizedDirection, distance, pt, RollbackPhysicsType.Physics2D, asOwnerAndClientHost);
+            //PROEND
+        }
+
+        [Obsolete("Use Rollback(Vector3, Vector3, float, PreciseTick, RollbackPhysicsType.Physics2D, bool) instead.")] //Remove on V5
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Rollback(Vector2 origin, Vector2 normalizedDirection, float distance, PreciseTick pt, bool asOwnerAndClientHost = false)
+        {
+            //PROSTART
+            Rollback(0, origin, normalizedDirection, distance, pt, RollbackPhysicsType.Physics2D, asOwnerAndClientHost);
+            //PROEND
+        }
+
+
         /// <summary>
         /// Rolls back all colliders.
         /// </summary>
@@ -191,10 +246,10 @@ namespace FishNet.Component.ColliderRollback
             //PROEND
         }
 
-
         /// <summary>
-        /// Rolls back all colliders.
+        /// Rolls back all colliders in a scene.
         /// </summary>
+        /// <param name="scene">Scene containing colliders.</param>
         /// <param name="pt">Precise tick received from the client.</param>
         /// <param name="physicsType">Type of physics to rollback; this is often what your casts will use.</param>
         /// <param name="asOwnerAndClientHost">True if IsOwner of the object the raycast is for. This can be ignored and only provides more accurate results for clientHost.</param>
@@ -205,9 +260,11 @@ namespace FishNet.Component.ColliderRollback
             Rollback(scene.handle, pt, physicsType, asOwnerAndClientHost);
             //PROEND
         }
+
         /// <summary>
-        /// Rolls back all colliders.
+        /// Rolls back all colliders in a scene.
         /// </summary>
+        /// <param name="sceneHandle">Scene handle containing colliders.</param>
         /// <param name="pt">Precise tick received from the client.</param>
         /// <param name="physicsType">Type of physics to rollback; this is often what your casts will use.</param>
         /// <param name="asOwnerAndClientHost">True if IsOwner of the object the raycast is for. This can be ignored and only provides more accurate results for clientHost.</param>
@@ -239,46 +296,50 @@ namespace FishNet.Component.ColliderRollback
             //PROEND
         }
 
-
         /// <summary>
-        /// Rolls back all 3d colliders hit by a test cast against bounding boxes.
+        /// Rolls back colliders hit by a test cast against bounding boxes.
         /// </summary>
         /// <param name="origin">Ray origin.</param>
         /// <param name="normalizedDirection">Direction to cast.</param>
         /// <param name="distance">Distance of cast.</param>
         /// <param name="pt">Precise tick received from the client.</param>
+        /// <param name="physicsType">Type of physics to rollback; this is often what your casts will use.</param>
         /// <param name="asOwnerAndClientHost">True if IsOwner of the object the raycast is for. This can be ignored and only provides more accurate results for clientHost.</param>
-        public void Rollback(Vector3 origin, Vector3 normalizedDirection, float distance, PreciseTick pt, bool asOwnerAndClientHost = false)
+        public void Rollback(Vector3 origin, Vector3 normalizedDirection, float distance, PreciseTick pt, RollbackPhysicsType physicsType, bool asOwnerAndClientHost = false)
         {
             //PROSTART
-            Rollback(0, origin, normalizedDirection, distance, pt, asOwnerAndClientHost);
+            Rollback(0, origin, normalizedDirection, distance, pt, physicsType, asOwnerAndClientHost);
             //PROEND
         }
 
         /// <summary>
-        /// Rolls back all 3d colliders hit by a test cast against bounding boxes.
+        /// Rolls back colliders hit by a test cast against bounding boxes, in a specific scene.
         /// </summary>
+        /// <param name="scene">Scene containing colliders.</param>
         /// <param name="origin">Ray origin.</param>
         /// <param name="normalizedDirection">Direction to cast.</param>
         /// <param name="distance">Distance of cast.</param>
         /// <param name="pt">Precise tick received from the client.</param>
+        /// <param name="physicsType">Type of physics to rollback; this is often what your casts will use.</param>
         /// <param name="asOwnerAndClientHost">True if IsOwner of the object the raycast is for. This can be ignored and only provides more accurate results for clientHost.</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Rollback(Scene scene, Vector3 origin, Vector3 normalizedDirection, float distance, PreciseTick pt, bool asOwnerAndClientHost = false)
+        public void Rollback(Scene scene, Vector3 origin, Vector3 normalizedDirection, float distance, PreciseTick pt, RollbackPhysicsType physicsType, bool asOwnerAndClientHost = false)
         {
             //PROSTART
-            Rollback(scene.handle, origin, normalizedDirection, distance, pt, asOwnerAndClientHost);
+            Rollback(scene.handle, origin, normalizedDirection, distance, pt, physicsType, asOwnerAndClientHost);
             //PROEND
         }
+
         /// <summary>
-        /// Rolls back all 3d colliders hit by a test cast against bounding boxes.
+        /// Rolls back colliders hit by a test cast against bounding boxes, in a specific scene.
         /// </summary>
+        /// <param name="sceneHandle">Scene handle containing colliders.</param>
         /// <param name="origin">Ray origin.</param>
         /// <param name="normalizedDirection">Direction to cast.</param>
         /// <param name="distance">Distance of cast.</param>
         /// <param name="pt">Precise tick received from the client.</param>
+        /// <param name="physicsType">Type of physics to rollback; this is often what your casts will use.</param>
         /// <param name="asOwnerAndClientHost">True if IsOwner of the object the raycast is for. This can be ignored and only provides more accurate results for clientHost.</param>
-        public void Rollback(int sceneHandle, Vector3 origin, Vector3 normalizedDirection, float distance, PreciseTick pt, bool asOwnerAndClientHost = false)
+        public void Rollback(int sceneHandle, Vector3 origin, Vector3 normalizedDirection, float distance, PreciseTick pt, RollbackPhysicsType physicsType, bool asOwnerAndClientHost = false)
         {
             //PROSTART
             if (!IsBoundingBoxLayerSet(true))
@@ -287,72 +348,51 @@ namespace FishNet.Component.ColliderRollback
             TryUnsetAsOwnerAndClientHost(ref asOwnerAndClientHost);
             float time = GetRollbackTime(pt, asOwnerAndClientHost);
 
-            int hitCount = Physics.RaycastNonAlloc(origin, normalizedDirection, _hitsCache, distance, _boundingBoxLayer);
-
-            //If a handle is specified perform a different loop.
-            if (sceneHandle != 0)
+            const int arrayResizeMultiplier = 3;
+            if (physicsType == RollbackPhysicsType.Physics)
             {
+                int hitCount = Physics.RaycastNonAlloc(origin, normalizedDirection, _hitsCache, distance, _boundingBoxLayer);
                 for (int i = 0; i < hitCount; i++)
                 {
-                    if (_hitsCache[i].transform.gameObject.scene.handle != sceneHandle)
+                    GameObject hitGO = _hitsCache[i].transform.gameObject;
+                    if (sceneHandle != 0 && hitGO.scene.handle != sceneHandle)
                         continue;
-                    if (_hitsCache[i].transform.TryGetComponent<ColliderRollback>(out ColliderRollback cr))
-                        cr.Rollback(time);
+
+                    TryRollback(hitGO);
                 }
 
+                //If maxed hits resize cache.
+                if (hitCount == _hitsCache.Length)
+                    Array.Resize(ref _hitsCache, hitCount * arrayResizeMultiplier);
             }
             else
             {
+                int hitCount = Physics2D.RaycastNonAlloc(origin, normalizedDirection, _hitsCache2d, distance, BoundingBoxLayer);
                 for (int i = 0; i < hitCount; i++)
                 {
-                    if (_hitsCache[i].transform.TryGetComponent<ColliderRollback>(out ColliderRollback cr))
-                        cr.Rollback(time);
+                    GameObject hitGO = _hitsCache2d[i].transform.gameObject;
+                    if (sceneHandle != 0 && hitGO.scene.handle != sceneHandle)
+                        continue;
+
+                    TryRollback(hitGO);
                 }
+
+                //If maxed hits resize cache.
+                if (hitCount == _hitsCache2d.Length)
+                    Array.Resize(ref _hitsCache2d, hitCount * arrayResizeMultiplier);
             }
 
-            //If maxed hits resize cache.
-            if (hitCount == _hitsCache.Length)
-                Array.Resize(ref _hitsCache, hitCount * 3);
-
-            RollbackPhysicsType physicsType = RollbackPhysicsType.Physics;
-            _rollbackPhysics |= physicsType;
-            SyncTransforms(physicsType);
-            //PROEND
-        }
-
-        /// <summary>
-        /// Rolls back all 3d colliders hit by a test cast against bounding boxes.
-        /// </summary>
-        /// <param name="origin">Ray origin.</param>
-        /// <param name="normalizedDirection">Direction to cast.</param>
-        /// <param name="distance">Distance of cast.</param>
-        /// <param name="pt">Precise tick received from the client.</param>
-        /// <param name="asOwnerAndClientHost">True if IsOwner of the object the raycast is for. This can be ignored and only provides more accurate results for clientHost.</param>
-        public void Rollback(Vector2 origin, Vector2 normalizedDirection, float distance, PreciseTick pt, bool asOwnerAndClientHost = false)
-        {
-            //PROSTART
-            if (!IsBoundingBoxLayerSet(true))
-                return;
-
-            TryUnsetAsOwnerAndClientHost(ref asOwnerAndClientHost);
-            float time = GetRollbackTime(pt, asOwnerAndClientHost);
-            int hitCount = Physics2D.RaycastNonAlloc(origin, normalizedDirection, _hitsCache2d, distance, BoundingBoxLayer);
-            for (int i = 0; i < hitCount; i++)
+            //Rollsback a gameObject if it has a rollback script.
+            void TryRollback(GameObject go)
             {
-                if (_hitsCache2d[i].transform.TryGetComponent<ColliderRollback>(out ColliderRollback cr))
+                if (go.TryGetComponent(out ColliderRollback cr))
                     cr.Rollback(time);
             }
 
-            //If maxed hits resize cache.
-            if (hitCount == _hitsCache2d.Length)
-                Array.Resize(ref _hitsCache2d, hitCount * 3);
-
-            RollbackPhysicsType physicsType = RollbackPhysicsType.Physics2D;
             _rollbackPhysics |= physicsType;
             SyncTransforms(physicsType);
             //PROEND
         }
-
 
         //PROSTART   
         /// <summary>
@@ -426,6 +466,7 @@ namespace FishNet.Component.ColliderRollback
                     time -= ((float)percent * tickDelta);
                 }
             }
+
             return time;
         }
 
@@ -435,12 +476,11 @@ namespace FishNet.Component.ColliderRollback
         /// <param name="physicsType"></param>
         private void SyncTransforms(RollbackPhysicsType physicsType)
         {
-            if (physicsType ==  RollbackPhysicsType.Physics)
+            if (physicsType == RollbackPhysicsType.Physics)
                 Physics.SyncTransforms();
             else if (physicsType == RollbackPhysicsType.Physics2D)
                 Physics2D.SyncTransforms();
         }
         //PROEND
     }
-
 }

@@ -65,6 +65,18 @@ namespace VMFramework.Timers
         {
             return queue.Contains(timer);
         }
+    
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryStop(ITimer timer)
+        {
+            if (queue.Contains(timer))
+            {
+                Stop(timer);
+                return true;
+            }
+            
+            return false;
+        }
 
         private void Update()
         {

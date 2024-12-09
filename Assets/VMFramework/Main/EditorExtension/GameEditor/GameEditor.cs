@@ -2,12 +2,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Sirenix.OdinInspector.Editor;
 using Sirenix.Utilities.Editor;
 using UnityEditor;
 using UnityEngine;
 using VMFramework.Core;
 using VMFramework.Core.Linq;
+using VMFramework.Core.Pools;
 using VMFramework.GameLogicArchitecture;
 using VMFramework.GameLogicArchitecture.Editor;
 using VMFramework.Procedure.Editor;
@@ -46,7 +48,7 @@ namespace VMFramework.Editor.GameEditor
 
             OdinMenuTree tree = new(true);
 
-            var nodesInfo = new Dictionary<IGameEditorMenuTreeNode, TreeNodeInfo>();
+            var nodesInfo = new Dictionary<IGameEditorMenuTreeNode, TreeNodePreBuildInfo>();
             
             var nodes = new List<IGameEditorMenuTreeNode>();
             
@@ -58,11 +60,9 @@ namespace VMFramework.Editor.GameEditor
                 {
                     leftNodes.Enqueue(node);
                     nodes.Add(node);
-                    nodesInfo.Add(node, new TreeNodeInfo()
-                    {
-                        parent = null,
-                        provider = null
-                    });
+                    var info = SimplePool<TreeNodePreBuildInfo>.Get();
+                    info.node = node;
+                    nodesInfo.Add(node, info);
                 }
             }
 
@@ -85,8 +85,8 @@ namespace VMFramework.Editor.GameEditor
                     if (nodesInfo.TryGetValue(child, out var existingInfo))
                     {
                         Debugger.LogWarning(
-                            $"{child.name} has already provided by {existingInfo.provider.name}." +
-                            $"Cannot be provided by {provider.name} again!");
+                            $"{child.Name} has already provided by {existingInfo.provider.Name}." +
+                            $"Cannot be provided by {provider.Name} again!");
                         continue;
                     }
 
@@ -99,11 +99,12 @@ namespace VMFramework.Editor.GameEditor
                         parent = providerNode;
                     }
                     
-                    nodesInfo.Add(child, new()
-                    {
-                        parent = parent,
-                        provider = provider
-                    });
+                    var childInfo = SimplePool<TreeNodePreBuildInfo>.Get();
+                    childInfo.node = child;
+                    childInfo.parent = parent;
+                    childInfo.provider = provider;
+                    
+                    nodesInfo.Add(child, childInfo);
                 }
             }
 
@@ -116,19 +117,90 @@ namespace VMFramework.Editor.GameEditor
                 
                 if (nodesInfo.ContainsKey(info.parent) == false)
                 {
-                    Debugger.LogWarning($"The parent of {node.name} is not found!" +
-                                     $"It doesn't belong to any provider.");
-                    info.parent = null;
+                    Debugger.LogWarning($"The parent of {node.Name} is not found!");
+                    info.parent = info.provider as IGameEditorMenuTreeNode;
                 }
+
+                if (info.parent == null)
+                {
+                    continue;
+                }
+                
+                var parentInfo = nodesInfo[info.parent];
+
+                parentInfo.childrenInfos.Add(info);
+                info.parentInfo = parentInfo;
             }
 
-            foreach (var node in nodes)
+            foreach (var (node, info) in nodesInfo)
             {
-                var path = node.name;
-                
-                foreach (var parent in node.TraverseToRoot(false, node => nodesInfo[node].parent))
+                info.name = node.Name;
+            }
+
+            var nameDictionary = new Dictionary<string, HashSet<TreeNodePreBuildInfo>>();
+
+            foreach (var (node, info) in nodesInfo)
+            {
+                if (info.childrenInfos.Count <= 0)
                 {
-                    path = parent.name + "/" + path;
+                    continue;
+                }
+                
+                nameDictionary.Clear();
+
+                foreach (var childInfo in info.childrenInfos)
+                {
+                    if (childInfo.name == null)
+                    {
+                        continue;
+                    }
+                    
+                    if (nameDictionary.TryGetValue(childInfo.name, out var hashSet) == false)
+                    {
+                        hashSet = SimplePool<HashSet<TreeNodePreBuildInfo>>.Get();
+                        hashSet.Clear();
+                        nameDictionary.Add(childInfo.name, hashSet);
+                    }
+                    
+                    hashSet.Add(childInfo);
+                }
+                
+                foreach (var childInfosByName in nameDictionary.Values)
+                {
+                    if (childInfosByName.Count <= 1)
+                    {
+                        continue;
+                    }
+
+                    int autoIndex = 0;
+                    foreach (var childInfo in childInfosByName)
+                    {
+                        if (childInfo.node is IIDOwner<string> idOwner)
+                        {
+                            childInfo.name = $"{childInfo.name}({idOwner.id})";
+                            continue;
+                        }
+                        
+                        childInfo.name = $"{childInfo.name}({autoIndex})";
+                        autoIndex++;
+                    }
+                }
+
+                foreach (var childInfosByName in nameDictionary.Values)
+                {
+                    SimplePool<HashSet<TreeNodePreBuildInfo>>.Return(childInfosByName);
+                }
+                
+                nameDictionary.Clear();
+            }
+
+            foreach (var (node, info) in nodesInfo)
+            {
+                var path = info.name;
+                
+                foreach (var parentInfo in info.TraverseToRoot(false))
+                {
+                    path = parentInfo.name + "/" + path;
                 }
 
                 if (node.IsVisible == false)
@@ -137,6 +209,12 @@ namespace VMFramework.Editor.GameEditor
                 }
                 
                 tree.Add(path, node, node.Icon);
+            }
+
+            foreach (var info in nodesInfo.Values)
+            {
+                SimplePool<TreeNodePreBuildInfo>.Return(info);
+                info.TryReset();
             }
 
             tree.DefaultMenuStyle.IconSize = 24.00f;
@@ -203,8 +281,9 @@ namespace VMFramework.Editor.GameEditor
                 SirenixEditorGUI.EndHorizontalToolbar();
                 return;
             }
-            
-            GUILayout.Label(selected.Name);
+
+            var label = $"{selected.Name}({selected.Value.GetType().Name})";
+            GUILayout.Label(label);
 
             if (selected.Value is not IGameEditorToolbarProvider toolBarProvider)
             {
@@ -219,12 +298,12 @@ namespace VMFramework.Editor.GameEditor
                 tree.Add(buttonConfig.path, buttonConfig);
             }
 
-            foreach (var buttonNode in tree.root.children.Values)
+            foreach (var buttonNode in tree.Root.Children.Values)
             {
-                if (SirenixEditorGUI.ToolbarButton(new GUIContent(buttonNode.pathPart,
+                if (SirenixEditorGUI.ToolbarButton(new GUIContent(buttonNode.PathPart,
                         buttonNode.data.tooltip)))
                 {
-                    if (buttonNode.children.Count <= 0)
+                    if (buttonNode.Children.Count <= 0)
                     {
                         buttonNode.data.onClick?.Invoke();
                     }
@@ -235,7 +314,7 @@ namespace VMFramework.Editor.GameEditor
                         Action action = null;
                         foreach (var leaf in buttonNode.GetAllLeaves(true))
                         {
-                            menu.AddItem(new GUIContent(leaf.pathPart, leaf.data.tooltip), false, () =>
+                            menu.AddItem(new GUIContent(leaf.PathPart, leaf.data.tooltip), false, () =>
                             {
                                 leaf.data.onClick?.Invoke();
                             });

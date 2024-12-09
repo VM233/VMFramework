@@ -63,11 +63,11 @@ namespace FishNet.Managing.Client
         /// NetworkManager for this cache.
         /// </summary>
         private NetworkManager _networkManager;
-        /// <summary>
-        /// True if logged the warning about despawning on the same tick as the spawn.
-        /// This exist to prevent excessive spam of the warning.
-        /// </summary>
-        private bool _loggedSameTickWarning;
+        // /// <summary>
+        // /// True if logged the warning about despawning on the same tick as the spawn.
+        // /// This exist to prevent excessive spam of the warning.
+        // /// </summary>
+        // private bool _loggedSameTickWarning;
         /// <summary>
         /// True if initializeOrder was not default for any spawned objects.
         /// </summary>
@@ -119,7 +119,7 @@ namespace FishNet.Managing.Client
         /// <param name="manager"></param>
         public void AddSpawn(NetworkManager manager, ushort collectionId, int objectId, sbyte initializeOrder, int ownerId, SpawnType ost, byte componentIndex, int rootObjectId, int? parentObjectId, byte? parentComponentIndex
             , int? prefabId, Vector3? localPosition, Quaternion? localRotation, Vector3? localScale, ulong sceneId, string sceneName, string objectName
-            ,ArraySegment<byte> payload, ArraySegment<byte> rpcLinks, ArraySegment<byte> syncValues)
+            , ArraySegment<byte> payload, ArraySegment<byte> rpcLinks, ArraySegment<byte> syncValues)
         {
             //Set if initialization order has changed.
             _initializeOrderChanged |= (initializeOrder != 0);
@@ -173,7 +173,7 @@ namespace FishNet.Managing.Client
 
             cnob.InitializeSpawn(manager, collectionId, objectId, initializeOrder, ownerId, ost, componentIndex, rootObjectId, parentObjectId, parentComponentIndex
                 , prefabId, localPosition, localRotation, localScale, sceneId, sceneName, objectName
-                ,payload, rpcLinks, syncValues);
+                , payload, rpcLinks, syncValues);
 
             ReadSpawningObjects.Add(objectId);
         }
@@ -395,13 +395,13 @@ namespace FishNet.Managing.Client
                          * the best we can do is let the user know the risk. */
                         if (_iteratedSpawns.Contains(cnob.NetworkObject))
                         {
-                            if (!_loggedSameTickWarning)
-                            {
-                                _loggedSameTickWarning = true;
-                                _networkManager.LogWarning($"NetworkObject {cnob.NetworkObject.name} is being despawned on the same tick it's spawned." +
-                                               $" When this occurs SyncTypes will not be set on other objects during the time of this despawn." +
-                                               $" In result, if NetworkObject {cnob.NetworkObject.name} is referencing a SyncType of another object being spawned this tick, the returned values will be default.");
-                            }
+                            // if (!_loggedSameTickWarning)
+                            // {
+                            //     _loggedSameTickWarning = true;
+                            //     _networkManager.LogWarning($"NetworkObject {cnob.NetworkObject.name} is being despawned on the same tick it's spawned." +
+                            //                    $" When this occurs SyncTypes will not be set on other objects during the time of this despawn." +
+                            //                    $" In result, if NetworkObject {cnob.NetworkObject.name} is referencing a SyncType of another object being spawned this tick, the returned values will be default.");
+                            // }
 
                             _conflictingDespawns.Add(cnob.ObjectId);
                             cnob.NetworkObject.gameObject.SetActive(true);
@@ -480,9 +480,15 @@ namespace FishNet.Managing.Client
                     {
                         _networkManager.Log($"Parent NetworkObject Id {cnob.ParentObjectId} could not be found in spawned. NetworkObject {cnob.NetworkObject} will not have it's parent set.");
                     }
+
+                    cnob.NetworkObject.transform.SetLocalPositionRotationAndScale(cnob.Position, cnob.Rotation, cnob.Scale);
+                }
+                else
+                {
+                    cnob.NetworkObject.transform.SetWorldPositionRotationAndScale(cnob.Position, cnob.Rotation, cnob.Scale);
                 }
 
-                cnob.NetworkObject.transform.SetLocalPositionRotationAndScale(cnob.LocalPosition, cnob.LocalRotation, cnob.LocalScale);
+
             }
         }
 
@@ -553,7 +559,7 @@ namespace FishNet.Managing.Client
         /// <summary>
         /// True if a scene object.
         /// </summary>
-        public bool IsSceneObject => (SceneId > 0);
+        public bool IsSceneObject => (SceneId != NetworkObject.UNSET_SCENEID_VALUE);
         /// <summary>
         /// True if this object has a parent.
         /// </summary>
@@ -574,11 +580,11 @@ namespace FishNet.Managing.Client
         public int? ParentObjectId;
         public byte? ParentComponentIndex;
         public int? PrefabId;
-        public Vector3? LocalPosition;
-        public Quaternion? LocalRotation;
-        public Vector3? LocalScale;
+        public Vector3? Position;
+        public Quaternion? Rotation;
+        public Vector3? Scale;
         public ulong SceneId;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if DEVELOPMENT
         public string SceneName = string.Empty;
         public string ObjectName = string.Empty;
 #endif
@@ -607,8 +613,8 @@ namespace FishNet.Managing.Client
 #pragma warning restore 0649
 
         public void InitializeSpawn(NetworkManager manager, ushort collectionId, int objectId, sbyte initializeOrder, int ownerId, SpawnType objectSpawnType, byte componentIndex, int rootObjectId, int? parentObjectId, byte? parentComponentIndex
-            , int? prefabId, Vector3? localPosition, Quaternion? localRotation, Vector3? localScale, ulong sceneId, string sceneName, string objectName
-            ,ArraySegment<byte> payload, ArraySegment<byte> rpcLinks, ArraySegment<byte> syncValues)
+            , int? prefabId, Vector3? position, Quaternion? rotation, Vector3? scale, ulong sceneId, string sceneName, string objectName
+            , ArraySegment<byte> payload, ArraySegment<byte> rpcLinks, ArraySegment<byte> syncValues)
         {
             ResetState();
             Action = ActionType.Spawn;
@@ -622,11 +628,11 @@ namespace FishNet.Managing.Client
             ParentObjectId = parentObjectId;
             ParentComponentIndex = parentComponentIndex;
             PrefabId = prefabId;
-            LocalPosition = localPosition;
-            LocalRotation = localRotation;
-            LocalScale = localScale;
+            Position = position;
+            Rotation = rotation;
+            Scale = scale;
             SceneId = sceneId;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if DEVELOPMENT
             SceneName = sceneName;
             ObjectName = objectName;
 #endif

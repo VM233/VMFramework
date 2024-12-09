@@ -12,6 +12,8 @@ namespace VMFramework.GameLogicArchitecture.Editor
     {
         public static event Action OnGamePrefabWrappersRefresh;
 
+        private static readonly Action<IGamePrefab, string, string> onGamePrefabIDChangedFunc = OnGamePrefabIDChanged;
+
         private static readonly List<IGamePrefab> gamePrefabsCache = new();
 
         public static void Refresh()
@@ -21,12 +23,12 @@ namespace VMFramework.GameLogicArchitecture.Editor
             foreach (var wrapper in GamePrefabWrapperQueryTools.GetAllGamePrefabWrappers())
             {
                 gamePrefabsCache.Clear();
-                gamePrefabsCache.AddRange(wrapper.GetGamePrefabs());
+                wrapper.GetGamePrefabs(gamePrefabsCache);
 
                 if (gamePrefabsCache.Count == 0)
                 {
                     Debug.LogWarning(
-                        $"There are no {nameof(IGamePrefab)}s in {wrapper.name}." +
+                        $"There are no {nameof(IGamePrefab)}s in {wrapper.name}. " +
                         $"Wrapper path: {wrapper.GetAssetPath()}", wrapper);
                     continue;
                 }
@@ -34,7 +36,7 @@ namespace VMFramework.GameLogicArchitecture.Editor
                 if (gamePrefabsCache.IsAnyNull())
                 {
                     Debug.LogWarning(
-                        $"There are null {nameof(IGamePrefab)}s in {wrapper.name}." +
+                        $"There are null {nameof(IGamePrefab)}s in {wrapper.name}. " +
                         $"Wrapper path: {wrapper.GetAssetPath()}", wrapper);
                 }
 
@@ -45,14 +47,14 @@ namespace VMFramework.GameLogicArchitecture.Editor
                     if (gamePrefab.id.IsNullOrEmpty())
                     {
                         Debug.LogWarning(
-                            $"There is a {nameof(IGamePrefab)} with no ID set in {wrapper.name}." +
+                            $"There is a {nameof(IGamePrefab)} with no ID set in {wrapper.name}. " +
                             $"Wrapper path: {wrapper.GetAssetPath()}", wrapper);
                         continue;
                     }
 
                     GamePrefabManager.RegisterGamePrefab(gamePrefab);
 
-                    gamePrefab.OnIDChangedEvent += OnGamePrefabIDChanged;
+                    gamePrefab.OnIDChangedEvent += onGamePrefabIDChangedFunc;
                 }
             }
 
@@ -62,6 +64,8 @@ namespace VMFramework.GameLogicArchitecture.Editor
         public static void CreateAutoRegisterGamePrefabs()
         {
             var autoRegisterInfos = GamePrefabAutoRegisterCollector.Collect();
+            
+            bool newWrappersCreated = false;
 
             foreach (var info in autoRegisterInfos)
             {
@@ -73,7 +77,7 @@ namespace VMFramework.GameLogicArchitecture.Editor
                     if (existedGamePrefab.GetType() != gamePrefabType)
                     {
                         Debug.LogWarning($"The {nameof(GamePrefab)} with ID {id} already exists, " +
-                                         $"but its type is not the same as the one to be created." +
+                                         $"but its type is not the same as the one to be created. " +
                                          $"The type to be created is {gamePrefabType} but " +
                                          $"the existing type is {existedGamePrefab.GetType()}");
                     }
@@ -82,30 +86,36 @@ namespace VMFramework.GameLogicArchitecture.Editor
                 }
 
                 var wrapper =
-                    GamePrefabWrapperCreator.CreateGamePrefabWrapper(id, gamePrefabType,
-                        GamePrefabWrapperType.Single);
+                    GamePrefabWrapperCreator.CreateGamePrefabWrapper(id, gamePrefabType, GamePrefabWrapperType.Single);
 
                 if (wrapper == null)
                 {
                     continue;
                 }
+                
+                gamePrefabsCache.Clear();
+                wrapper.GetGamePrefabs(gamePrefabsCache);
 
-                foreach (var gamePrefab in wrapper.GetGamePrefabs())
+                foreach (var gamePrefab in gamePrefabsCache)
                 {
                     if (gamePrefab is IGamePrefabAutoRegisterProvider autoRegisterProvider)
                     {
                         autoRegisterProvider.OnGamePrefabAutoRegister();
                     }
-                    
+
                     gamePrefab.OnInspectorInit();
                 }
 
                 wrapper.EnforceSave();
+                
+                newWrappersCreated = true;
             }
-            
-            GlobalSettingFileEditorManager.SaveAll();
 
-            Refresh();
+            if (newWrappersCreated)
+            {
+                GlobalSettingFileEditorManager.SaveAll();
+                Refresh();
+            }
         }
 
         private static void OnGamePrefabIDChanged(IGamePrefab gamePrefab, string oldID, string newID)

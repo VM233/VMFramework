@@ -8,7 +8,7 @@ namespace VMFramework.Containers
 {
     public partial class ContainerGeneralSetting : IGameEditorMenuTreeNode
     {
-        string INameOwner.name => "Container";
+        string INameOwner.Name => "Container";
 
         Icon IGameEditorMenuTreeNode.Icon => SdfIconType.Archive;
     }

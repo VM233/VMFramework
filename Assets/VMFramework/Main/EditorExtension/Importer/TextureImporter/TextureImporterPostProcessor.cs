@@ -1,6 +1,7 @@
 ﻿#if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
+using VMFramework.Core;
 using VMFramework.GameLogicArchitecture.Editor;
 
 namespace VMFramework.Editor
@@ -48,7 +49,7 @@ namespace VMFramework.Editor
                 if (configuration.ignoreSpritePivot == false)
                 {
                     settings.spriteAlignment = (int)SpriteAlignment.Custom;
-                    settings.spritePivot = configuration.spritePivot.GetValue();
+                    settings.spritePivot = configuration.spritePivot.GetRandomItem();
                 }
                 
                 importer.SetTextureSettings(settings);

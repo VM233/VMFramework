@@ -5,23 +5,25 @@ using VMFramework.Core;
 
 namespace VMFramework.GameEvents
 {
-    public class FloatInputGameEvent : InputGameEvent<FloatInputGameEvent>, IFloatInputGameEvent, 
-        IUpdateableGameEvent
+    public class FloatInputGameEvent : InputGameEvent<float>, IFloatInputGameEvent, IUpdateableGameEvent
     {
-        private FloatInputGameEventConfig floatInputGameEventConfig => (FloatInputGameEventConfig)GamePrefab;
+        protected FloatInputGameEventConfig FloatInputGameEventConfig => (FloatInputGameEventConfig)GamePrefab;
+
+        [ShowInInspector]
+        public bool isReversed { get; private set; }
         
         [ShowInInspector]
         public bool isFromAxis { get; private set; }
-        
+
         [ShowInInspector]
         public InputAxisType inputAxisType { get; private set; }
-        
+
         [ShowInInspector]
         private List<InputActionGroupRuntime> positiveActionGroups;
-        
+
         [ShowInInspector]
         private List<InputActionGroupRuntime> negativeActionGroups;
-        
+
         [ShowInInspector]
         public float value { get; private set; }
 
@@ -29,11 +31,11 @@ namespace VMFramework.GameEvents
         {
             base.OnCreate();
 
-            isFromAxis = floatInputGameEventConfig.isFromAxis;
-            inputAxisType = floatInputGameEventConfig.inputAxisType;
-            
-            positiveActionGroups = floatInputGameEventConfig.positiveActionGroups.ToRuntime().ToList();
-            negativeActionGroups = floatInputGameEventConfig.negativeActionGroups.ToRuntime().ToList();
+            isFromAxis = FloatInputGameEventConfig.isFromAxis;
+            inputAxisType = FloatInputGameEventConfig.inputAxisType;
+
+            positiveActionGroups = FloatInputGameEventConfig.positiveActionGroups.ToRuntime().ToList();
+            negativeActionGroups = FloatInputGameEventConfig.negativeActionGroups.ToRuntime().ToList();
         }
 
         public override IEnumerable<string> GetInputMappingContent(KeyCodeToStringMode mode)
@@ -64,7 +66,12 @@ namespace VMFramework.GameEvents
 
             if (value != 0)
             {
-                Propagate();
+                if (isReversed)
+                {
+                    value = -value;
+                }
+                
+                Propagate(value);
             }
         }
     }

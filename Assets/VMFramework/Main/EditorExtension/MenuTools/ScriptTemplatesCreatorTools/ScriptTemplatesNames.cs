@@ -3,6 +3,8 @@ namespace VMFramework.Editor
 {
     public static class ScriptTemplatesNames
     {
+        public const string GAME_PROPERTY = "GamePropertyTemplate";
+        
         public const string GAME_INITIALIZER = "GameInitializerTemplate";
         
         public const string EDITOR_INITIALIZER = "EditorInitializerTemplate";
@@ -18,6 +20,8 @@ namespace VMFramework.Editor
         public const string GAME_ITEM_INTERFACE = "IGameItemTemplate";
         
         public const string GAME_PREFAB_GENERAL_SETTING = "GamePrefabGeneralSettingTemplate";
+        
+        public const string GAME_ITEM_SERIALIZER = "GameItemSerializerTemplate";
         
         public const string GLOBAL_SETTING_FILE = "GlobalSettingFileTemplate";
         

@@ -4,6 +4,6 @@ namespace VMFramework.Containers
 {
     public interface IContainerOwner
     {
-        public IEnumerable<IContainer> GetContainers();
+        public void GetContainers(ICollection<IContainer> containers);
     }
 }

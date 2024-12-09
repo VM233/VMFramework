@@ -7,10 +7,6 @@ namespace VMFramework.Configuration
 {
     public partial class RangeIntegerConfig : KCubeIntegerConfig<int>
     {
-        protected override string pointName => "值";
-
-        protected override string sizeName => "长度";
-
         public override int Size => max - min + 1;
 
         public override int Count => Size;
@@ -55,7 +51,7 @@ namespace VMFramework.Configuration
         public override int ClampMax(int pos) => pos.ClampMax(max);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override int GetRandomPoint(Random random) => random.Range(min, max);
+        public override int GetRandomItem(Random random) => random.Range(min, max);
 
         public override IEnumerator<int> GetEnumerator()
         {

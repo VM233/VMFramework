@@ -7,7 +7,7 @@ namespace VMFramework.Editor.GameEditor
 {
     public partial class GameEditorGeneralSetting : IGameEditorMenuTreeNode
     {
-        string INameOwner.name => "Game Editor";
+        string INameOwner.Name => "Game Editor";
 
         protected override IEnumerable<ToolbarButtonConfig> GetToolbarButtons()
         {

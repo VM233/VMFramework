@@ -7,7 +7,7 @@ using VMFramework.GameLogicArchitecture;
 #PARENT_INTERFACE_REGION#@begin@, #PARENT_INTERFACE_NAME##PARENT_INTERFACE_REGION#@end@
     {
 #ID_SUFFIX_OVERRIDE_REGION#@begin@
-        protected override string IDSuffix => "#ID_SUFFIX#";
+        public override string IDSuffix => "#ID_SUFFIX#";
         
 #ID_SUFFIX_OVERRIDE_REGION#@end@
 #GAME_ITEM_TYPE_OVERRIDE_REGION#@begin@

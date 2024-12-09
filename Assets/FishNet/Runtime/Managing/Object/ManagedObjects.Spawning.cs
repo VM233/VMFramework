@@ -24,19 +24,19 @@ namespace FishNet.Managing.Object
         protected void ReadTransformProperties(Reader reader, out Vector3? localPosition, out Quaternion? localRotation, out Vector3? localScale)
         {
             //Read changed.
-            ChangedTransformProperties ctp = (ChangedTransformProperties)reader.ReadByte();
+            TransformPropertiesFlag tpf = (TransformPropertiesFlag)reader.ReadUInt8Unpacked();
             //Position.
-            if (ChangedTransformPropertiesEnum.Contains(ctp, ChangedTransformProperties.LocalPosition))
+            if (tpf.FastContains(TransformPropertiesFlag.Position))
                 localPosition = reader.ReadVector3();
             else
                 localPosition = null;
             //Rotation.
-            if (ChangedTransformPropertiesEnum.Contains(ctp, ChangedTransformProperties.LocalRotation))
+            if (tpf.FastContains(TransformPropertiesFlag.Rotation))
                 localRotation = reader.ReadQuaternion(NetworkManager.ServerManager.SpawnPacking.Rotation);
             else
                 localRotation = null;
             //Scale.
-            if (ChangedTransformPropertiesEnum.Contains(ctp, ChangedTransformProperties.LocalScale))
+            if (tpf.FastContains(TransformPropertiesFlag.LocalScale))
                 localScale = reader.ReadVector3();
             else
                 localScale = null;
@@ -53,18 +53,18 @@ namespace FishNet.Managing.Object
              * owner writer is only written to if owner is valid.
              * This makes the code a little uglier but will scale
              * significantly better with more connections.
-             * 
+             *
              * EG:
              * with this technique networkBehaviours are iterated
              * twice if there is an owner; once for data to send to everyone
-             * and again for data only going to owner. 
+             * and again for data only going to owner.
              *
              * The alternative would be to iterate the networkbehaviours
              * for every connection it's going to and filling a single
              * writer with values based on if owner or not. This would
              * result in significantly more iterations. */
             PooledWriter headerWriter = WriterPool.Retrieve();
-            headerWriter.WritePacketId(PacketId.ObjectSpawn);
+            headerWriter.WritePacketIdUnpacked(PacketId.ObjectSpawn);
             headerWriter.WriteNetworkObjectForSpawn(nob);
             if (NetworkManager.ServerManager.ShareIds || connection == nob.Owner)
                 headerWriter.WriteNetworkConnection(nob.Owner);
@@ -83,9 +83,9 @@ namespace FishNet.Managing.Object
             if (nested)
                 st |= SpawnType.Nested;
 
-            headerWriter.WriteByte((byte)st);
+            headerWriter.WriteUInt8Unpacked((byte)st);
             //ComponentIndex for the nob. 0 is root but more appropriately there's a IsNested boolean as shown above.
-            headerWriter.WriteByte(nob.ComponentIndex);
+            headerWriter.WriteUInt8Unpacked(nob.ComponentIndex);
             //Properties on the transform which diff from serialized value.
             WriteChangedTransformProperties(nob, sceneObject, nested, headerWriter);
 
@@ -98,10 +98,11 @@ namespace FishNet.Managing.Object
                  * objects via Ids. */
                 headerWriter.WriteNetworkObjectId(nob.CurrentParentNetworkBehaviour.ObjectId);
             }
+
             /* Writing a scene object. */
             if (sceneObject)
             {
-                headerWriter.WriteUInt64(nob.SceneId, AutoPackType.Unpacked);
+                headerWriter.WriteUInt64Unpacked(nob.SceneId);
 #if DEVELOPMENT
                 //Check to write additional information if a scene object.
                 if (NetworkManager.DebugManager.WriteSceneObjectDetails)
@@ -130,11 +131,11 @@ namespace FishNet.Managing.Object
                         //ParentNob is null or not spawned.
                         if (!ParentIsSpawned(parentNob))
                         {
-                            headerWriter.WriteByte((byte)SpawnParentType.Unset);
+                            headerWriter.WriteUInt8Unpacked((byte)SpawnParentType.Unset);
                         }
                         else
                         {
-                            headerWriter.WriteByte((byte)SpawnParentType.NetworkObject);
+                            headerWriter.WriteUInt8Unpacked((byte)SpawnParentType.NetworkObject);
                             headerWriter.WriteNetworkObjectId(parentNob);
                         }
                     }
@@ -144,11 +145,11 @@ namespace FishNet.Managing.Object
                         //ParentNb is null or not spawned.
                         if (!ParentIsSpawned(parentNb.NetworkObject))
                         {
-                            headerWriter.WriteByte((byte)SpawnParentType.Unset);
+                            headerWriter.WriteUInt8Unpacked((byte)SpawnParentType.Unset);
                         }
                         else
                         {
-                            headerWriter.WriteByte((byte)SpawnParentType.NetworkBehaviour);
+                            headerWriter.WriteUInt8Unpacked((byte)SpawnParentType.NetworkBehaviour);
                             headerWriter.WriteNetworkBehaviour(parentNb);
                         }
                     }
@@ -159,7 +160,7 @@ namespace FishNet.Managing.Object
                         bool isNull = (pNob == null);
                         if (isNull || !pNob.IsSpawned)
                         {
-                            /* Only log if pNob exist. Otherwise this would print if the user 
+                            /* Only log if pNob exist. Otherwise this would print if the user
                              * was parenting any object, which may not be desirable as they could be
                              * simply doing it for organization reasons. */
                             if (!isNull)
@@ -169,12 +170,11 @@ namespace FishNet.Managing.Object
 
                         return true;
                     }
-
                 }
                 //No parent.
                 else
                 {
-                    headerWriter.WriteByte((byte)SpawnParentType.Unset);
+                    headerWriter.WriteUInt8Unpacked((byte)SpawnParentType.Unset);
                 }
 
                 headerWriter.WriteNetworkObjectId(nob.PrefabId);
@@ -213,31 +213,44 @@ namespace FishNet.Managing.Object
         protected void WriteChangedTransformProperties(NetworkObject nob, bool sceneObject, bool nested, Writer headerWriter)
         {
             /* Write changed transform properties. */
-            ChangedTransformProperties ctp;
+            TransformPropertiesFlag tpf;
             //If a scene object then get it from scene properties.
+            //TODO: parentChange. If nested or has parent write local space, otherwise world.
             if (sceneObject || nested)
             {
-                ctp = nob.GetTransformChanges(nob.SerializedTransformProperties);
+                tpf = nob.GetTransformChanges(nob.SerializedTransformProperties);
             }
             else
             {
                 PrefabObjects po = NetworkManager.GetPrefabObjects<PrefabObjects>(nob.SpawnableCollectionId, false);
-                ctp = nob.GetTransformChanges(po.GetObject(true, nob.PrefabId).gameObject);
+                tpf = nob.GetTransformChanges(po.GetObject(asServer: true, nob.PrefabId).gameObject);
             }
 
-            headerWriter.WriteByte((byte)ctp);
+            headerWriter.WriteUInt8Unpacked((byte)tpf);
             //If properties have changed.
-            if (ctp != ChangedTransformProperties.Unset)
+            if (tpf != TransformPropertiesFlag.Unset)
             {
-                //Write any changed properties.
-                if (ChangedTransformPropertiesEnum.Contains(ctp, ChangedTransformProperties.LocalPosition))
-                    headerWriter.WriteVector3(nob.transform.localPosition);
-                if (ChangedTransformPropertiesEnum.Contains(ctp, ChangedTransformProperties.LocalRotation))
-                    headerWriter.WriteQuaternion(nob.transform.localRotation, NetworkManager.ServerManager.SpawnPacking.Rotation);
-                if (ChangedTransformPropertiesEnum.Contains(ctp, ChangedTransformProperties.LocalScale))
-                    headerWriter.WriteVector3(nob.transform.localScale);
+                if (nob.IsNested)
+                {
+                    //Write any changed properties.
+                    if (tpf.FastContains(TransformPropertiesFlag.Position))
+                        headerWriter.WriteVector3(nob.transform.localPosition);
+                    if (tpf.FastContains(TransformPropertiesFlag.Rotation))
+                        headerWriter.WriteQuaternion(nob.transform.localRotation, NetworkManager.ServerManager.SpawnPacking.Rotation);
+                    if (tpf.FastContains(TransformPropertiesFlag.LocalScale))
+                        headerWriter.WriteVector3(nob.transform.localScale);
+                }
+                else
+                {
+                    //Write any changed properties.
+                    if (tpf.FastContains(TransformPropertiesFlag.Position))
+                        headerWriter.WriteVector3(nob.transform.position);
+                    if (tpf.FastContains(TransformPropertiesFlag.Rotation))
+                        headerWriter.WriteQuaternion(nob.transform.rotation, NetworkManager.ServerManager.SpawnPacking.Rotation);
+                    if (tpf.FastContains(TransformPropertiesFlag.LocalScale))
+                        headerWriter.WriteVector3(nob.transform.lossyScale);
+                }
             }
-
         }
 
         /// <summary>
@@ -246,7 +259,7 @@ namespace FishNet.Managing.Object
         /// <param name="nob"></param>
         protected void WriteDespawn(NetworkObject nob, DespawnType despawnType, Writer everyoneWriter)
         {
-            everyoneWriter.WritePacketId(PacketId.ObjectDespawn);
+            everyoneWriter.WritePacketIdUnpacked(PacketId.ObjectDespawn);
             everyoneWriter.WriteNetworkObjectForDespawn(nob, despawnType);
         }
 
@@ -265,13 +278,15 @@ namespace FishNet.Managing.Object
             if (nob == null)
             {
 #if DEVELOPMENT
-                string missingObjectDetails = (sceneName == string.Empty) ? "For more information on the missing object add DebugManager to your NetworkManager and enable WriteSceneObjectDetails"
+                string missingObjectDetails = (sceneName == string.Empty)
+                    ? "For more information on the missing object add DebugManager to your NetworkManager and enable WriteSceneObjectDetails"
                     : $"Scene containing the object is '{sceneName}', object name is '{objectName}";
                 NetworkManager.LogError($"SceneId of {sceneId} not found in SceneObjects. {missingObjectDetails}. This may occur if your scene differs between client and server, if client does not have the scene loaded, or if networked scene objects do not have a SceneCondition. See ObserverManager in the documentation for more on conditions.");
 #else
                 NetworkManager.LogError($"SceneId of {sceneId} not found in SceneObjects. This may occur if your scene differs between client and server, if client does not have the scene loaded, or if networked scene objects do not have a SceneCondition. See ObserverManager in the documentation for more on conditions.");
 #endif
             }
+
             return nob;
         }
 
@@ -280,7 +295,7 @@ namespace FishNet.Managing.Object
         /// </summary>
         /// <param name="reader">If not null reader will be cleared on error.</param>
         /// <returns></returns>
-        protected bool CanPredictedSpawn(NetworkObject nob, NetworkConnection spawner, NetworkConnection owner, bool asServer, Reader reader = null)
+        protected bool CanPredictedSpawn(NetworkObject nob, NetworkConnection spawner, bool asServer, Reader reader = null)
         {
             //Does not allow predicted spawning.
             if (!nob.AllowPredictedSpawning)
@@ -288,38 +303,36 @@ namespace FishNet.Managing.Object
                 if (asServer)
                     spawner.Kick(KickReason.ExploitAttempt, LoggingType.Common, $"Connection {spawner.ClientId} tried to spawn an object {nob.name} which does not support predicted spawning.");
                 else
-                    NetworkManager.LogError($"Object {nob.name} does not support predicted spawning. Modify the NetworkObject component settings to allow predicted spawning.");
+                    NetworkManager.LogError($"Object {nob.name} does not support predicted spawning. Add a PredictedSpawn component to the object and configure appropriately.");
 
-                reader?.Clear();
+                if (reader != null)
+                    reader.Clear();
                 return false;
             }
+
             //Parenting is not yet supported.
-            if (nob.transform.parent != null)
+            if (nob.CurrentParentNetworkBehaviour != null)
             {
                 if (asServer)
                     spawner.Kick(KickReason.ExploitAttempt, LoggingType.Common, $"Connection {spawner.ClientId} tried to spawn an object that is not root.");
                 else
                     NetworkManager.LogError($"Predicted spawning as a child is not supported.");
 
-                reader?.Clear();
+                if (reader != null)
+                    reader.Clear();
                 return false;
             }
+
             //Nested nobs not yet supported.
-            if (nob.NestedRootNetworkBehaviours.Count > 0)
+            if (nob.SerializedNestedNetworkObjects.Count > 0)
             {
                 if (asServer)
                     spawner.Kick(KickReason.ExploitAttempt, LoggingType.Common, $"Connection {spawner.ClientId} tried to spawn an object {nob.name} which has nested NetworkObjects.");
                 else
                     NetworkManager.LogError($"Predicted spawning prefabs which contain nested NetworkObjects is not yet supported but will be in a later release.");
 
-                reader?.Clear();
-                return false;
-            }
-            //Blocked by PredictedSpawn settings or user logic.
-            if ((asServer && !nob.PredictedSpawn.OnTrySpawnServer(spawner, owner))
-                || (!asServer && !nob.PredictedSpawn.OnTrySpawnClient()))
-            {
-                reader?.Clear();
+                if (reader != null)
+                    reader.Clear();
                 return false;
             }
 
@@ -344,19 +357,20 @@ namespace FishNet.Managing.Object
                 reader?.Clear();
                 return false;
             }
-            //Parenting is not yet supported.
-            if (nob.transform.parent != null)
-            {
-                if (asServer)
-                    despawner.Kick(KickReason.ExploitAttempt, LoggingType.Common, $"Connection {despawner.ClientId} tried to despawn an object that is not root.");
-                else
-                    NetworkManager.LogError($"Predicted despawning as a child is not supported.");
 
-                reader?.Clear();
-                return false;
-            }
+            ////Parenting is not yet supported.
+            //if (nob.transform.parent != null)
+            //{
+            //    if (asServer)
+            //        despawner.Kick(KickReason.ExploitAttempt, LoggingType.Common, $"Connection {despawner.ClientId} tried to despawn an object that is not root.");
+            //    else
+            //        NetworkManager.LogError($"Predicted despawning as a child is not supported.");
+
+            //    reader?.Clear();
+            //    return false;
+            //}
             //Nested nobs not yet supported.
-            if (nob.NestedRootNetworkBehaviours.Count > 0)
+            if (nob.SerializedNestedNetworkObjects.Count > 0)
             {
                 if (asServer)
                     despawner.Kick(KickReason.ExploitAttempt, LoggingType.Common, $"Connection {despawner.ClientId} tried to despawn an object {nob.name} which has nested NetworkObjects.");
@@ -366,13 +380,13 @@ namespace FishNet.Managing.Object
                 reader?.Clear();
                 return false;
             }
+
             //Blocked by PredictedSpawn settings or user logic.
             if (
-                (asServer && !nob.PredictedSpawn.OnTryDepawnServer(despawner))
+                (asServer && !nob.PredictedSpawn.OnTryDespawnServer(despawner))
                 || (!asServer && !nob.PredictedSpawn.OnTryDespawnClient())
-                )
+            )
             {
-                reader?.Clear();
                 return false;
             }
 
@@ -387,7 +401,7 @@ namespace FishNet.Managing.Object
         {
             while (reader.Remaining > 0)
             {
-                byte componentIndex = reader.ReadByte();
+                byte componentIndex = reader.ReadUInt8Unpacked();
                 nob.NetworkBehaviours[componentIndex].ReadPayload(conn, reader);
             }
         }
@@ -404,12 +418,10 @@ namespace FishNet.Managing.Object
                 nb.WritePayload(conn, nbWriter);
                 if (nbWriter.Length > 0)
                 {
-                    writer.WriteByte(nb.ComponentIndex);
+                    writer.WriteUInt8Unpacked(nb.ComponentIndex);
                     writer.WriteArraySegment(nbWriter.GetArraySegment());
                 }
             }
         }
-
     }
 }
-

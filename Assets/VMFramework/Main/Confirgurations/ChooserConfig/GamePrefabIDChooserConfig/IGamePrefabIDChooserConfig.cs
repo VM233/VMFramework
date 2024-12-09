@@ -1,11 +1,16 @@
-﻿using VMFramework.GameLogicArchitecture;
+﻿using System.Collections.Generic;
+using VMFramework.Core;
+using VMFramework.GameLogicArchitecture;
 
 namespace VMFramework.Configuration
 {
     public interface IGamePrefabIDChooserConfig<TGamePrefab>
-        : IChooserConfig<GamePrefabIDConfig<TGamePrefab>, string>
+        : IWrapperChooserConfig<GamePrefabIDConfig<TGamePrefab>, string>, IIDCollectionOwner
         where TGamePrefab : IGamePrefab
     {
-        
+        void IIDCollectionOwner.GetIDs(ICollection<string> ids)
+        {
+            ids.AddRange(GetAvailableValues());
+        }
     }
 }

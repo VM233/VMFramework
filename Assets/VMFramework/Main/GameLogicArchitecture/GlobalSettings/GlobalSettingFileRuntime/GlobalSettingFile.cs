@@ -28,9 +28,12 @@ namespace VMFramework.GameLogicArchitecture
             // }
         }
 
-        IEnumerable<InitializationAction> IInitializer.GetInitializationActions()
+        void IInitializer.GetInitializationActions(ICollection<InitializationAction> actions)
         {
-            return GetAllGeneralSettings().SelectMany(generalSetting => generalSetting.GetInitializationActions());
+            foreach (var generalSetting in GetAllGeneralSettings())
+            {
+                generalSetting.GetInitializationActions(actions);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -6,10 +6,9 @@ using VMFramework.GameLogicArchitecture;
 
 namespace VMFramework.GameEvents
 {
-    public class BoolInputGameEvent : InputGameEvent<BoolInputGameEvent>, IBoolInputGameEvent, 
-        IUpdateableGameEvent
+    public class BoolInputGameEvent : InputGameEvent<bool>, IBoolInputGameEvent, IUpdateableGameEvent
     {
-        private BoolInputGameEventConfig boolInputGameEventConfig => (BoolInputGameEventConfig)GamePrefab;
+        protected BoolInputGameEventConfig BoolInputGameEventConfig => (BoolInputGameEventConfig)GamePrefab;
 
         [ShowInInspector]
         private List<InputActionGroupRuntime> actionGroups;
@@ -21,7 +20,7 @@ namespace VMFramework.GameEvents
         {
             base.OnCreate();
 
-            actionGroups = boolInputGameEventConfig.actionGroups.ToRuntime().ToList();
+            actionGroups = BoolInputGameEventConfig.actionGroups.ToRuntime().ToList();
         }
 
         public IList<IList<InputAction>> GetActionGroups()
@@ -32,10 +31,10 @@ namespace VMFramework.GameEvents
             {
                 actionGroups.Add(actionGroup.actions.Select(action => action.inputAction).ToList());
             }
-            
+
             return actionGroups;
         }
-        
+
         public override IEnumerable<string> GetInputMappingContent(KeyCodeToStringMode mode)
         {
             if (actionGroups.Count == 0)
@@ -61,11 +60,11 @@ namespace VMFramework.GameEvents
         void IUpdateableGameEvent.Update()
         {
             value = false;
-            
+
             if (actionGroups.Check())
             {
                 value = true;
-                Propagate();
+                Propagate(value);
             }
         }
     }

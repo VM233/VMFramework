@@ -217,7 +217,7 @@ namespace FishNet.Managing.Object
                  * individual despawns for each child. */
                 if (asServer)
                 {
-                    foreach (NetworkObject childNob in nob.NestedRootNetworkBehaviours)
+                    foreach (NetworkObject childNob in nob.SerializedNestedNetworkObjects)
                     {
                         if (childNob != null && !childNob.IsDeinitializing)
                             Despawn(childNob, despawnType, asServer);

@@ -11,11 +11,11 @@ namespace VMFramework.Configuration
         [JsonProperty]
         public T value;
 
-        [LabelText("占比"), LabelWidth(30), HorizontalGroup]
+        [LabelWidth(30), HorizontalGroup]
         [JsonProperty]
         public int ratio;
 
-        [LabelText("概率"), LabelWidth(30), SuffixLabel("%", Overlay = true), HorizontalGroup]
+        [LabelText("Probability"), LabelWidth(30), SuffixLabel("%", Overlay = true), HorizontalGroup]
         [DisplayAsString]
         [NonSerialized]
         public float probability;
@@ -35,8 +35,8 @@ namespace VMFramework.Configuration
             };
         }
 
-        T IWeightedSelectItem<T>.value => value;
+        T IWeightedSelectItem<T>.Value => value;
 
-        float IWeightedSelectItem<T>.weight => ratio;
+        float IWeightedSelectItem<T>.Weight => ratio;
     }
 }

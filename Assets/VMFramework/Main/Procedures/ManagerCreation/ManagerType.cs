@@ -6,6 +6,7 @@
         ProcedureCore,
         EventCore,
         UICore,
+        ContainerUICore,
         NetworkCore,
         TestingCore,
         EnvironmentCore,

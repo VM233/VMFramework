@@ -3,16 +3,8 @@ using VMFramework.Core;
 
 namespace VMFramework.Configuration
 {
-    public partial class RangeFloatChooserConfig : RangeFloatConfig, ISingleRangeChooserConfig<float>
+    public partial class RangeFloatChooserConfig : RangeFloatConfig, ISingleKCubeChooserConfig<float, RangeFloat>
     {
-        [ShowInInspector, HideInEditorMode]
-        IChooser<float> ISingleChooserConfig<float>.objectChooser { get; set; }
         
-        protected override void OnInit()
-        {
-            base.OnInit();
-            
-            this.RegenerateObjectChooser();
-        }
     }
 }

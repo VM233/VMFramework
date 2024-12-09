@@ -1,14 +1,20 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using VMFramework.Containers;
 
 namespace VMFramework.UI
 {
-    public interface IContainerUIPanel : IUIPanelController
+    public interface IContainerUIPanel : IUIPanel
     {
-        public int containerUIPriority { get; }
+        public int ContainerUIPriority { get; }
         
-        public IEnumerable<IContainer> GetBindContainers();
+        public IReadOnlyCollection<IContainer> BindContainers { get; }
 
-        public void SetBindContainer(IContainer newBindContainer);
+        public event Action<IContainerUIPanel, IContainer> OnBindContainerAdded;
+        public event Action<IContainerUIPanel, IContainer> OnBindContainerRemoved;
+
+        public void AddBindContainer(IContainer newBindContainer);
+        
+        public void RemoveBindContainer(IContainer oldBindContainer);
     }
 }

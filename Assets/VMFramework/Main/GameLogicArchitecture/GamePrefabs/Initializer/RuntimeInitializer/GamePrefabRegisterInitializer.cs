@@ -11,10 +11,10 @@ namespace VMFramework.GameLogicArchitecture
     [Preserve]
     public sealed class GamePrefabRegisterInitializer : IGameInitializer
     {
-        IEnumerable<InitializationAction> IInitializer.GetInitializationActions()
+        void IInitializer.GetInitializationActions(ICollection<InitializationAction> actions)
         {
-            yield return new(InitializationOrder.PostInit, OnPostInit, this);
-            yield return new(InitializationOrder.InitComplete, OnInitComplete, this);
+            actions.Add(new(InitializationOrder.PostInit, OnPostInit, this));
+            actions.Add(new(InitializationOrder.InitComplete, OnInitComplete, this));
         }
 
         private static async void OnPostInit(Action onDone)

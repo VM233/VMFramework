@@ -35,6 +35,11 @@ namespace FishNet.CodeGenerating.Helping.Extension
         /// <returns></returns>
         internal static bool HasCustomAttribute<TAttribute>(this ICustomAttributeProvider attributeProvider)
         {
+            if (attributeProvider == null)
+            {
+                return false;
+            }
+            
             return attributeProvider.CustomAttributes.Any(attr => attr.AttributeType.Is<TAttribute>());
         }
 

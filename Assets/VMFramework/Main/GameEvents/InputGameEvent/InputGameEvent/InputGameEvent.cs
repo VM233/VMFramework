@@ -1,11 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using VMFramework.Core;
 
 namespace VMFramework.GameEvents
 {
-    public abstract class InputGameEvent<TGameEvent> : GameEvent<TGameEvent>, IInputGameEvent
-        where TGameEvent : InputGameEvent<TGameEvent>
+    public abstract class InputGameEvent<TArgument> : ParameterizedGameEvent<TArgument>, IInputGameEvent<TArgument>
     {
         protected InputGameEventConfig inputGameEventConfig => (InputGameEventConfig)GamePrefab;
 

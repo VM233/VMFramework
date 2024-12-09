@@ -4,16 +4,16 @@ namespace VMFramework.Configuration
 {
     public interface IChooserGenerator
     {
-        public IChooser GetObjectChooser();
+        public IChooser GenerateNewObjectChooser();
     }
 
-    public interface IChooserGenerator<T> : IChooserGenerator
+    public interface IChooserGenerator<out T> : IChooserGenerator
     {
-        public new IChooser<T> GetObjectChooser();
+        public IChooser<T> GenerateNewChooser();
 
-        IChooser IChooserGenerator.GetObjectChooser()
+        IChooser IChooserGenerator.GenerateNewObjectChooser()
         {
-            return GetObjectChooser();
+            return GenerateNewChooser();
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using VMFramework.Core;
+using VMFramework.Core.Linq;
 
 namespace VMFramework.GameLogicArchitecture
 {
@@ -15,21 +16,21 @@ namespace VMFramework.GameLogicArchitecture
         private static readonly Dictionary<string, IGamePrefab> allGamePrefabsByID = new();
 
         private static readonly Dictionary<IGamePrefab, string> allIDsByGamePrefab = new();
-        
+
         private static readonly Dictionary<Type, HashSet<IGamePrefab>> allGamePrefabsByType = new();
 
-        private static readonly Dictionary<string, HashSet<IGamePrefab>> allGamePrefabsByGameType = new();
+        private static readonly Dictionary<string, HashSet<IGamePrefab>> allGamePrefabsByGameTag = new();
 
         public static IEnumerable<string> AllGamePrefabIDs => allGamePrefabsByID.Keys;
-        
+
         public delegate void GamePrefabModificationEvent(IGamePrefab gamePrefab);
 
         public static event GamePrefabModificationEvent OnGamePrefabRegisteredEvent;
-        
+
         public static event GamePrefabModificationEvent OnGamePrefabUnregisteredEvent;
 
         #region Register & Unregister
-        
+
         public static bool RegisterGamePrefab(IGamePrefab gamePrefab)
         {
             if (gamePrefab == null)
@@ -39,18 +40,19 @@ namespace VMFramework.GameLogicArchitecture
 
             if (gamePrefab.id.IsNullOrEmpty())
             {
-                Debug.LogError($"ID不能为空！");
+                Debug.LogError($"The registered {gamePrefab.GetType().Name} has no ID!");
                 return false;
             }
 
             if (allGamePrefabsByID.TryAdd(gamePrefab.id, gamePrefab) == false)
             {
-                Debug.LogWarning($"ID为{gamePrefab.id}的{nameof(IGamePrefab)}已经注册过了！");
+                Debug.LogWarning($"The ID : {gamePrefab.id} of the registered {gamePrefab.GetType().Name} " +
+                                 $"is already registered for another {nameof(IGamePrefab)}!");
                 return false;
             }
-            
+
             allIDsByGamePrefab.Add(gamePrefab, gamePrefab.id);
-            
+
             var gamePrefabType = gamePrefab.GetType();
 
             if (allGamePrefabsByType.TryGetValue(gamePrefabType, out var gamePrefabsByType) == false)
@@ -58,29 +60,25 @@ namespace VMFramework.GameLogicArchitecture
                 gamePrefabsByType = new();
                 allGamePrefabsByType.Add(gamePrefabType, gamePrefabsByType);
             }
-            
+
             gamePrefabsByType.Add(gamePrefab);
 
-            if (gamePrefab is IGameTypeOwner gameTypeOwner)
+            if (gamePrefab.GameTags != null)
             {
-                var gameTypeSet = gameTypeOwner.GameTypeSet;
-                
-                foreach (var gameTypeID in gameTypeSet.GameTypesID)
+                foreach (var gameTag in gamePrefab.GameTags)
                 {
-                    if (allGamePrefabsByGameType.ContainsKey(gameTypeID) == false)
+                    if (allGamePrefabsByGameTag.TryGetValue(gameTag, out var gamePrefabsByGameTag) == false)
                     {
-                        allGamePrefabsByGameType.Add(gameTypeID, new HashSet<IGamePrefab>());
+                        gamePrefabsByGameTag = new();
+                        allGamePrefabsByGameTag.Add(gameTag, gamePrefabsByGameTag);
                     }
-                    
-                    allGamePrefabsByGameType[gameTypeID].Add(gamePrefab);
+
+                    gamePrefabsByGameTag.Add(gamePrefab);
                 }
-                
-                gameTypeSet.OnAddGameType += OnAddGameType;
-                gameTypeSet.OnRemoveGameType += OnRemoveGameType;
             }
-            
+
             OnGamePrefabRegisteredEvent?.Invoke(gamePrefab);
-            
+
             return true;
         }
 
@@ -95,20 +93,21 @@ namespace VMFramework.GameLogicArchitecture
             {
                 return false;
             }
-            
+
             allIDsByGamePrefab.Remove(gamePrefab);
-            
+
             var gamePrefabType = gamePrefab.GetType();
 
             if (allGamePrefabsByType.TryGetValue(gamePrefabType, out var gamePrefabsByType) == false)
             {
-                Debug.LogWarning($"类型为{gamePrefabType}的{nameof(IGamePrefab)}不存在！");
+                Debug.LogWarning($"Type {gamePrefabType} does not have any registered {nameof(IGamePrefab)}s!");
             }
             else
             {
                 if (gamePrefabsByType.Remove(gamePrefab) == false)
                 {
-                    Debug.LogWarning($"类型为{gamePrefabType}的{nameof(IGamePrefab)}不存在！");
+                    Debug.LogWarning(
+                        $"The {nameof(IGamePrefab)} {gamePrefab} is not registered for type {gamePrefabType}!");
                 }
 
                 if (gamePrefabsByType.Count == 0)
@@ -117,24 +116,19 @@ namespace VMFramework.GameLogicArchitecture
                 }
             }
 
-            if (gamePrefab is IGameTypeOwner gameTypeOwner)
+            if (gamePrefab.GameTags != null)
             {
-                var gameTypeSet = gameTypeOwner.GameTypeSet;
-
-                foreach (var gameTypeID in gameTypeSet.GameTypesID)
+                foreach (var gameTag in gamePrefab.GameTags)
                 {
-                    if (allGamePrefabsByGameType.TryGetValue(gameTypeID, out var gamePrefabsByGameType))
+                    if (allGamePrefabsByGameTag.TryGetValue(gameTag, out var gamePrefabsByGameTag))
                     {
-                        gamePrefabsByGameType.Remove(gamePrefab);
+                        gamePrefabsByGameTag.Remove(gamePrefab);
                     }
                 }
-
-                gameTypeSet.OnAddGameType -= OnAddGameType;
-                gameTypeSet.OnRemoveGameType -= OnRemoveGameType;
             }
-            
+
             OnGamePrefabUnregisteredEvent?.Invoke(gamePrefab);
-            
+
             return true;
         }
 
@@ -149,7 +143,7 @@ namespace VMFramework.GameLogicArchitecture
             {
                 return UnregisterGamePrefab(id);
             }
-            
+
             return false;
         }
 
@@ -163,48 +157,6 @@ namespace VMFramework.GameLogicArchitecture
             {
                 UnregisterGamePrefab(id);
             }
-        }
-
-        #endregion
-
-        #region Game Type Event
-
-        private static void OnAddGameType(IReadOnlyGameTypeSet readOnlyGameTypeSet, GameType gameType)
-        {
-            var gameTypeSet = (IGameTypeSet)readOnlyGameTypeSet;
-            var owner = gameTypeSet.Owner;
-
-            if (owner is not IGamePrefab gamePrefab)
-            {
-                Debug.LogError(
-                    $"Owner of {gameTypeSet} is a {owner.GetType()} instead of a {nameof(IGamePrefab)}!");
-                return;
-            }
-            
-            allGamePrefabsByGameType.TryAdd(gameType.id, new());
-            allGamePrefabsByGameType[gameType.id].Add(gamePrefab);
-        }
-
-        private static void OnRemoveGameType(IReadOnlyGameTypeSet readOnlyGameTypeSet, GameType gameType)
-        {
-            if (allGamePrefabsByGameType.ContainsKey(gameType.id) == false)
-            {
-                Debug.LogWarning(
-                    $"{nameof(GameType)}:{gameType} is not existed in {nameof(allGamePrefabsByGameType)}!");
-                return;
-            }
-
-            var gameTypeSet = (IGameTypeSet)readOnlyGameTypeSet;
-            var owner = gameTypeSet.Owner;
-
-            if (owner is not IGamePrefab gamePrefab)
-            {
-                Debug.LogError(
-                    $"Owner of {gameTypeSet} is a {owner.GetType()} instead of a {nameof(IGamePrefab)}!");
-                return;
-            }
-            
-            allGamePrefabsByGameType[gameType.id].Remove(gamePrefab);
         }
 
         #endregion

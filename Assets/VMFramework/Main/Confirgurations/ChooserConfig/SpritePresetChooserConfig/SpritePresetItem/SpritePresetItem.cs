@@ -7,7 +7,7 @@ using VMFramework.ResourcesManagement;
 
 namespace VMFramework.Configuration
 {
-    public sealed partial class SpritePresetItem : BaseConfig
+    public sealed partial class SpritePresetItem : BaseConfig, IIDOwner<string>
     {
         private const string SPRITE_PREVIEW_GROUP = "SpritePreview";
         
@@ -15,10 +15,13 @@ namespace VMFramework.Configuration
         
         private const string SPRITE_PREVIEW_FLIP_GROUP = SPRITE_PREVIEW_GROUP + "/SpritePreviewLeft/Flip";
 
-        [field: HideLabel, HorizontalGroup(SPRITE_PREVIEW_GROUP, 200), VerticalGroup(SPRITE_PREVIEW_LEFT_GROUP)]
-        [field: GamePrefabID(typeof(SpritePreset))]
-        [field: SerializeField]
-        public string spritePresetID { get; private set; }
+        [HideLabel, HorizontalGroup(SPRITE_PREVIEW_GROUP, 200), VerticalGroup(SPRITE_PREVIEW_LEFT_GROUP)]
+        [GamePrefabID(typeof(SpritePreset))]
+#if UNITY_EDITOR
+        [OnValueChanged(nameof(OnIDChanged))]
+#endif
+        [SerializeField]
+        private string spritePresetID;
 
         public string id
         {
@@ -26,37 +29,15 @@ namespace VMFramework.Configuration
             init => spritePresetID = value;
         }
 
-        [field: LabelWidth(50), HorizontalGroup(SPRITE_PREVIEW_FLIP_GROUP)]
+        [field: LabelWidth(50), HorizontalGroup(SPRITE_PREVIEW_FLIP_GROUP, width: 65)]
         [field: SerializeField]
         public bool flipX { get; init; } = false;
 
         [field: LabelWidth(50), HorizontalGroup(SPRITE_PREVIEW_FLIP_GROUP)]
         [field: SerializeField]
         public bool flipY { get; init; } = false;
-
-        [HideLabel, HorizontalGroup(SPRITE_PREVIEW_GROUP)]
-        [PreviewField(40, ObjectFieldAlignment.Right)]
-        [ShowInInspector]
-        public Sprite sprite
-        {
-            get => SpriteManager.GetSprite(spritePresetID, (flipX, flipY).ToFlipType2D());
-#if UNITY_EDITOR
-            private set
-            {
-                if (value == null)
-                {
-                    spritePresetID = null;
-                }
-
-                if (SpriteManager.HasSpritePreset(value) == false)
-                {
-                    ResourcesManagementSetting.SpriteGeneralSetting.AddSpritePreset(value);
-                }
-
-                spritePresetID = SpriteManager.GetSpritePreset(value)?.id;
-            }
-#endif
-        }
+        
+        public Sprite Sprite => SpriteManager.GetSprite(spritePresetID, (flipX, flipY).ToFlipType2D());
 
         #region Constructor
 
@@ -85,9 +66,14 @@ namespace VMFramework.Configuration
 
         public static implicit operator Sprite(SpritePresetItem item)
         {
-            return item?.sprite;
+            return item?.Sprite;
         }
 
         #endregion
+
+        public override string ToString()
+        {
+            return spritePresetID;
+        }
     }
 }

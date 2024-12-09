@@ -15,21 +15,17 @@ namespace VMFramework.GameLogicArchitecture
         #region Properties & Fields
 
         [ShowInInspector]
-        protected IGameTypedGamePrefab GamePrefab { get; private set; }
+        protected IGamePrefab GamePrefab { get; private set; }
 
         [ShowInInspector, DisplayAsString]
         public string id => GamePrefab.id;
 
-        public string name => GamePrefab.name;
+        public string Name => GamePrefab.Name;
 
         [ShowInInspector]
-        public bool isDebugging => GamePrefab.IsDebugging;
+        public bool IsDebugging => GamePrefab.IsDebugging;
 
-        [ShowInInspector]
-        public IReadOnlyGameTypeSet GameTypeSet => GamePrefab.GameTypeSet;
-
-        [ShowInInspector]
-        public GameType UniqueGameType => GamePrefab.UniqueGameType;
+        public ICollection<string> GameTags => GamePrefab.GameTags;
 
         [ShowInInspector]
         public bool IsDestroyed { get; private set; } = false;
@@ -52,9 +48,9 @@ namespace VMFramework.GameLogicArchitecture
             OnGet();
         }
 
-        void ICreatablePoolItem<string>.OnCreate(string argument)
+        void ICreatablePoolItem<string>.OnCreate(string id)
         {
-            GamePrefab = GamePrefabManager.GetGamePrefabStrictly<IGameTypedGamePrefab>(id);
+            GamePrefab = GamePrefabManager.GetGamePrefabStrictly(id);
 
             OnCreate();
             OnGet();
@@ -73,7 +69,7 @@ namespace VMFramework.GameLogicArchitecture
 
         protected virtual void OnGet()
         {
-
+            IsDestroyed = false;
         }
 
         protected virtual void OnCreate()
@@ -83,7 +79,7 @@ namespace VMFramework.GameLogicArchitecture
 
         protected virtual void OnReturn()
         {
-
+            IsDestroyed = true;
         }
 
         protected virtual void OnClear()
@@ -104,10 +100,11 @@ namespace VMFramework.GameLogicArchitecture
         public override string ToString()
         {
             var list = ListPool<(string propertyID, string propertyContent)>.Shared.Get();
+            list.Clear();
             OnGetStringProperties(list);
 
             var extraString = list.Select(property => property.propertyID + ":" + property.propertyContent).Join(", ");
-            list.ReturnToPool();
+            list.ReturnToSharedPool();
 
             return $"[{GetType()}:id:{id},{extraString}]";
         }

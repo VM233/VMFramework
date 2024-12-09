@@ -8,6 +8,10 @@ using VMFramework.GameLogicArchitecture;
         #region Meta Data
 
         public override Type BaseGamePrefabType => typeof(#BASE_GAME_PREFAB_TYPE#);
+#GAME_ITEM_NAME_OVERRIDE_REGION#@begin@        
+        
+        public override string GameItemName => nameof(#GAME_ITEM_NAME#);
+#GAME_ITEM_NAME_OVERRIDE_REGION#@end@
 
         #endregion
 

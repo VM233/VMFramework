@@ -8,14 +8,11 @@ namespace VMFramework.GameLogicArchitecture
     [Preserve]
     public sealed class GeneralSettingsInitializer : IGameInitializer
     {
-        IEnumerable<InitializationAction> IInitializer.GetInitializationActions()
+        void IInitializer.GetInitializationActions(ICollection<InitializationAction> actions)
         {
             foreach (var globalSetting in GlobalSettingCollector.Collect())
             {
-                foreach (var action in globalSetting.GlobalSettingFile.GetInitializationActions())
-                {
-                    yield return action;
-                }
+                globalSetting.GlobalSettingFile.GetInitializationActions(actions);
             }
         }
     }

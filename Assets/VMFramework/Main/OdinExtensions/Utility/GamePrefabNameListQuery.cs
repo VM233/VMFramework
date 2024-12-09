@@ -10,7 +10,7 @@ namespace VMFramework.OdinExtensions
     {
         public static ValueDropdownItem GetNameIDDropDownItem(this IGamePrefab prefab)
         {
-            return new(prefab.name, prefab.id);
+            return new(prefab.Name, prefab.id);
         }
         
         /// <summary>

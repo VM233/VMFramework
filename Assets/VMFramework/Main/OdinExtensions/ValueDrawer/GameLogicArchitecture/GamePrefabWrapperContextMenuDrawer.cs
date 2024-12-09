@@ -6,6 +6,7 @@ using UnityEditor;
 using UnityEngine;
 using VMFramework.Core.Editor;
 using VMFramework.Core.Linq;
+using VMFramework.Core.Pools;
 using VMFramework.Editor;
 using VMFramework.GameLogicArchitecture;
 using VMFramework.GameLogicArchitecture.Editor;
@@ -14,8 +15,6 @@ namespace VMFramework.OdinExtensions
 {
     internal sealed class GamePrefabWrapperContextMenuDrawer : OdinValueDrawer<GamePrefabWrapper>, IDefinesGenericMenuItems
     {
-        private static readonly List<IGamePrefab> gamePrefabsCache = new();
-        
         protected override void DrawPropertyLayout(GUIContent label)
         {
             CallNextDrawer(label);
@@ -24,12 +23,14 @@ namespace VMFramework.OdinExtensions
         void IDefinesGenericMenuItems.PopulateGenericMenu(InspectorProperty property, GenericMenu genericMenu)
         {
             var value = ValueEntry.SmartValue;
-        
+
+            var gamePrefabsCache = ListPool<IGamePrefab>.Default.Get();
             gamePrefabsCache.Clear();
-            gamePrefabsCache.AddRange(value.GetGamePrefabs());
+            value.GetGamePrefabs(gamePrefabsCache);
 
             if (gamePrefabsCache.IsNullOrEmptyOrAllNull())
             {
+                gamePrefabsCache.ReturnToDefaultPool();
                 return;
             } 
                 
@@ -39,6 +40,8 @@ namespace VMFramework.OdinExtensions
             {
                 genericMenu.AddItem(EditorNames.OPEN_GAME_ITEM_SCRIPT_PATH, value.OpenGameItemScripts);
             }
+            
+            gamePrefabsCache.ReturnToDefaultPool();
         }
     }
 }

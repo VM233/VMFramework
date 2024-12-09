@@ -6,7 +6,7 @@
         
     }
     
-    public interface IWeightedSelectChooserConfig<TWrapper, TItem> : ICollectionChooserConfig<TWrapper, TItem>
+    public interface IWeightedSelectChooserConfig<TWrapper, TItem> : ICollectionWrapperChooserConfig<TWrapper, TItem>
     {
         
     }

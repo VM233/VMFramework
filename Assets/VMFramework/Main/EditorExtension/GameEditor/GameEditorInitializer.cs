@@ -11,9 +11,9 @@ namespace VMFramework.Editor.GameEditor
 {
     internal sealed class GameEditorInitializer : IEditorInitializer
     {
-        IEnumerable<InitializationAction> IInitializer.GetInitializationActions()
+        void IInitializer.GetInitializationActions(ICollection<InitializationAction> actions)
         {
-            yield return new(InitializationOrder.InitComplete, OnInitComplete, this);
+            actions.Add(new(InitializationOrder.InitComplete, OnInitComplete, this));
         }
 
         private static void OnInitComplete(Action onDone)

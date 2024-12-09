@@ -1,7 +1,7 @@
-﻿using Sirenix.OdinInspector;
+﻿#if UNITY_EDITOR
+using Sirenix.OdinInspector;
 using UnityEngine;
 
-#if UNITY_EDITOR
 namespace VMFramework.GameEvents
 {
     public partial class FloatInputGameEventConfig
@@ -14,8 +14,8 @@ namespace VMFramework.GameEvents
             negativeActionGroups ??= new();
         }
 
-        [Button("快速添加AD左右输入动作组", ButtonSizes.Medium), TabGroup(TAB_GROUP_NAME, INPUT_MAPPING_CATEGORY)]
-        private void AddADActionGroupGUI()
+        [Button(ButtonSizes.Medium), TabGroup(TAB_GROUP_NAME, INPUT_MAPPING_CATEGORY)]
+        private void QuickADSetup()
         {
             isFromAxis = false;
 

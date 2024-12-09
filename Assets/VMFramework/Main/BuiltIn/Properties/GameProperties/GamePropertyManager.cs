@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using UnityEngine;
 using VMFramework.Core;
 using VMFramework.GameLogicArchitecture;
 
@@ -16,13 +15,13 @@ namespace VMFramework.Properties
 
             foreach (var gameProperty in GamePrefabManager.GetAllGamePrefabs<IGameProperty>())
             {
-                if (gameProperty.targetType == null)
+                if (gameProperty.TargetType == null)
                 {
                     Debugger.LogWarning($"{gameProperty} has no target type set.");
                     continue;
                 }
 
-                var gameProperties = propertyConfigs.GetValueOrAddNew(gameProperty.targetType);
+                var gameProperties = propertyConfigs.GetValueOrAddNew(gameProperty.TargetType);
                 
                 gameProperties.Add(gameProperty);
             }

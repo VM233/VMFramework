@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Sirenix.OdinInspector;
-using UnityEngine;
 using VMFramework.Core;
 using VMFramework.GameLogicArchitecture;
 
@@ -16,18 +15,18 @@ namespace VMFramework.GameEvents
         [Button]
         private static void Invoke(MouseEventType eventType, ColliderMouseEventTrigger trigger)
         {
+            trigger.TriggerEvent(eventType);
+            
             if (mouseEvents.TryGetValue(eventType, out ColliderMouseEvent mouseEvent) == false)
             {
                 return;
             }
             
-            mouseEvent.SetTrigger(trigger);
-            
-            mouseEvent.Propagate();
+            mouseEvent.Propagate(trigger);
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void AddCallback(MouseEventType eventType, Action<ColliderMouseEvent> callback,
+        public static void AddCallback(MouseEventType eventType, Action<ColliderMouseEventTrigger> callback,
             int priority = GameEventPriority.TINY)
         {
             if (mouseEvents.TryGetValue(eventType, out ColliderMouseEvent gameEvent) == false)
@@ -40,7 +39,7 @@ namespace VMFramework.GameEvents
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void RemoveCallback(MouseEventType eventType, Action<ColliderMouseEvent> callback)
+        public static void RemoveCallback(MouseEventType eventType, Action<ColliderMouseEventTrigger> callback)
         {
             if (mouseEvents.TryGetValue(eventType, out ColliderMouseEvent gameEvent) == false)
             {

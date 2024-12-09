@@ -7,7 +7,7 @@ namespace VMFramework.Procedure
 {
     public partial class DefaultGlobalScenesGeneralSetting : IGameEditorMenuTreeNode
     {
-        string INameOwner.name => "Default Global Scenes";
+        string INameOwner.Name => "Default Global Scenes";
     }
 }
 #endif

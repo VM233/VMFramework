@@ -8,7 +8,7 @@ namespace VMFramework.Containers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IEnumerable<IContainerItem> GetValidInputs(this IInputsContainer inputsContainer)
         {
-            return inputsContainer.GetRangeValidItems(inputsContainer.inputsRange);
+            return inputsContainer.GetValidItems(inputsContainer.InputsRange);
         }
     }
 }

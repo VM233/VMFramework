@@ -10,30 +10,23 @@ namespace VMFramework.Examples
     [ManagerCreationProvider("Demo")]
     public sealed class GameStartEventDemo : ManagerBehaviour<GameStartEventDemo>
     {
-        protected override IEnumerable<InitializationAction> GetInitializationActions()
+        protected override void GetInitializationActions(ICollection<InitializationAction> actions)
         {
-            return base.GetInitializationActions()
-                .Concat(new(InitializationOrder.InitComplete, OnInitComplete, this));
+            base.GetInitializationActions(actions);
+            
+            actions.Add(new InitializationAction(InitializationOrder.InitComplete, OnInitComplete, this));
         }
 
         private void OnInitComplete(Action onDone)
         {
             // Add a callback to the GameStartEvent
-            GameEventManager.AddCallback(GameStartEventConfig.ID, (GameStartEvent gameEvent) =>
+            GameEventManager.AddCallback(GameStartEventConfig.ID, (GameStartEventArguments arguments) =>
             {
-                Debug.LogWarning($"Game Started with {gameEvent.playerCount} players");
-                
-                // You can stop the propagation of the event if you want to prevent others from receiving it.
-                gameEvent.StopPropagation();
+                Debug.LogWarning($"Game Started with {arguments.playerCount} players");
             }, GameEventPriority.SUPER);
             
             // Propagate the GameStartEvent
-            if (GameEventManager.TryGetGameEvent(GameStartEventConfig.ID, out GameStartEvent gameStartEvent))
-            {
-                gameStartEvent.SetParameters(2);
-                
-                gameStartEvent.Propagate();
-            }
+            GameEventManager.Propagate(GameStartEventConfig.ID, new GameStartEventArguments(2));
             
             onDone();
         }

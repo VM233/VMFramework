@@ -9,14 +9,14 @@ namespace VMFramework.Editor.BatchProcessor
 {
     public sealed class AddComponentUnit : SingleButtonBatchProcessorUnit
     {
-        protected override string processButtonName => "Add Component";
+        protected override string ProcessButtonName => "Add Component";
 
         [SerializeField]
         [DerivedType(typeof(Component), IncludingSelf = false, IncludingAbstract = false,
             IncludingGeneric = false, IncludingInterfaces = false)]
         private Type componentType;
 
-        public override bool IsValid(IList<object> selectedObjects)
+        public override bool IsValid(IReadOnlyList<object> selectedObjects)
         {
             return selectedObjects.Any(obj => obj is GameObject);
         }

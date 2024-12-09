@@ -6,4 +6,9 @@ namespace VMFramework.Maps
     {
         public bool FillTile(TPoint position, [NotNull] TTileInfo info);
     }
+
+    public interface ITileFillableMap<in TPoint, in TTileInfo, TTile>
+    {
+        public bool FillTile(TPoint position, [NotNull] TTileInfo info, [NotNull] out TTile existingTile);
+    }
 }

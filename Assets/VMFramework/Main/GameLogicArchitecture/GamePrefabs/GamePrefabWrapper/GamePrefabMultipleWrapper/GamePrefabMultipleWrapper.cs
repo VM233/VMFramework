@@ -2,6 +2,7 @@
 using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using VMFramework.Core;
 using VMFramework.Core.Linq;
 
 namespace VMFramework.GameLogicArchitecture
@@ -17,17 +18,45 @@ namespace VMFramework.GameLogicArchitecture
 #endif
         private List<IGamePrefab> gamePrefabs = new();
 
-        public override IEnumerable<IGamePrefab> GetGamePrefabs()
+        public override string id
         {
-            return gamePrefabs;
+            get
+            {
+                if (gamePrefabs.IsNullOrEmpty())
+                {
+                    return null;
+                }
+
+                return gamePrefabs.FirstNotNull()?.id;
+            }
         }
 
-        public override void InitGamePrefabs(IEnumerable<IGamePrefab> gamePrefabs)
+        public override void GetGamePrefabs(ICollection<IGamePrefab> gamePrefabsCollection)
         {
-            this.gamePrefabs = gamePrefabs.ToList();
+            if (gamePrefabs.IsNullOrEmpty())
+            {
+                return;
+            }
+            
+            gamePrefabsCollection.AddRange(gamePrefabs);
+            
+            foreach (var gamePrefab in gamePrefabs)
+            {
+                if (gamePrefab is IGamePrefabProvider provider)
+                {
+                    provider.GetGamePrefabs(gamePrefabsCollection);
+                }
+            }
         }
 
-        string INameOwner.name
+        public override void InitGamePrefabs(IReadOnlyCollection<IGamePrefab> gamePrefabs)
+        {
+            this.gamePrefabs ??= new();
+            this.gamePrefabs.RemoveAllNull();
+            this.gamePrefabs.AddRange(gamePrefabs.WhereNotNull());
+        }
+
+        string INameOwner.Name
         {
             get
             {
@@ -41,7 +70,7 @@ namespace VMFramework.GameLogicArchitecture
                     return $"Null {nameof(GamePrefabMultipleWrapper)}";
                 }
 
-                return gamePrefabs[0].name;
+                return gamePrefabs[0].Name;
             }
         }
     }

@@ -3,7 +3,9 @@ using Sirenix.OdinInspector;
 using UnityEngine;
 using VMFramework.GameLogicArchitecture;
 
-[RequireComponent(typeof(Camera))]
+namespace VMFramework.Cameras
+{
+    [RequireComponent(typeof(Camera))]
 public class CameraController : MonoBehaviour
 {
     public new Camera camera => GetComponent<Camera>();
@@ -146,4 +148,5 @@ public class CameraController : MonoBehaviour
 
         transform.position = targetPosition;
     }
+}
 }

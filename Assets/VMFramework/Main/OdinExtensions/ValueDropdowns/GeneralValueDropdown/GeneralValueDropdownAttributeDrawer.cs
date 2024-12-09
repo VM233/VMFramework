@@ -51,9 +51,9 @@ namespace VMFramework.OdinExtensions
 
         protected virtual void Validate()
         {
-            
+
         }
-        
+
         private void AddResult(IEnumerable<object> query)
         {
             if (isList)
@@ -93,13 +93,13 @@ namespace VMFramework.OdinExtensions
         }
 
         #region Draw
-        
+
         private static bool showOriginalValue = false;
 
         protected override void DrawPropertyLayout(GUIContent label)
         {
             this.label = label;
-            
+
             Validate();
 
             if (Property.ValueEntry == null)
@@ -130,7 +130,7 @@ namespace VMFramework.OdinExtensions
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.BeginVertical();
-                
+
                 if (GUI.enabled && showOriginalValue)
                 {
                     CallNextDrawer(label);
@@ -139,16 +139,9 @@ namespace VMFramework.OdinExtensions
                 {
                     DrawDropdown();
                 }
-                
-                GUILayout.EndVertical();
-                
-                var iconType = showOriginalValue ? SdfIconType.EyeFill : SdfIconType.EyeSlashFill;
 
-                if (Button("开关显示原内容", iconType))
-                {
-                    showOriginalValue = !showOriginalValue;
-                }
-                
+                GUILayout.EndVertical();
+
                 DrawCustomButtons();
 
                 GUILayout.EndHorizontal();
@@ -161,9 +154,14 @@ namespace VMFramework.OdinExtensions
 
         protected virtual void DrawCustomButtons()
         {
-            
+            var iconType = showOriginalValue ? SdfIconType.EyeFill : SdfIconType.EyeSlashFill;
+
+            if (Button("Toggle Show Original Value", iconType))
+            {
+                showOriginalValue = !showOriginalValue;
+            }
         }
-        
+
         protected Rect GetButtonRect()
         {
             float buttonWidth = EditorGUIUtility.singleLineHeight + 6f;
@@ -177,16 +175,15 @@ namespace VMFramework.OdinExtensions
             }
             catch (ArgumentException)
             {
-                
+
             }
-            
+
             return new Rect(0, 0, 0, 0);
         }
 
         protected bool Button(string tooltip, SdfIconType icon)
         {
-            return SirenixEditorGUI.SDFIconButton(GetButtonRect(), tooltip, icon,
-                style: SirenixGUIStyles.MiniButton);
+            return SirenixEditorGUI.SDFIconButton(GetButtonRect(), tooltip, icon, style: SirenixGUIStyles.MiniButton);
         }
 
         protected virtual Texture GetSelectorIcon(object value)
@@ -200,7 +197,7 @@ namespace VMFramework.OdinExtensions
             {
                 return GUIHelper.GetAssetThumbnail(null, type, false);
             }
-            
+
             return null;
         }
 
@@ -208,7 +205,7 @@ namespace VMFramework.OdinExtensions
         {
             var value = Property.ValueEntry.WeakSmartValue;
             List<object> objects;
-            
+
             if (Attribute.AppendNextDrawer && isList == false)
             {
                 GUILayout.BeginHorizontal();
@@ -221,15 +218,9 @@ namespace VMFramework.OdinExtensions
 
                 var btnLabel = GUIHelper.TempContent("");
                 btnLabel.image = GetSelectorIcon(value);
-                // if (Property.Info.TypeOfValue == typeof(Type))
-                // {
-                //     btnLabel.image = GUIHelper.GetAssetThumbnail(null,
-                //         Property.ValueEntry.WeakSmartValue as Type, false);
-                // }
 
                 objects = OdinSelector<object>.DrawSelectorDropdown(label, btnLabel, ShowSelector,
-                        !Attribute.OnlyChangeValueOnConfirm, GUIStyle.none, GUILayoutOptions.Width(width))
-                    ?.ToList();
+                    !Attribute.OnlyChangeValueOnConfirm, GUIStyle.none, GUILayoutOptions.Width(width))?.ToList();
                 if (Event.current.type == EventType.Repaint)
                 {
                     var position = RectUtility.AlignRight(GUILayoutUtility.GetLastRect(), 15f);
@@ -259,16 +250,11 @@ namespace VMFramework.OdinExtensions
             {
                 if (TryGetCurrentValueName(out var currentName) == false)
                 {
-                    SirenixEditorGUI.ErrorMessageBox("无效值");
+                    SirenixEditorGUI.ErrorMessageBox("Invalid value");
                 }
-                
+
                 var btnLabel = GUIHelper.TempContent(currentName);
                 btnLabel.image = GetSelectorIcon(value);
-                // if (Property.Info.TypeOfValue == typeof(Type))
-                // {
-                //     btnLabel.image = GUIHelper.GetAssetThumbnail(null,
-                //         Property.ValueEntry.WeakSmartValue as Type, false);
-                // }
 
                 if (!Attribute.HideChildProperties && Property.Children.Count > 0)
                 {
@@ -311,8 +297,7 @@ namespace VMFramework.OdinExtensions
         private void OpenSelector()
         {
             ReloadDropdownCollections();
-            ShowSelector(new Rect(Event.current.mousePosition, Vector2.zero)).SelectionConfirmed +=
-                x => result = x;
+            ShowSelector(new Rect(Event.current.mousePosition, Vector2.zero)).SelectionConfirmed += x => result = x;
         }
 
         private OdinSelector<object> ShowSelector(Rect rect)
@@ -447,7 +432,7 @@ namespace VMFramework.OdinExtensions
                 name = "-";
                 return true;
             }
-            
+
             var value = Property.ValueEntry.WeakSmartValue;
 
             if (nameLookup != null && value != null)

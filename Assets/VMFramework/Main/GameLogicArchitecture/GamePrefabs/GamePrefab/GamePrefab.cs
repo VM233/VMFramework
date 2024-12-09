@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -11,8 +12,7 @@ namespace VMFramework.GameLogicArchitecture
     {
         #region Constants
 
-        protected const string ACTIVE_STATE_AND_DEBUGGING_MODE_HORIZONTAL_GROUP =
-            "ActiveStateAndDebuggingModeHorizontalGroup";
+        protected const string ACTIVE_STATE_AND_DEBUGGING_MODE_GROUP = "ActiveStateAndDebuggingModeGroup";
 
         protected const string TAB_GROUP_NAME = "TabGroup";
 
@@ -32,13 +32,21 @@ namespace VMFramework.GameLogicArchitecture
 
         [LabelText(SdfIconType.Activity)]
         [JsonProperty(Order = -9000), PropertyOrder(-9000)]
-        [HorizontalGroup(ACTIVE_STATE_AND_DEBUGGING_MODE_HORIZONTAL_GROUP)]
+        [HorizontalGroup(ACTIVE_STATE_AND_DEBUGGING_MODE_GROUP)]
         public bool isActive = true;
 
         [LabelText(SdfIconType.BugFill)]
         [JsonProperty(Order = -8000), PropertyOrder(-8000)]
-        [HorizontalGroup(ACTIVE_STATE_AND_DEBUGGING_MODE_HORIZONTAL_GROUP)]
+        [HorizontalGroup(ACTIVE_STATE_AND_DEBUGGING_MODE_GROUP)]
         public bool isDebugging = false;
+
+        [TabGroup(TAB_GROUP_NAME, BASIC_CATEGORY)]
+        [MinValue(0)]
+        public int gameItemPrewarmCount = 0;
+
+        [TabGroup(TAB_GROUP_NAME, BASIC_CATEGORY)]
+        [GameTagID]
+        public List<string> gameTags = new();
 
         #endregion
 
@@ -48,9 +56,9 @@ namespace VMFramework.GameLogicArchitecture
         [ShowInInspector]
         [IsNotNullOrEmpty(DrawCurrentRect = true)]
         [IsGamePrefabID]
-        [ValidateIsNot(content: IGamePrefab.NULL_ID, DrawCurrentRect = true)]
+        [ValidateIsNot(contents: IGamePrefab.NULL_ID, DrawCurrentRect = true)]
 #if UNITY_EDITOR
-        [Placeholder("@"+ nameof(GetIDPlaceholderText) + "()")]
+        [Placeholder("@" + nameof(GetIDPlaceholderText) + "()")]
 #endif
         [PropertyOrder(-10000)]
         public string id
@@ -69,13 +77,11 @@ namespace VMFramework.GameLogicArchitecture
         [HideIfNull]
         public virtual Type GameItemType => null;
 
-        public bool initDone { get; private set; } = false;
-
         #endregion
 
         #region Events
 
-        public event Action<IGamePrefab, string, string> OnIDChangedEvent; 
+        public event Action<IGamePrefab, string, string> OnIDChangedEvent;
 
         #endregion
 
@@ -85,30 +91,30 @@ namespace VMFramework.GameLogicArchitecture
         /// The prefix of the ID.
         /// This id should start with this prefix.
         /// </summary>
-        protected virtual string idPrefix => null;
-        
+        public virtual string IDPrefix => null;
+
         /// <summary>
         /// The suffix of the ID.
         /// This id should end with this suffix.
         /// </summary>
-        protected virtual string IDSuffix => null;
+        public virtual string IDSuffix => null;
 
-        public bool isIDStartsWithPrefix
+        public bool IsIDStartsWithPrefix
         {
             get
             {
-                if (id.IsNullOrWhiteSpace() || idPrefix.IsNullOrWhiteSpace())
+                if (id.IsNullOrWhiteSpace() || IDPrefix.IsNullOrWhiteSpace())
                 {
                     return true;
                 }
 
-                var prefix = idPrefix.TrimEnd(' ', '_').TrimStart(' ', '_');
-                
+                var prefix = IDPrefix.TrimEnd(' ', '_').TrimStart(' ', '_');
+
                 return id.StartsWith(prefix);
             }
         }
 
-        public bool isIDEndsWithSuffix
+        public bool IsIDEndsWithSuffix
         {
             get
             {
@@ -118,7 +124,7 @@ namespace VMFramework.GameLogicArchitecture
                 }
 
                 var suffix = IDSuffix.TrimEnd(' ', '_').TrimStart(' ', '_');
-                
+
                 return id.EndsWith(suffix);
             }
         }
@@ -129,7 +135,7 @@ namespace VMFramework.GameLogicArchitecture
 
         string IIDOwner<string>.id => id;
 
-        string INameOwner.name => id;
+        string INameOwner.Name => id;
 
         bool IGamePrefab.IsActive
         {
@@ -143,8 +149,12 @@ namespace VMFramework.GameLogicArchitecture
             set => isDebugging = value;
         }
 
+        int IGamePrefab.GameItemPrewarmCount => gameItemPrewarmCount;
+
+        ICollection<string> IGameTagsOwner.GameTags => gameTags;
+
         #endregion
-        
+
         #region To String
 
         public override string ToString()

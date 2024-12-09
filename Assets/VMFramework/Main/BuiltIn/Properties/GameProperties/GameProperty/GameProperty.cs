@@ -6,15 +6,15 @@ using VMFramework.Core;
 
 namespace VMFramework.Properties
 {
-    public abstract partial class GameProperty : LocalizedGameTypedGamePrefab, IGameProperty
+    public abstract partial class GameProperty : LocalizedGamePrefab, IGameProperty
     {
-        protected override string IDSuffix => "property";
+        public override string IDSuffix => "property";
 
         public sealed override Type GameItemType => null;
 
         [TabGroup(TAB_GROUP_NAME, BASIC_CATEGORY)]
         [ShowInInspector]
-        public abstract Type targetType { get; }
+        public abstract Type TargetType { get; }
 
         [TabGroup(TAB_GROUP_NAME, BASIC_CATEGORY)]
         [PreviewField(50, ObjectFieldAlignment.Center)]

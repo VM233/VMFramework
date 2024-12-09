@@ -7,6 +7,19 @@ namespace VMFramework.Maps
     public static class GridMapTileQueryUtility
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool ContainsTile(this IGridMap map, Vector3Int tilePosition)
+        {
+            map.GetChunkPositionAndRelativePosition(tilePosition, out var chunkPosition, out var relativePosition);
+
+            if (map.TryGetChunk(chunkPosition, out var chunk) == false)
+            {
+                return false;
+            }
+            
+            return chunk.ContainsTile(relativePosition);
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IGridTile GetTile(this IGridMap map, Vector3Int tilePosition)
         {
             map.GetChunkPositionAndRelativePosition(tilePosition, out var chunkPosition, out var relativePosition);
@@ -30,6 +43,27 @@ namespace VMFramework.Maps
             }
             
             return chunk.TryGetTile(relativePosition, out tile);
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryGetTile<TGridTile>(this IGridMap map, Vector3Int tilePosition, out TGridTile tile)
+        where TGridTile : IGridTile
+        {
+            map.GetChunkPositionAndRelativePosition(tilePosition, out var chunkPosition, out var relativePosition);
+            if (map.TryGetChunk(chunkPosition, out var chunk) == false)
+            {
+                tile = default;
+                return false;
+            }
+
+            if (chunk.TryGetTile(relativePosition, out var gridTile))
+            {
+                tile = (TGridTile)gridTile;
+                return true;
+            }
+            
+            tile = default;
+            return false;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

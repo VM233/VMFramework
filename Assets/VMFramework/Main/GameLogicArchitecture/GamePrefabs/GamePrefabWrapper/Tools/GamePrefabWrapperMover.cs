@@ -13,7 +13,8 @@ namespace VMFramework.GameLogicArchitecture.Editor
         public static void MoveToDefaultFolder(this GamePrefabWrapper gamePrefabWrapper)
         {
             generalSettingsCache.Clear();
-            generalSettingsCache.AddRange(gamePrefabWrapper.GetGamePrefabGeneralSettings());
+
+            gamePrefabWrapper.GetGamePrefabGeneralSettings(generalSettingsCache);
 
             if (generalSettingsCache.Count == 0)
             {
@@ -24,8 +25,6 @@ namespace VMFramework.GameLogicArchitecture.Editor
             var folderPath = generalSetting.GamePrefabFolderPath;
                 
             gamePrefabWrapper.MoveAssetToNewFolder(folderPath);
-            
-            generalSettingsCache.Clear();
         }
     }
 }

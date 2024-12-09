@@ -25,7 +25,7 @@ namespace VMFramework.Procedure
 
         [ShowInInspector]
         [ListDrawerSettings(ShowFoldout = false)]
-        public static IReadOnlyList<string> CurrentProcedureIDs => _fsm?.currentStatesID.ToList();
+        public static IReadOnlyList<string> CurrentProcedureIDs => _fsm?.CurrentStates.Keys.ToList();
 
         [ShowInInspector]
         private static readonly Queue<(string fromProcedureID, string toProcedureID)> procedureSwitchQueue =

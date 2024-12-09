@@ -14,14 +14,14 @@ namespace VMFramework.GameLogicArchitecture
         
         protected const string LOCALIZABLE_SETTING_CATEGORY = "Localization";
 
-        protected virtual IEnumerable<InitializationAction> GetInitializationActions()
+        protected virtual void GetInitializationActions(ICollection<InitializationAction> actions)
         {
-            yield return new(InitializationOrder.Init, OnInitInternal, this);
+            actions.Add(new(InitializationOrder.Init, OnInitInternal, this));
         }
         
-        IEnumerable<InitializationAction> IInitializer.GetInitializationActions()
+        void IInitializer.GetInitializationActions(ICollection<InitializationAction> actions)
         {
-            return GetInitializationActions();
+            GetInitializationActions(actions);
         }
 
         private void OnInitInternal(Action onDone)

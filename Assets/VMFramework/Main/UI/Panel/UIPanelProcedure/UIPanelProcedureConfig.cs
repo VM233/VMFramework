@@ -6,7 +6,7 @@ using VMFramework.OdinExtensions;
 
 namespace VMFramework.UI
 {
-    public sealed partial class UIPanelProcedureConfig : BaseConfig, IIDOwner
+    public sealed partial class UIPanelProcedureConfig : BaseConfig, IIDOwner<string>
     {
         [ProcedureID]
         [IsNotNullOrEmpty]

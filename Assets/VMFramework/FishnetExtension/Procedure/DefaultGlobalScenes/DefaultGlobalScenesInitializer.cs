@@ -6,6 +6,7 @@ using FishNet.Managing.Scened;
 using UnityEngine;
 using UnityEngine.Scripting;
 using VMFramework.Core;
+using VMFramework.Core.Linq;
 using VMFramework.Network;
 
 namespace VMFramework.Procedure
@@ -14,17 +15,24 @@ namespace VMFramework.Procedure
     [Preserve]
     public sealed class DefaultGlobalScenesInitializer : IGameInitializer
     {
-        IEnumerable<InitializationAction> IInitializer.GetInitializationActions()
+        void IInitializer.GetInitializationActions(ICollection<InitializationAction> actions)
         {
             if (NetworkSetting.DefaultGlobalScenesGeneralSetting.enableDefaultGlobalScenesLoader)
             {
-                yield return new(InitializationOrder.AfterInitComplete, OnAfterInitComplete, this);
+                actions.Add(new(InitializationOrder.AfterInitComplete, OnAfterInitComplete, this));
             }
         }
 
         private static void OnAfterInitComplete(Action onDone)
         {
             var sceneNames = NetworkSetting.DefaultGlobalScenesGeneralSetting.sceneNames;
+
+            if (sceneNames.IsNullOrEmpty())
+            {
+                Debugger.LogError($"No Default Global Scenes found");
+                onDone();
+                return;
+            }
 
             Debugger.Log("Loading Default Global Scenes : " + sceneNames.Join(", "));
 

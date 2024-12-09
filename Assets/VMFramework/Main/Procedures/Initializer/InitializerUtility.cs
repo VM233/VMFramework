@@ -12,21 +12,24 @@ namespace VMFramework.Procedure
         public static IEnumerable<(int order, IList<InitializationAction>)> GetInitializationActions(
             this IList<IInitializer> initializers)
         {
+            var initializerActions = new List<InitializationAction>();
+
             foreach (var initializer in initializers)
             {
-                foreach (var actionInfo in initializer.GetInitializationActions())
+                initializer.GetInitializationActions(initializerActions);
+            }
+
+            foreach (var actionInfo in initializerActions)
+            {
+                if (actionInfo.action == null)
                 {
-                    if (actionInfo.action == null)
-                    {
-                        Debug.LogError($"The action with order : {actionInfo.order} is null." +
-                                       $"It's provided by {initializer.GetType()}.");
-                    }
+                    Debug.LogError($"The action with order : {actionInfo.order} is null." +
+                                   $"It's provided by {actionInfo.initializer.GetType()}.");
                 }
             }
-            
-            var dict = initializers.SelectMany(initializer => initializer.GetInitializationActions())
-                .BuildSortedDictionary(initializer => (initializer.order, initializer),
-                    Comparer<int>.Create((x, y) => x.CompareTo(y)));
+
+            var dict = initializerActions.BuildSortedDictionary(initializer => (initializer.order, initializer),
+                Comparer<int>.Create((x, y) => x.CompareTo(y)));
 
             foreach (var (order, listOfActions) in dict)
             {

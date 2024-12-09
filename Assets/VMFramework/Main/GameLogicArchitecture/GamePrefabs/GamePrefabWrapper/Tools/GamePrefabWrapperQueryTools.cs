@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using VMFramework.Core;
 using VMFramework.Core.Editor;
+using VMFramework.Core.Pools;
 
 namespace VMFramework.GameLogicArchitecture.Editor
 {
@@ -48,9 +49,14 @@ namespace VMFramework.GameLogicArchitecture.Editor
                 yield break;
             }
 
+            var gamePrefabsCache = ListPool<IGamePrefab>.Default.Get();
+            
             foreach (var gamePrefabWrapper in GetAllGamePrefabWrappers())
             {
-                foreach (var existingGamePrefab in gamePrefabWrapper.GetGamePrefabs())
+                gamePrefabsCache.Clear();
+                gamePrefabWrapper.GetGamePrefabs(gamePrefabsCache);
+                
+                foreach (var existingGamePrefab in gamePrefabsCache)
                 {
                     if (existingGamePrefab == gamePrefab)
                     {
@@ -59,6 +65,8 @@ namespace VMFramework.GameLogicArchitecture.Editor
                     }
                 }
             }
+            
+            gamePrefabsCache.ReturnToDefaultPool();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -74,9 +82,14 @@ namespace VMFramework.GameLogicArchitecture.Editor
                 yield break;
             }
 
+            var gamePrefabsCache = ListPool<IGamePrefab>.Default.Get();
+            
             foreach (var gamePrefabWrapper in GetAllGamePrefabWrappers())
             {
-                foreach (var existingGamePrefab in gamePrefabWrapper.GetGamePrefabs())
+                gamePrefabsCache.Clear();
+                gamePrefabWrapper.GetGamePrefabs(gamePrefabsCache);
+                
+                foreach (var existingGamePrefab in gamePrefabsCache)
                 {
                     if (existingGamePrefab.GetType().IsDerivedFrom(gamePrefabType, true))
                     {
@@ -85,6 +98,8 @@ namespace VMFramework.GameLogicArchitecture.Editor
                     }
                 }
             }
+            
+            gamePrefabsCache.ReturnToDefaultPool();
         }
     }
 }

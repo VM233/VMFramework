@@ -76,13 +76,13 @@ namespace VMFramework.OdinExtensions
                 AssetDatabase.Refresh();
             }
 
-            if (CommonFolders.projectFolderPath.TryMakeRelative(destination, out var relativeDestination))
+            if (CommonFolders.ProjectFolderPath.TryMakeRelative(destination, out var relativeDestination))
             {
-                destination = CommonFolders.projectFolderPath.PathCombine(relativeDestination);
+                destination = CommonFolders.ProjectFolderPath.PathCombine(relativeDestination);
             }
             else
             {
-                destination = CommonFolders.projectFolderPath.PathCombine(destination);
+                destination = CommonFolders.ProjectFolderPath.PathCombine(destination);
             }
 
             destination = EditorUtility.SaveFilePanel("Save object as", destination,

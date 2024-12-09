@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using VMFramework.Core;
@@ -10,6 +11,7 @@ namespace VMFramework.GameLogicArchitecture
     {
         #region By Game Item Type
 
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IEnumerable<IGamePrefab> GetGamePrefabsByGameItemType(Type gameItemType)
         {
@@ -52,6 +54,7 @@ namespace VMFramework.GameLogicArchitecture
         
         #region By Type
 
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IEnumerable<TGamePrefab> GetGamePrefabsByType<TGamePrefab>()
             where TGamePrefab : IGamePrefab
@@ -65,6 +68,7 @@ namespace VMFramework.GameLogicArchitecture
             }
         }
         
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IEnumerable<IGamePrefab> GetGamePrefabsByType(Type gamePrefabType)
         {
@@ -88,6 +92,7 @@ namespace VMFramework.GameLogicArchitecture
             }
         }
 
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IEnumerable<IGamePrefab> GetGamePrefabsByTypes(params Type[] gamePrefabTypes)
         {
@@ -116,12 +121,14 @@ namespace VMFramework.GameLogicArchitecture
             }
         }
 
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IEnumerable<IGamePrefab> GetGamePrefabsByTypes(IEnumerable<Type> gamePrefabTypes)
         {
             return GetGamePrefabsByTypes(gamePrefabTypes.ToArray());
         }
 
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IEnumerable<TGamePrefab> GetGamePrefabsByTypes<TGamePrefab>(
             params Type[] gamePrefabTypes) where TGamePrefab : IGamePrefab

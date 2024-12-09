@@ -95,15 +95,15 @@ namespace FishNet.Object
         {
             if (!IsServerStarted)
                 return false;
-            /* No reason to dirty if there are no observers.
-             * This can happen even if a client is going to see
-             * this object because the server side initializes
-             * before observers are built. */
-            if (_networkObjectCache.Observers.Count == 0 && !_networkObjectCache.PredictedSpawner.IsValid)
-                return false;
-
+            // /* No reason to dirty if there are no observers.
+            //  * This can happen even if a client is going to see
+            //  * this object because the server side initializes
+            //  * before observers are built. */
+            // if (_networkObjectCache.Observers.Count == 0 && !_networkObjectCache.PredictedSpawner.IsValid)
+            //     return false;
             if (!SyncTypeDirty)
                 _networkObjectCache.NetworkManager.ServerManager.Objects.SetDirtySyncType(this);
+            
             SyncTypeDirty = true;
 
             return true;
@@ -163,7 +163,7 @@ namespace FishNet.Object
             int readerStart = reader.Position;
             while (reader.Position - readerStart < length)
             {
-                byte index = reader.ReadByte();
+                byte index = reader.ReadUInt8Unpacked();
                 if (_syncTypes.TryGetValueIL2CPP(index, out SyncBase sb))
                     sb.Read(reader, asServer);
                 else
@@ -177,11 +177,19 @@ namespace FishNet.Object
         /// <returns>True if there are no pending dirty sync types.</returns>
         internal bool WriteDirtySyncTypes(bool ignoreInterval = false, bool forceReliable = false, bool writeOnlyOwner = false)
         {
-            /* Can occur when a synctype is queued after
+            /* IsSpawned Can occur when a synctype is queued after
              * the object is marked for destruction. This should not
              * happen under most conditions since synctypes will be
-             * pushed through when despawn is called. */
-            if (!IsSpawned)
+             * pushed through when despawn is called.
+             *
+             * No observers can occur when the server changes a syncType
+             * value but gained no observers in the same tick. We still
+             * want to mark a syncType as dirty in this situation because
+             * it needs to write in a despawn message in the scenario the object
+             * is spawned (no observers), synctype changed, then despawned immediately
+             * after.
+             * */
+            if (!IsSpawned || _networkObjectCache.Observers.Count == 0)
             {
                 SyncTypes_ResetState();
                 return true;
@@ -282,10 +290,10 @@ namespace FishNet.Object
                         {
                             PooledWriter headerWriter = WriterPool.Retrieve();
                             //Write the packetId and NB information.
-                            headerWriter.WritePacketId(PacketId.SyncType);
+                            headerWriter.WritePacketIdUnpacked(PacketId.SyncType);
                             PooledWriter dataWriter = WriterPool.Retrieve();
                             dataWriter.WriteNetworkBehaviour(this);
-                            dataWriter.WriteBytesAndSize(channelWriter.GetBuffer(), 0, channelWriter.Length);
+                            dataWriter.WriteUInt8ArrayAndSize(channelWriter.GetBuffer(), 0, channelWriter.Length);
                             //Attach data onto packetWriter.
                             headerWriter.WriteArraySegment(dataWriter.GetArraySegment());
                             dataWriter.Store();
@@ -337,7 +345,7 @@ namespace FishNet.Object
         /// <summary>
         /// Resets all SyncTypes for this NetworkBehaviour for server or client.
         /// </summary>
-        internal void SyncTypes_ResetState(bool asServer)
+        internal void ResetState_SyncTypes(bool asServer)
         {
             foreach (SyncBase item in _syncTypes.Values)
                 item.ResetState(asServer);
@@ -388,7 +396,7 @@ namespace FishNet.Object
                 sb.WriteFull(syncTypeWriter);
             }
 
-            writer.WriteBytesAndSize(syncTypeWriter.GetBuffer(), 0, syncTypeWriter.Length);
+            writer.WriteUInt8ArrayAndSize(syncTypeWriter.GetBuffer(), 0, syncTypeWriter.Length);
             syncTypeWriter.Store();
         }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using VMFramework.Core;
 
@@ -14,6 +15,7 @@ namespace VMFramework.GameLogicArchitecture
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         [return: NotNull]
         public static IGamePrefab GetGamePrefabStrictly(string id)
@@ -35,6 +37,7 @@ namespace VMFramework.GameLogicArchitecture
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T GetGamePrefabStrictly<T>(string id) where T : IGamePrefab
         {
@@ -58,6 +61,7 @@ namespace VMFramework.GameLogicArchitecture
         /// <param name="id"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IGamePrefab GetActiveGamePrefabStrictly(string id)
         {
@@ -78,6 +82,7 @@ namespace VMFramework.GameLogicArchitecture
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
+        [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T GetActiveGamePrefabStrictly<T>(string id) where T : IGamePrefab
         {

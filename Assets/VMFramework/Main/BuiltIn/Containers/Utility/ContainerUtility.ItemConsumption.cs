@@ -11,13 +11,13 @@ namespace VMFramework.Containers
         public static bool ContainsEnoughItems(this IContainer container,
             IItemConsumption consumption)
         {
-            return container.HasItemCount(consumption.itemID, consumption.count);
+            return container.HasItemCountByID(consumption.itemID, consumption.count);
         }
 
         public static bool ContainsEnoughItems(this IEnumerable<IContainer> containers,
             IItemConsumption consumption)
         {
-            return containers.HasItemCount(consumption.itemID,
+            return containers.HasItemCountByID(consumption.itemID,
                 consumption.count);
         }
 

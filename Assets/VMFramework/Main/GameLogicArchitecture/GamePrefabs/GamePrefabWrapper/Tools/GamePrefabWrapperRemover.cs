@@ -16,18 +16,15 @@ namespace VMFramework.GameLogicArchitecture.Editor
         [MenuItem(UnityMenuItemNames.GAME_PREFABS_TOOLS + "Remove Empty GamePrefab Wrappers")]
         public static void RemoveEmptyGamePrefabWrappers()
         {
-            gamePrefabsCache.Clear();
-            
             foreach (var wrapper in GamePrefabWrapperQueryTools.GetAllGamePrefabWrappers())
             {
-                gamePrefabsCache.AddRange(wrapper.GetGamePrefabs());
+                gamePrefabsCache.Clear();
+                wrapper.GetGamePrefabs(gamePrefabsCache);
 
                 if (gamePrefabsCache.IsNullOrEmptyOrAllNull())
                 {
                     wrapper.DeleteAsset();
                 }
-                
-                gamePrefabsCache.Clear();
             }
         }
         

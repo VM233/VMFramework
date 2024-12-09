@@ -5,7 +5,7 @@ using VMFramework.Procedure;
 
 namespace VMFramework.GameLogicArchitecture
 {
-    public partial interface IGamePrefab : IIDOwner, INameOwner, IInitializer, ICheckableConfig
+    public partial interface IGamePrefab : IIDOwner<string>, INameOwner, IInitializer, ICheckableConfig, IGameTagsOwner
     {
         public const string NULL_ID = "null";
         
@@ -19,6 +19,15 @@ namespace VMFramework.GameLogicArchitecture
         
         public Type GameItemType { get; }
         
+        public int GameItemPrewarmCount { get; }
+        
         public event Action<IGamePrefab, string, string> OnIDChangedEvent;
+
+        public IGameItem GenerateGameItem()
+        {
+            GameItemType.AssertIsNotNull(nameof(GameItemType));
+            
+            return (IGameItem)Activator.CreateInstance(GameItemType);
+        }
     }
 }

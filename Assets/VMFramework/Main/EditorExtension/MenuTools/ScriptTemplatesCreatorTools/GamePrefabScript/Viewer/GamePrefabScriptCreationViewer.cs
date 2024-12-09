@@ -18,7 +18,12 @@ namespace VMFramework.Editor
         [EnumToggleButtons]
         public GameItemBaseType gameItemBaseType;
 
-        protected override string nameSuffix => withGameItem ? "Config" : string.Empty;
+#if FISHNET
+        [EnableIf(nameof(withGameItem))]
+        public bool withSerializer = false;
+#endif
+
+        protected override string NameSuffix => withGameItem ? "Config" : string.Empty;
     }
 }
 #endif

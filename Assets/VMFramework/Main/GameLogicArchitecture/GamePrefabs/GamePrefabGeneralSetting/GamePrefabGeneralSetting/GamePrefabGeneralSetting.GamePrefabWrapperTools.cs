@@ -26,7 +26,7 @@ namespace VMFramework.GameLogicArchitecture
 
         #region Game Prefab Create
 
-        [Button(ButtonSizes.Medium, ButtonStyle.FoldoutButton),
+        [Button(ButtonSizes.Medium, ButtonStyle.FoldoutButton, Expanded = true),
          TabGroup(TAB_GROUP_NAME, INITIAL_GAME_PREFABS_CATEGORY)]
         private void CreateGamePrefab([IsNotNullOrEmpty, IsUncreatedGamePrefabID] string gamePrefabID,
             GamePrefabWrapperType wrapperType)
@@ -44,8 +44,6 @@ namespace VMFramework.GameLogicArchitecture
                 {
                     return;
                 }
-                
-                AddDefaultGameTypeToGamePrefabWrapper(wrapper);
 
                 wrapper.OpenInNewInspector();
             }).ShowInPopup();

@@ -14,7 +14,7 @@ namespace VMFramework.GameLogicArchitecture
 
         protected virtual void OnInspectorInit()
         {
-            
+            gameTags ??= new();
         }
         
         void IInspectorConfig.OnInspectorInit()

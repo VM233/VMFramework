@@ -15,17 +15,15 @@ namespace VMFramework.UI
         private const string CONTEXT_MENU_ID_BIND_CATEGORY =
             TAB_GROUP_NAME + "/" + CONTEXT_MENU_CATEGORY + "/Context Menu ID Bind";
 
-        [PropertyTooltip("默认上下文菜单")]
         [TabGroup(TAB_GROUP_NAME, CONTEXT_MENU_CATEGORY), TitleGroup(CONTEXT_MENU_ID_BIND_CATEGORY)]
-        [GamePrefabID(typeof(IContextMenuPreset))]
+        [GamePrefabID(typeof(IContextMenuConfig))]
         [IsNotNullOrEmpty]
         [JsonProperty, SerializeField]
         public string defaultContextMenuID;
         
-        [PropertyTooltip("上下文菜单ID绑定配置")]
         [TitleGroup(CONTEXT_MENU_ID_BIND_CATEGORY)]
         [JsonProperty]
-        public GameTypeBasedConfigs<ContextMenuBindConfig> contextMenuIDBindConfigs = new();
+        public GameTagBasedConfigs<ContextMenuBindConfig> contextMenuIDBindConfigs = new();
 
         public override void CheckSettings()
         {

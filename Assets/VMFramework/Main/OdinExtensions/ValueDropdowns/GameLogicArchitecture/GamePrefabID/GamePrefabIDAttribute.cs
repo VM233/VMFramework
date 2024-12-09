@@ -1,8 +1,12 @@
 ﻿using System;
+using System.Diagnostics;
+using VMFramework.Core;
 using VMFramework.GameLogicArchitecture;
 
 namespace VMFramework.OdinExtensions
 {
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Parameter)]
+    [Conditional("UNITY_EDITOR")]
     public class GamePrefabIDAttribute : GeneralValueDropdownAttribute
     {
         public readonly Type[] GamePrefabTypes;

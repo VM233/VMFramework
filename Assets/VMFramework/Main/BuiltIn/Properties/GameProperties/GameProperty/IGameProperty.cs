@@ -4,9 +4,9 @@ using VMFramework.GameLogicArchitecture;
 
 namespace VMFramework.Properties
 {
-    public interface IGameProperty : ILocalizedGameTypedGamePrefab
+    public interface IGameProperty : ILocalizedGamePrefab
     {
-        public Type targetType { get; }
+        public Type TargetType { get; }
         
         public Sprite icon { get; }
         

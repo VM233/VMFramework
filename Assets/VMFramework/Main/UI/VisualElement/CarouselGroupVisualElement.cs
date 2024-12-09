@@ -4,23 +4,9 @@ using UnityEngine.UIElements;
 
 namespace VMFramework.UI
 {
-    public class CarouselGroupVisualElement : VisualElement
+    [UxmlElement]
+    public partial class CarouselGroupVisualElement : VisualElement
     {
-        #region Traits
-
-        [Preserve]
-        public new class UxmlFactory : UxmlFactory<CarouselGroupVisualElement, UxmlTraits>
-        {
-        }
-
-        [Preserve]
-        public new class UxmlTraits : VisualElement.UxmlTraits
-        {
-
-        }
-
-        #endregion
-
         public override VisualElement contentContainer => container ?? this;
 
         [ShowInInspector]

@@ -7,7 +7,7 @@ using VMFramework.Core;
 
 namespace VMFramework.Configuration
 {
-    public partial class SingleValueChooserConfig<TItem> : SingleValueChooserConfig<TItem, TItem>, IChooserConfig<TItem>
+    public partial class SingleValueChooserConfig<TItem> : SingleValueChooserConfig<TItem, TItem> where TItem : new()
     {
         public SingleValueChooserConfig() : base()
         {
@@ -30,7 +30,7 @@ namespace VMFramework.Configuration
         }
     }
     
-    public abstract partial class SingleValueChooserConfig<TWrapper, TItem> : ChooserConfig<TWrapper, TItem>
+    public abstract partial class SingleValueChooserConfig<TWrapper, TItem> : WrapperChooserConfig<TWrapper, TItem>
     {
         [HideLabel]
         public TWrapper value;
@@ -65,14 +65,14 @@ namespace VMFramework.Configuration
             }
         }
 
-        public override IChooser<TItem> GenerateNewObjectChooser()
+        public override IChooser<TItem> GenerateNewChooser()
         {
             return new SingleValueChooser<TItem>(UnboxWrapper(value));
         }
 
-        public sealed override IEnumerable<TItem> GetAvailableValues()
+        public override TItem GetRandomItem(Random random)
         {
-            yield return UnboxWrapper(value);
+            return UnboxWrapper(value);
         }
 
         public sealed override IEnumerable<TWrapper> GetAvailableWrappers()
@@ -92,7 +92,7 @@ namespace VMFramework.Configuration
                 return enumerable.Cast<object>().Join(", ");
             }
             
-            return ValueToString(value);
+            return WrapperToString(value);
         }
 
         public static implicit operator TWrapper(SingleValueChooserConfig<TWrapper, TItem> config)

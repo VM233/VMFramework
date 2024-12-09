@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using VMFramework.Configuration;
-using VMFramework.Core.Linq;
 using VMFramework.GameLogicArchitecture;
 using VMFramework.OdinExtensions;
 using VMFramework.Procedure;
@@ -24,11 +23,13 @@ namespace VMFramework.Examples
             // Write your initialization code here.
         }
 
-        protected override IEnumerable<InitializationAction> GetInitializationActions()
+        protected override void GetInitializationActions(ICollection<InitializationAction> actions)
         {
-            return base.GetInitializationActions().Concat(new(InitializationOrder.PostInit, OnPostInit, this));
+            base.GetInitializationActions(actions);
+            
+            actions.Add(new InitializationAction(InitializationOrder.PostInit, OnPostInit, this));
         }
-
+        
         private async void OnPostInit(Action onDone)
         {
             // Write your post-initialization code here.

@@ -8,25 +8,25 @@ using VMFramework.UI;
 
 namespace VMFramework.OdinExtensions
 {
-    internal sealed class VisualElementNameAttributeDrawer : 
-        GeneralValueDropdownAttributeDrawer<VisualElementNameAttribute>
+    internal sealed class VisualElementNameAttributeDrawer
+        : GeneralValueDropdownAttributeDrawer<VisualElementNameAttribute>
     {
         protected override void Validate()
         {
             base.Validate();
-            
+
             foreach (var parent in Property.TraverseToRoot(false, property => property.Parent))
             {
                 var value = parent?.ValueEntry?.WeakSmartValue;
 
-                if (value is IUIToolkitUIPanelPreset preset)
+                if (value is IVisualTreeAssetProvider)
                 {
                     return;
                 }
             }
 
             SirenixEditorGUI.ErrorMessageBox(
-                $"The property {Property.Name} is not a child of a {nameof(IUIToolkitUIPanelPreset)}.");
+                $"The property {Property.Name} is not a child of a {nameof(IVisualTreeAssetProvider)}.");
         }
 
         protected override IEnumerable<ValueDropdownItem> GetValues()
@@ -35,13 +35,13 @@ namespace VMFramework.OdinExtensions
             {
                 var value = parent?.ValueEntry?.WeakSmartValue;
 
-                if (value is IUIToolkitUIPanelPreset preset)
+                if (value is IVisualTreeAssetProvider provider)
                 {
-                    return preset.visualTree.GetAllNamesByTypes(Attribute.VisualElementTypes)
-                        .ToValueDropdownItems();
+                    return provider.VisualTree.GetAllNamesByTypes(Attribute.VisualElementTypes)
+                        .Where(name => name.IsLowercaseAndHyphenOnly() == false).ToValueDropdownItems();
                 }
             }
-            
+
             return Enumerable.Empty<ValueDropdownItem>();
         }
     }

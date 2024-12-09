@@ -13,11 +13,11 @@ namespace VMFramework.GameEvents
 
         public override Type BaseGamePrefabType => typeof(GameEventConfig);
 
-        public override string GameItemName => typeof(GameEvent<>).Name;
+        public override string GameItemName => typeof(ParameterizedGameEvent<>).Name;
 
         #endregion
 
-        [field: LabelText("KeyCode翻译"), TabGroup(TAB_GROUP_NAME, LOCALIZABLE_SETTING_CATEGORY)]
+        [field: TabGroup(TAB_GROUP_NAME, LOCALIZABLE_SETTING_CATEGORY)]
         [field: SerializeField]
         public DictionaryConfigs<KeyCode, KeyCodeTranslation> keyCodeTranslations
         {

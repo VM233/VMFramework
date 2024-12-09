@@ -1,15 +1,8 @@
 ﻿using FishNet.Connection;
-using FishNet.Documenting;
-using FishNet.Managing.Transporting;
-using FishNet.Object;
 using FishNet.Serializing;
-using FishNet.Serializing.Helping;
 using FishNet.Transporting;
-using FishNet.Utility;
-using FishNet.Utility.Extension;
 using GameKit.Dependencies.Utilities;
 using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 using SystemStopwatch = System.Diagnostics.Stopwatch;
@@ -47,63 +40,6 @@ namespace FishNet.Managing.Timing
         {
             BeforeTick = 0,
             AfterTick = 1,
-        }
-        /// <summary>
-        /// Synchronizes tick timing between server and client.
-        /// </summary>
-        private class TimingSync
-        {
-            /// <summary>
-            /// Last server tick passed in.
-            /// </summary>
-            private uint _lastServerTick;
-            /// <summary>
-            /// Last local tick passed in.
-            /// </summary>
-            private uint _lastLocalTick;
-            /// <summary>
-            /// Last difference between server and client.
-            /// </summary>
-            private long? _lastServerClientDifference;
-
-            /// <summary>
-            /// Sets differences between last server and local tick.
-            /// </summary>
-            /// <returns>True if values exist, false if unable to process.</returns>
-            public bool GetTickDifference(uint currentServerTick, uint currentLocalTick, out long tickDifference)
-            {
-                if (currentServerTick < _lastServerTick)
-                {
-                    tickDifference = 0;
-                    return false;
-                }
-                else
-                {
-                    uint serverDifference = (currentServerTick - _lastServerTick);
-                    uint localDifference = (currentLocalTick - _lastLocalTick);
-
-                    long td = ((long)serverDifference - (long)localDifference);
-                    //Average tick differences over 2 updates to help with unstable connections.
-                    if (_lastServerClientDifference.HasValue)
-                    {
-                        long totalTd = (td + _lastServerClientDifference.Value);
-                        tickDifference = (totalTd / (long)2);
-                    }
-                    //Last tick difference not set yet, use current values only.
-                    else
-                    {
-                        tickDifference = td;
-                    }
-
-                    //Also update last values.
-                    _lastServerTick = currentServerTick;
-                    _lastLocalTick = currentLocalTick;
-                    _lastServerClientDifference = td;
-
-                    return true;
-                }
-            }
-
         }
         #endregion
 
@@ -152,6 +88,10 @@ namespace FishNet.Managing.Timing
         /// Called when MonoBehaviours call FixedUpdate.
         /// </summary>
         public event Action OnFixedUpdate;
+        /// <summary>
+        /// How many ticks must pass to update timing.
+        /// </summary>
+        internal uint TimingTickInterval => _tickRate;
         /// <summary>
         /// RoundTripTime in milliseconds. This value includes latency from the tick rate.
         /// </summary>
@@ -309,9 +249,24 @@ namespace FishNet.Managing.Timing
         /// </summary>
         private bool _fixedUpdateTimeStep;
         /// <summary>
-        /// Synchronizes tick deltas between server and client.
+        /// 
         /// </summary>
-        private TimingSync _timing = new TimingSync();
+        private float _physicsTimeScale = 1f;
+        /// <summary>
+        /// Gets the current physics time scale.
+        /// </summary>
+        /// <returns></returns>
+        public float GetPhysicsTimeScale() => _physicsTimeScale;
+        /// <summary>
+        /// Sets the physics time scale.
+        /// This is not automatically synchronized.
+        /// </summary>
+        /// <param name="value">New value.</param>
+        public void SetPhysicsTimeScale(float value)
+        {
+            value = Mathf.Clamp(value, 0f, float.PositiveInfinity);
+            _physicsTimeScale = value;
+        }
         #endregion
 
         #region Const.
@@ -322,7 +277,7 @@ namespace FishNet.Managing.Timing
         /// <summary>
         /// Playerprefs string to load and save user fixed time.
         /// </summary>
-        private const string SAVED_FIXED_TIME_TEXT = "SavedFixedTimeFN";
+        private const string SAVED_FIXED_TIME_TEXT = "SavedFixedTimeFN";        
         #endregion
 
 #if UNITY_EDITOR
@@ -416,8 +371,8 @@ namespace FishNet.Managing.Timing
             NetworkManager = networkManager;
             LastPacketTick.Initialize(networkManager.TimeManager);
             SetInitialValues();
-            NetworkManager.ServerManager.OnServerConnectionState += ServerManager_OnServerConnectionState;
-            NetworkManager.ClientManager.OnClientConnectionState += ClientManager_OnClientConnectionState;
+            networkManager.ServerManager.OnServerConnectionState += ServerManager_OnServerConnectionState;
+            networkManager.ClientManager.OnClientConnectionState += ClientManager_OnClientConnectionState;
 
             AddNetworkLoops();
         }
@@ -474,6 +429,7 @@ namespace FishNet.Managing.Timing
             }
         }
 
+ 
         /// <summary>
         /// Sets values to use based on settings.
         /// </summary>
@@ -639,7 +595,7 @@ namespace FishNet.Managing.Timing
 
             uint tick = (tickOverride == null) ? LocalTick : tickOverride.Value;
             PooledWriter writer = WriterPool.Retrieve();
-            writer.WritePacketId(PacketId.PingPong);
+            writer.WritePacketIdUnpacked(PacketId.PingPong);
             writer.WriteTickUnpacked(tick);
             NetworkManager.TransportManager.SendToServer((byte)Channel.Unreliable, writer.GetArraySegment());
             writer.Store();
@@ -654,7 +610,7 @@ namespace FishNet.Managing.Timing
                 return;
 
             PooledWriter writer = WriterPool.Retrieve();
-            writer.WritePacketId(PacketId.PingPong);
+            writer.WritePacketIdUnpacked(PacketId.PingPong);
             writer.WriteTickUnpacked(clientTick);
             conn.SendToClient((byte)Channel.Unreliable, writer.GetArraySegment());
             writer.Store();
@@ -701,6 +657,7 @@ namespace FishNet.Managing.Timing
 
             bool variableTiming = (_timingType == TimingType.Variable);
             bool frameTicked = FrameTicked;
+            float tickDelta = ((float)TickDelta * GetPhysicsTimeScale());
 
             do
             {
@@ -719,26 +676,21 @@ namespace FishNet.Managing.Timing
 
                 if (frameTicked)
                 {
-#if !PREDICTION_1
                     //Tell predicted objecs to reconcile before OnTick.
                     NetworkManager.PredictionManager.ReconcileToStates();
-#endif
                     OnTick?.Invoke();
 
                     if (PhysicsMode == PhysicsMode.TimeManager)
                     {
-                        float tick = (float)TickDelta;
-                        OnPrePhysicsSimulation?.Invoke(tick);
-                        Physics.Simulate(tick);
-                        Physics2D.Simulate(tick);
-                        OnPostPhysicsSimulation?.Invoke(tick);
+                        OnPrePhysicsSimulation?.Invoke(tickDelta);
+                        Physics.Simulate(tickDelta);
+                        Physics2D.Simulate(tickDelta);
+                        OnPostPhysicsSimulation?.Invoke(tickDelta);
                     }
 
                     OnPostTick?.Invoke();
-#if !PREDICTION_1
                     //After post tick send states.
                     NetworkManager.PredictionManager.SendStateUpdate();
-#endif
 
                     /* If isClient this is the
                      * last tick during this loop. */
@@ -1006,10 +958,7 @@ namespace FishNet.Managing.Timing
                 return tick;
 
             long difference = (Tick - tick);
-            //If no ticks have passed then return current local tick.
-            if (difference <= 0)
-                return LocalTick;
-
+            
             long result = (LocalTick - difference);
             if (result <= 0)
                 result = 0;
@@ -1028,9 +977,6 @@ namespace FishNet.Managing.Timing
                 return localTick;
 
             long difference = (LocalTick - localTick);
-            //If no ticks have passed then return current local tick.
-            if (difference <= 0)
-                return Tick;
 
             long result = (Tick - difference);
             if (result <= 0)
@@ -1092,8 +1038,9 @@ namespace FishNet.Managing.Timing
         /// </summary>
         private void SendTimingAdjustment()
         {
+      
             //Send every second.
-            if (LocalTick % _tickRate == 0)
+            if (LocalTick % TimingTickInterval == 0)
             {
                 //Now send using a packetId.
                 PooledWriter writer = WriterPool.Retrieve();
@@ -1102,11 +1049,10 @@ namespace FishNet.Managing.Timing
                     if (!item.IsAuthenticated)
                         continue;
 
-                    writer.WritePacketId(PacketId.TimingUpdate);
+                    writer.WritePacketIdUnpacked(PacketId.TimingUpdate);
                     writer.WriteTickUnpacked(item.PacketTick.Value());
                     item.SendToClient((byte)Channel.Unreliable, writer.GetArraySegment());
                     writer.Reset();
-
                 }
 
                 writer.Store();
@@ -1128,6 +1074,7 @@ namespace FishNet.Managing.Timing
              * always be in the past. */
             if (LocalTick < clientTick)
                 return;
+
             /* Use the last ordered remote tick rather than
              * lastPacketTick. This will help with out of order
              * packets where the timing update sent before
@@ -1141,7 +1088,7 @@ namespace FishNet.Managing.Timing
             uint nextTick = (LocalTick - clientTick) + lastPacketTick;
             long difference = ((long)nextTick - (long)prevTick);
             Tick = nextTick;
-            
+
             //Maximum difference allowed before resetting values.
             const int maximumDifference = 4;
             //Difference is extreme, reset to default timings. Client probably had an issue.

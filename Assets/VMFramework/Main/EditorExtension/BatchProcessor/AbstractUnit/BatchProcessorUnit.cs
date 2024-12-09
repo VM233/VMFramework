@@ -13,9 +13,16 @@ namespace VMFramework.Editor.BatchProcessor
         public void Init(BatchProcessorContainer container)
         {
             this.container = container;
+            
+            OnInit();
         }
 
-        public abstract bool IsValid(IList<object> selectedObjects);
+        protected virtual void OnInit()
+        {
+            
+        }
+
+        public abstract bool IsValid(IReadOnlyList<object> selectedObjects);
 
         public virtual void OnSelectedObjectsChanged(IList<object> selectedObjects)
         {

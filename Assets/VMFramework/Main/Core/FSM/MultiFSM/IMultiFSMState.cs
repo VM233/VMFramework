@@ -15,7 +15,5 @@
         public void Update(bool isActive);
         
         public void FixedUpdate(bool isActive);
-        
-        public void OnDestroy();
     }
 }

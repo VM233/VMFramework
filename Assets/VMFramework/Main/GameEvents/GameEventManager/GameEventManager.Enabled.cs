@@ -1,28 +1,37 @@
 ﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using VMFramework.Core;
 
 namespace VMFramework.GameEvents
 {
     public partial class GameEventManager
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Enable(string id)
+        public static bool IsEnabled(string id)
         {
             var gameEvent = GetGameEventStrictly(id);
             
-            gameEvent.Enable();
+            return gameEvent.IsEnabled;
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Disable(string id)
+        public static void Enable(string id, IToken token)
         {
             var gameEvent = GetGameEventStrictly(id);
             
-            gameEvent.Disable();
+            gameEvent.Enable(token);
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Enable(IEnumerable<string> ids)
+        public static void Disable(string id, IToken token)
+        {
+            var gameEvent = GetGameEventStrictly(id);
+            
+            gameEvent.Disable(token);
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Enable<TEnumerable>(TEnumerable ids, IToken token) where TEnumerable : IEnumerable<string>
         {
             if (ids == null)
             {
@@ -31,12 +40,12 @@ namespace VMFramework.GameEvents
             
             foreach (var id in ids)
             {
-                Enable(id);
+                Enable(id, token);
             }
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Disable(IEnumerable<string> ids)
+        public static void Disable<TEnumerable>(TEnumerable ids, IToken token) where TEnumerable : IEnumerable<string>
         {
             if (ids == null)
             {
@@ -45,7 +54,7 @@ namespace VMFramework.GameEvents
             
             foreach (var id in ids)
             {
-                Disable(id);
+                Disable(id, token);
             }
         }
     }

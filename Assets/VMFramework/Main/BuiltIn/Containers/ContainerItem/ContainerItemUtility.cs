@@ -32,27 +32,5 @@ namespace VMFramework.Containers
 
             return false;
         }
-        
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool TryGetContainerAndSlotIndex(this IContainerItem item, out IContainer container,
-            out int slotIndex)
-        {
-            container = item.sourceContainer;
-            
-            if (container == null)
-            {
-                Debug.LogError("Item does not have a source container.");
-                slotIndex = -1;
-                return false;
-            }
-
-            if (container.TryGetSlotIndex(item, out slotIndex) == false)
-            {
-                Debug.LogError("Item does not exist in the source container.");
-                return false;
-            }
-            
-            return true;
-        }
     }
 }

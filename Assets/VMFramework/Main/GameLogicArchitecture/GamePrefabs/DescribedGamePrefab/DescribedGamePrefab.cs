@@ -5,7 +5,7 @@ using VMFramework.Localization;
 
 namespace VMFramework.GameLogicArchitecture
 {
-    public partial class DescribedGamePrefab : LocalizedGameTypedGamePrefab, IDescribedGamePrefab
+    public partial class DescribedGamePrefab : LocalizedGamePrefab, IDescribedGamePrefab
     {
         [LabelText(SdfIconType.Bootstrap), TabGroup(TAB_GROUP_NAME, BASIC_CATEGORY)]
         [JsonProperty]
@@ -29,7 +29,7 @@ namespace VMFramework.GameLogicArchitecture
 
         #region Interface Implementation
 
-        string INameOwner.name => nameFormat.GetText(name);
+        string INameOwner.Name => nameFormat.GetText(name);
 
         string IDescriptionOwner.Description
         {

@@ -28,7 +28,7 @@ namespace VMFramework.Configuration
                     continue;
                 }
 
-                var values = items.Select(item => item.value.sprite).ToList();
+                var values = items.Select(item => item.value.Sprite).ToList();
 
                 if (values.Contains(selectedSprite) == false)
                 {

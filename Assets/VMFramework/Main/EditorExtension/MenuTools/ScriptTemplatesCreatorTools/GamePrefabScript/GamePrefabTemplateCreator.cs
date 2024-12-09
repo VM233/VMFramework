@@ -4,6 +4,7 @@ using UnityEditor;
 using VMFramework.Core;
 using VMFramework.Core.Editor;
 using VMFramework.GameLogicArchitecture;
+using VMFramework.Tools.Editor;
 
 namespace VMFramework.Editor
 {
@@ -19,6 +20,8 @@ namespace VMFramework.Editor
 
         private static readonly GamePrefabGeneralSettingScriptPostProcessor gamePrefabGeneralSettingPostProcessor =
             new();
+        
+        private static readonly GameItemSerializerScriptPostProcessor gameItemSerializerPostProcessor = new();
 
         [MenuItem(UnityMenuItemNames.SCRIPT_TEMPLATE + "Derived Game Prefab", false, 0)]
         private static void CreateDerivedGamePrefabScript()
@@ -50,13 +53,13 @@ namespace VMFramework.Editor
                 ScriptCreator.CreateScriptAssets(ScriptTemplatesNames.GAME_PREFAB, gamePrefabName, gamePrefabFolder,
                     extraInfo: new GamePrefabScriptExtraInfo()
                     {
-                        namespaceName = info.namespaceName,
-                        enableParentInterfaceRegion = info.withGamePrefabInterface,
-                        parentInterfaceName = gamePrefabInterfaceName,
-                        parentClassName = parentGamePrefabName,
-                        enableIDSuffixOverrideRegion = false,
-                        enableGameItemTypeOverrideRegion = createGameItem,
-                        gameItemType = createGameItem ? $"typeof({gameItemName})" : "null"
+                        NamespaceName = info.namespaceName,
+                        EnableParentInterfaceRegion = info.withGamePrefabInterface,
+                        ParentInterfaceName = gamePrefabInterfaceName,
+                        ParentClassName = parentGamePrefabName,
+                        EnableIDSuffixOverrideRegion = false,
+                        EnableGameItemTypeOverrideRegion = createGameItem,
+                        GameItemType = createGameItem ? $"typeof({gameItemName})" : "null"
                     }, postProcessor: gamePrefabPostProcessor);
 
                 if (info.withGamePrefabInterface)
@@ -64,7 +67,7 @@ namespace VMFramework.Editor
                     ScriptCreator.CreateScriptAssets(ScriptTemplatesNames.GAME_PREFAB_INTERFACE,
                         gamePrefabInterfaceName, gamePrefabFolder, extraInfo: new GamePrefabInterfaceScriptExtraInfo()
                         {
-                            namespaceName = info.namespaceName,
+                            NamespaceName = info.namespaceName,
                             parentInterfaceName = parentGamePrefabInterfaceName
                         }, postProcessor: gamePrefabInterfacePostProcessor);
                 }
@@ -74,7 +77,7 @@ namespace VMFramework.Editor
                     ScriptCreator.CreateScriptAssets(ScriptTemplatesNames.GAME_ITEM, gameItemName, gameItemFolder,
                         extraInfo: new GameItemScriptExtraInfo()
                         {
-                            namespaceName = info.namespaceName,
+                            NamespaceName = info.namespaceName,
                             parentClassName = parentGameItemName,
                             enableParentInterfaceRegion = info.withGameItemInterface,
                             parentInterfaceName = gameItemInterfaceName,
@@ -89,7 +92,7 @@ namespace VMFramework.Editor
                         ScriptCreator.CreateScriptAssets(ScriptTemplatesNames.GAME_ITEM_INTERFACE,
                             gameItemInterfaceName, gameItemFolder, extraInfo: new GameItemInterfaceScriptExtraInfo()
                             {
-                                namespaceName = info.namespaceName,
+                                NamespaceName = info.namespaceName,
                                 parentInterfaceName = parentGameItemInterfaceName
                             }, postProcessor: gameItemInterfacePostProcessor);
                     }
@@ -136,19 +139,20 @@ namespace VMFramework.Editor
                 ScriptCreator.CreateScriptAssets(ScriptTemplatesNames.GAME_PREFAB, gamePrefabName, gamePrefabFolder,
                     extraInfo: new GamePrefabScriptExtraInfo()
                     {
-                        namespaceName = info.namespaceName,
-                        parentInterfaceName = gamePrefabInterfaceName,
-                        parentClassName = info.gamePrefabBaseType.GetName(),
-                        enableIDSuffixOverrideRegion = true,
-                        idSuffix = info.name.ToSnakeCase(),
-                        enableGameItemTypeOverrideRegion = info.withGameItem,
-                        gameItemType = gameItemType,
+                        NamespaceName = info.namespaceName,
+                        EnableParentInterfaceRegion = true,
+                        ParentInterfaceName = gamePrefabInterfaceName,
+                        ParentClassName = info.gamePrefabBaseType.GetName(),
+                        EnableIDSuffixOverrideRegion = true,
+                        IDSuffix = info.name.ToSnakeCase(),
+                        EnableGameItemTypeOverrideRegion = info.withGameItem,
+                        GameItemType = gameItemType,
                     }, postProcessor: gamePrefabPostProcessor);
 
                 ScriptCreator.CreateScriptAssets(ScriptTemplatesNames.GAME_PREFAB_INTERFACE, gamePrefabInterfaceName,
                     gamePrefabFolder, extraInfo: new GamePrefabInterfaceScriptExtraInfo()
                     {
-                        namespaceName = info.namespaceName,
+                        NamespaceName = info.namespaceName,
                         parentInterfaceName = info.gamePrefabBaseType.GetInterfaceName()
                     }, postProcessor: gamePrefabInterfacePostProcessor);
 
@@ -157,7 +161,7 @@ namespace VMFramework.Editor
                     ScriptCreator.CreateScriptAssets(ScriptTemplatesNames.GAME_ITEM, gameItemName, gameItemFolder,
                         extraInfo: new GameItemScriptExtraInfo()
                         {
-                            namespaceName = info.namespaceName,
+                            NamespaceName = info.namespaceName,
                             parentClassName = info.gameItemBaseType.GetName(),
                             enableParentInterfaceRegion = true,
                             parentInterfaceName = gameItemInterfaceName,
@@ -168,7 +172,7 @@ namespace VMFramework.Editor
                     ScriptCreator.CreateScriptAssets(ScriptTemplatesNames.GAME_ITEM_INTERFACE, gameItemInterfaceName,
                         gameItemFolder, extraInfo: new GameItemInterfaceScriptExtraInfo()
                         {
-                            namespaceName = info.namespaceName,
+                            NamespaceName = info.namespaceName,
                             parentInterfaceName = info.gameItemBaseType.GetInterfaceName()
                         }, postProcessor: gameItemInterfacePostProcessor);
                 }
@@ -179,11 +183,28 @@ namespace VMFramework.Editor
                         generalSettingName, gamePrefabGeneralSettingFolder,
                         extraInfo: new GamePrefabGeneralSettingScriptExtraInfo()
                         {
-                            namespaceName = info.namespaceName,
-                            baseGamePrefabType = gamePrefabInterfaceName,
-                            nameInGameEditor = gameItemName.ToPascalCase(" "),
+                            NamespaceName = info.namespaceName,
+                            BaseGamePrefabType = gamePrefabInterfaceName,
+                            NameInGameEditor = gameItemName.ToPascalCase(" "),
+                            EnableGameItemNameOverrideRegion = info.withGameItem,
+                            GameItemName = gameItemName
                         }, postProcessor: gamePrefabGeneralSettingPostProcessor);
                 }
+
+#if FISHNET
+                if (info.withGameItem && info.withSerializer)
+                {
+                    var serializerName = gameItemName + "Serializer";
+                    ScriptCreator.CreateScriptAssets(ScriptTemplatesNames.GAME_ITEM_SERIALIZER, serializerName,
+                        gameItemFolder, extraInfo: new GameItemSerializerScriptExtraInfo()
+                        {
+                            NamespaceName = info.namespaceName,
+                            GameItemName = gameItemName,
+                            GameItemInterfaceName = gameItemInterfaceName,
+                            GameItemFieldName = gameItemName.ToCamelCase()
+                        }, postProcessor: gameItemSerializerPostProcessor);
+                }
+#endif
             });
         }
     }

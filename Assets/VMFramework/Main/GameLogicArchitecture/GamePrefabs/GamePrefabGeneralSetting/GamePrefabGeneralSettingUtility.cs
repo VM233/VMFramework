@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using VMFramework.Core;
+using VMFramework.Core.Pools;
 
 namespace VMFramework.GameLogicArchitecture
 {
@@ -88,37 +89,45 @@ namespace VMFramework.GameLogicArchitecture
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static IEnumerable<GamePrefabGeneralSetting> GetGamePrefabGeneralSettings(
-            this IEnumerable<IGamePrefab> gamePrefabs)
+        public static void GetGamePrefabGeneralSettings<TGamePrefabs, TGamePrefabGeneralSettings>(
+            this TGamePrefabs gamePrefabs, TGamePrefabGeneralSettings gamePrefabGeneralSettings)
+            where TGamePrefabs : IEnumerable<IGamePrefab>
+            where TGamePrefabGeneralSettings : ICollection<GamePrefabGeneralSetting>
         {
-            int count = 0;
-            
             foreach (var gamePrefab in gamePrefabs)
             {
                 if (TryGetGamePrefabGeneralSettingWithWarning(gamePrefab, out var gamePrefabSetting))
                 {
-                    yield return gamePrefabSetting;
+                    gamePrefabGeneralSettings.Add(gamePrefabSetting);
                 }
-                
-                count++;
-            }
-
-            if (count == 0)
-            {
-                Debug.LogWarning($"{nameof(gamePrefabs)} is empty!");
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static IEnumerable<GamePrefabGeneralSetting> GetGamePrefabGeneralSettings(
-            this GamePrefabWrapper gamePrefabWrapper)
+        public static void GetGamePrefabGeneralSettings<TGamePrefabGeneralSettings>(
+            this GamePrefabWrapper gamePrefabWrapper, TGamePrefabGeneralSettings gamePrefabGeneralSettings)
+            where TGamePrefabGeneralSettings : ICollection<GamePrefabGeneralSetting>
         {
             if (gamePrefabWrapper == null)
             {
-                return Enumerable.Empty<GamePrefabGeneralSetting>();
+                return;
             }
+            
+            var gamePrefabs = ListPool<IGamePrefab>.Default.Get();
+            gamePrefabs.Clear();
+            
+            gamePrefabWrapper.GetGamePrefabs(gamePrefabs);
 
-            return gamePrefabWrapper.GetGamePrefabs().GetGamePrefabGeneralSettings();
+            if (gamePrefabs.Count == 0)
+            {
+                Debugger.LogWarning($"{gamePrefabWrapper.name} has no game prefabs.");
+            }
+            else
+            {
+                gamePrefabs.GetGamePrefabGeneralSettings(gamePrefabGeneralSettings);
+            }
+            
+            gamePrefabs.ReturnToDefaultPool();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

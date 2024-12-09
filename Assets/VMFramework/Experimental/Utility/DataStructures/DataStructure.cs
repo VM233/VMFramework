@@ -93,7 +93,7 @@ namespace VMFramework.Core {
         }
 
         public override string ToString() {
-            return items.ToString(",");
+            return items.ToFormattedString(",");
         }
     }
 }

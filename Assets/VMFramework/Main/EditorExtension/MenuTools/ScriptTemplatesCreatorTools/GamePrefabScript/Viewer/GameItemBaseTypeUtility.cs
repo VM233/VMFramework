@@ -14,7 +14,17 @@ namespace VMFramework.Editor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string GetInterfaceName(this GameItemBaseType type)
         {
-            return "I" + type;
+            return type switch
+            {
+                GameItemBaseType.GameItem => "IGameItem",
+                GameItemBaseType.ControllerGameItem => "IGameItem",
+                GameItemBaseType.VisualGameItem => "IVisualGameItem",
+#if FISHNET
+                GameItemBaseType.UUIDGameItem => "IGameItem",
+                GameItemBaseType.UUIDVisualGameItem => "IVisualGameItem",
+#endif
+                _ => "IGameItem"
+            };
         }
     }
 }

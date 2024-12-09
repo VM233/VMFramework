@@ -3,7 +3,7 @@ namespace VMFramework.Editor
 {
     public sealed class EditorInitializerScriptCreationViewer : InitializerScriptCreationViewer
     {
-        protected override string nameSuffix => "EditorInitializer";
+        protected override string NameSuffix => "EditorInitializer";
     }
 }
 #endif

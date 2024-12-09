@@ -5,6 +5,7 @@ using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using VMFramework.Core;
+using VMFramework.GameLogicArchitecture;
 
 namespace VMFramework.Procedure
 {
@@ -92,8 +93,14 @@ namespace VMFramework.Procedure
                 {
                     if (actionInfo.initializer.EnableInitializationDebugLog)
                     {
-                        Debugger.Log($"Initializing {actionInfo.action.Method.Name} " +
-                                  $"of {actionInfo.initializer.GetType()}");
+                        var initializerName = actionInfo.initializer.GetType().ToString();
+
+                        if (actionInfo.initializer is INameOwner nameOwner)
+                        {
+                            initializerName += $": {nameOwner.Name}";
+                        }
+                        
+                        Debugger.Log($"Initializing {actionInfo.action.Method.Name} of {initializerName}");
                     }
 
                     actionInfo.action(() => _currentPriorityLeftActions.Remove(actionInfo.action));

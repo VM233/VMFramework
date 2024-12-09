@@ -3,7 +3,7 @@ using VMFramework.Configuration;
 
 namespace VMFramework.Containers
 {
-    public partial class InputsAndOutputsContainerPreset
+    public partial class InputsAndOutputsContainerConfig
     {
         protected override void OnInspectorInit()
         {

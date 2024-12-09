@@ -2,7 +2,7 @@ using VMFramework.GameLogicArchitecture;
 
 namespace VMFramework.Examples 
 {
-    public interface IEntityConfig : ILocalizedGameTypedGamePrefab
+    public interface IEntityConfig : ILocalizedGamePrefab
     {
         
     }

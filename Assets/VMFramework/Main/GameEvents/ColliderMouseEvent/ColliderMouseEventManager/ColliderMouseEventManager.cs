@@ -13,39 +13,54 @@ namespace VMFramework.GameEvents
     {
         private const string DEBUGGING_CATEGORY = "Only For Debugging";
 
+        private static ColliderMouseEventGeneralSetting Setting => CoreSetting.ColliderMouseEventGeneralSetting;
+
         [SerializeField]
         private Camera fixedBindCamera;
 
         [ShowInInspector]
         [HideInEditorMode]
-        public static Camera bindCamera;
+        public static Camera BindCamera { get; set; }
 
-        private static float detectDistance2D =>
-            CoreSetting.ColliderMouseEventGeneralSetting.detectDistance2D;
+        [ShowInInspector]
+        public static float DetectDistance3D { get; set; }
 
-        private static ObjectDimensions dimensionsDetectPriority =>
-            CoreSetting.ColliderMouseEventGeneralSetting.dimensionsDetectPriority;
+        [ShowInInspector]
+        public static float DetectDistance2D { get; set; }
 
-        private static LayerMask layerMask =>
-            CoreSetting.ColliderMouseEventGeneralSetting.detectLayerMask;
+        [ShowInInspector]
+        public static ObjectDimensions DimensionsDetectPriority { get; set; }
 
-        [BoxGroup(DEBUGGING_CATEGORY), ReadOnly, ShowInInspector]
+        [ShowInInspector]
+        public static LayerMask LayerMask { get; set; }
+
+        [ShowInInspector]
+        public static readonly List<PhysicsScene> physicsScene3Ds = new();
+
+        [ShowInInspector]
+        public static readonly List<PhysicsScene2D> physicsScene2Ds = new();
+
+        #region Triggers
+
+        [FoldoutGroup(DEBUGGING_CATEGORY), ReadOnly, ShowInInspector]
         private static ColliderMouseEventTrigger currentHoverTrigger;
 
-        [BoxGroup(DEBUGGING_CATEGORY), ReadOnly, ShowInInspector]
+        [FoldoutGroup(DEBUGGING_CATEGORY), ReadOnly, ShowInInspector]
         private static ColliderMouseEventTrigger lastHoverTrigger;
 
-        [BoxGroup(DEBUGGING_CATEGORY), ReadOnly, ShowInInspector]
+        [FoldoutGroup(DEBUGGING_CATEGORY), ReadOnly, ShowInInspector]
         private static ColliderMouseEventTrigger leftMouseUpDownTrigger;
 
-        [BoxGroup(DEBUGGING_CATEGORY), ReadOnly, ShowInInspector]
+        [FoldoutGroup(DEBUGGING_CATEGORY), ReadOnly, ShowInInspector]
         private static ColliderMouseEventTrigger rightMouseUpDownTrigger;
 
-        [BoxGroup(DEBUGGING_CATEGORY), ReadOnly, ShowInInspector]
+        [FoldoutGroup(DEBUGGING_CATEGORY), ReadOnly, ShowInInspector]
         private static ColliderMouseEventTrigger middleMouseUpDownTrigger;
 
-        [BoxGroup(DEBUGGING_CATEGORY), ReadOnly, ShowInInspector]
+        [FoldoutGroup(DEBUGGING_CATEGORY), ReadOnly, ShowInInspector]
         private static ColliderMouseEventTrigger dragTrigger;
+
+        #endregion
 
         protected override void OnBeforeInitStart()
         {
@@ -53,17 +68,35 @@ namespace VMFramework.GameEvents
 
             if (fixedBindCamera != null)
             {
-                bindCamera = fixedBindCamera;
+                BindCamera = fixedBindCamera;
             }
             else
             {
-                bindCamera = Camera.main;
+                BindCamera = Camera.main;
+            }
+
+            DetectDistance3D = Setting.detectDistance3D;
+
+            DetectDistance2D = Setting.detectDistance2D;
+
+            DimensionsDetectPriority = Setting.dimensionsDetectPriority;
+
+            LayerMask = Setting.detectLayerMask;
+
+            if (Setting.includingDefaultPhysicsScene3D)
+            {
+                physicsScene3Ds.Add(Physics.defaultPhysicsScene);
+            }
+
+            if (Setting.includingDefaultPhysicsScene2D)
+            {
+                physicsScene2Ds.Add(Physics2D.defaultPhysicsScene);
             }
         }
 
         private void Update()
         {
-            if (bindCamera == null)
+            if (BindCamera == null)
             {
                 return;
             }
@@ -353,7 +386,7 @@ namespace VMFramework.GameEvents
 
         private ColliderMouseEventTrigger DetectTrigger()
         {
-            if (dimensionsDetectPriority == ObjectDimensions.TWO_D)
+            if (DimensionsDetectPriority == ObjectDimensions.TWO_D)
             {
                 ColliderMouseEventTrigger detected2D = Detect2DTrigger();
                 if (detected2D != null)
@@ -382,30 +415,32 @@ namespace VMFramework.GameEvents
                 return default;
             }
 
-            var ray = bindCamera.ScreenPointToRay(mousePos);
+            var ray = BindCamera.ScreenPointToRay(mousePos);
 
             Debug.DrawRay(ray.origin, ray.direction, Color.green);
 
-            if (Physics.Raycast(ray, out var hit3D,
-                    CoreSetting.ColliderMouseEventGeneralSetting.detectDistance3D, layerMask))
+            foreach (var physicsScene in physicsScene3Ds)
             {
-                ColliderMouseEventTrigger detectResult =
-                    hit3D.collider.gameObject.GetComponent<ColliderMouseEventTrigger>();
+                if (physicsScene.Raycast(ray.origin, ray.direction, out var hit3D, DetectDistance3D, LayerMask))
+                {
+                    ColliderMouseEventTrigger detectResult =
+                        hit3D.collider.gameObject.GetComponent<ColliderMouseEventTrigger>();
 
-                return detectResult;
+                    return detectResult;
+                }
             }
 
             return default;
         }
 
-        private static readonly List<Vector2> hitDirections = new()
+        private static readonly Vector2[] hitDirections =
         {
             Vector2.left,
             Vector2.right,
             Vector2.down,
             Vector2.up
         };
-
+        
         private static ColliderMouseEventTrigger Detect2DTrigger()
         {
             Vector3 mousePos = Input.mousePosition;
@@ -415,39 +450,51 @@ namespace VMFramework.GameEvents
                 return default;
             }
 
-            RaycastHit2D hit2D = default;
+            ColliderMouseEventTrigger resultTrigger = null;
 
-            Ray ray = bindCamera.ScreenPointToRay(mousePos);
+            Ray ray = BindCamera.ScreenPointToRay(mousePos);
 
             float distance = -1;
 
-            foreach (Vector2 direction in hitDirections)
+            foreach (var physicsScene in physicsScene2Ds)
             {
-
-                RaycastHit2D newHit = Physics2D.Raycast(new Vector2(ray.origin.x, ray.origin.y), direction,
-                    detectDistance2D, layerMask);
-                if (newHit.collider)
+                foreach (Vector2 direction in hitDirections)
                 {
-                    Vector3 colliderPos =
-                        bindCamera.WorldToScreenPoint(newHit.collider.gameObject.transform.position);
-                    colliderPos.z = 0;
+                    var origin = new Vector2(ray.origin.x, ray.origin.y);
+                    RaycastHit2D newHit = physicsScene.Raycast(origin, direction, DetectDistance2D, LayerMask);
 
-                    float newDistance = Vector3.Distance(colliderPos, Input.mousePosition);
+                    if (newHit == false)
+                    {
+                        continue;
+                    }
+                    
+                    var pivotPosition = newHit.collider.transform.position;
+
+                    if (Vector2.Dot(newHit.normal, (pivotPosition.XY() - newHit.point)) < 0)
+                    {
+                        continue;
+                    }
+
+                    if (newHit.collider.TryGetComponent(out ColliderMouseEventTrigger trigger) == false)
+                    {
+                        continue;
+                    }
+
+                    Vector2 colliderPos = BindCamera.WorldToScreenPoint(pivotPosition).XY();
+
+                    float newDistance = Vector2.Distance(colliderPos, Input.mousePosition.XY());
 
                     if (newDistance < distance || distance < 0)
                     {
                         distance = newDistance;
-                        hit2D = newHit;
+                        resultTrigger = trigger;
                     }
                 }
             }
 
             if (distance >= 0)
             {
-                ColliderMouseEventTrigger detectResult =
-                    hit2D.collider.gameObject.GetComponent<ColliderMouseEventTrigger>();
-
-                return detectResult;
+                return resultTrigger;
             }
 
             return default;

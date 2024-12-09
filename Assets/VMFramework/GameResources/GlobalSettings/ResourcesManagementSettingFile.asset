@@ -21,8 +21,5 @@ MonoBehaviour:
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
     SerializationNodes: []
-  particleGeneralSetting: {fileID: 11400000, guid: f36fb2836cf15c3478bc0ceba4718901, type: 2}
-  trailGeneralSetting: {fileID: 11400000, guid: e7a5e3302d6bcc0409b656f28fb929cb, type: 2}
-  audioGeneralSetting: {fileID: 11400000, guid: cf38edfea8576bf45beade93f6cb0501, type: 2}
-  modelGeneralSetting: {fileID: 11400000, guid: 6fa66472caacb4a438e51f020c6b35d0, type: 2}
   spriteGeneralSetting: {fileID: 11400000, guid: a1484a824053989459af6674ba4740c6, type: 2}
+  effectGeneralSetting: {fileID: 11400000, guid: d2833760855e23842b7c87f28b844f0a, type: 2}
