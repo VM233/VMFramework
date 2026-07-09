@@ -9,6 +9,7 @@
     "name": "VM233"
   },
   "dependencies": {
+    "com.cysharp.unitask": "2.5.11",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap.extras": "7.0.1",
     "com.unity.addressables": "2.9.1",
