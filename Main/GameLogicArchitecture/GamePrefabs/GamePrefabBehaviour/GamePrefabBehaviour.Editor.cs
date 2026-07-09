@@ -4,7 +4,7 @@ using VMFramework.Core;
 
 namespace VMFramework.GameLogicArchitecture
 {
-    public partial class GamePrefabBehaviour
+    public partial class GamePrefabBehaviour : IInspectorConfig
     {
         #region On Inspector Init
 

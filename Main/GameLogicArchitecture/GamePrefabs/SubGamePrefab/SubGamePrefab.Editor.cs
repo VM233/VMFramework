@@ -7,7 +7,7 @@ namespace VMFramework.GameLogicArchitecture
     [HideDuplicateReferenceBox]
     [HideReferenceObjectPicker]
     [OnInspectorInit("@((IInspectorConfig)$value)?.OnInspectorInit()")]
-    public partial class SubGamePrefab
+    public partial class SubGamePrefab : IInspectorConfig
     {
         protected virtual void OnInspectorInit()
         {
