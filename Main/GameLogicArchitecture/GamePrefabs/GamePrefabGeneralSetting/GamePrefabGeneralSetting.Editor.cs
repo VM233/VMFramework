@@ -15,16 +15,9 @@ namespace VMFramework.GameLogicArchitecture
         public string GamePrefabFolderPath =>
             EditorSetting.GamePrefabsAssetFolderPath.PathCombine(GamePrefabName);
         
-        protected override void OnInspectorInit()
-        {
-            base.OnInspectorInit();
-
-            RefreshInitialGamePrefabProviders();
-        }
-        
         private void OnInitialGamePrefabProvidersChanged()
         {
-            OnInspectorInit();
+            RefreshInitialGamePrefabProviders();
             
             this.EnforceSave();
         }

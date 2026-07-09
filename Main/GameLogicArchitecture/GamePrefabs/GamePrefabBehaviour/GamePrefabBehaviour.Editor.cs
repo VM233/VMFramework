@@ -1,25 +1,10 @@
 ﻿#if UNITY_EDITOR
-using VMFramework.Configuration;
 using VMFramework.Core;
 
 namespace VMFramework.GameLogicArchitecture
 {
-    public partial class GamePrefabBehaviour : IInspectorConfig
+    public partial class GamePrefabBehaviour
     {
-        #region On Inspector Init
-
-        protected virtual void OnInspectorInit()
-        {
-            gameTags ??= new();
-        }
-        
-        void IInspectorConfig.OnInspectorInit()
-        {
-            OnInspectorInit();
-        }
-
-        #endregion
-        
         #region ID
 
         private const string PLACEHOLDER_TEXT = "Please enter an ID";

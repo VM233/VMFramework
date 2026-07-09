@@ -59,7 +59,6 @@ namespace VMFramework.GameLogicArchitecture
         [ValidateIsNot(contents: IGamePrefab.NULL_ID, DrawCurrentRect = true)]
 #if UNITY_EDITOR
         [Placeholder("@" + nameof(GetIDPlaceholderText) + "()")]
-        [OnInspectorInit(nameof(OnInspectorInit))]
 #endif
         [PropertyOrder(-10000)]
         public string id

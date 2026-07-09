@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using VMFramework.Configuration;
 using VMFramework.Core;
 using VMFramework.Core.Editor;
 using VMFramework.Core.Linq;
@@ -115,10 +114,6 @@ namespace VMFramework.GameLogicArchitecture.Editor
                         autoRegisterProvider.OnGamePrefabAutoRegister();
                     }
 
-                    if (gamePrefab is IInspectorConfig inspectorConfig)
-                    {
-                        inspectorConfig.OnInspectorInit();
-                    }
                 }
 
                 wrapper.EnforceSave();
