@@ -1,0 +1,30 @@
+{
+    "name": "VMFramework",
+    "rootNamespace": "",
+    "references": [
+        "GUID:f5b42f5d067c7814d9b2dbeddfb9cb99",
+        "GUID:c6e19d63eaa36bc49941accf213dda33",
+        "GUID:f7476dd33af1a434b907ab43f8ec6be3",
+        "GUID:075f52d8f7506b5409012981910793fa",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:2c573e6b271651846a79655161004c5b",
+        "GUID:75469ad4d38634e559750d17036d5f7c",
+        "GUID:eec0964c48f6f4e40bc3ec2257ccf8c5",
+        "GUID:2e77701fe0ceda44fb763f03ee704c37",
+        "GUID:9e24947de15b9834991c9d8411ea37cf",
+        "GUID:69448af7b92c7f342b298e06a37122aa",
+        "GUID:3656feb4b010c5941972fb7b3b9eec3e",
+        "GUID:6055be8ebefd69e48b49212b09b47b2f",
+        "GUID:613783dc1674e844b87788ea74ede0f6",
+        "GUID:84651a3751eca9349aac36a66bba901b"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

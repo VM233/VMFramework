@@ -1,0 +1,29 @@
+{
+  "name": "com.vm233.vmframework",
+  "version": "1.0.0",
+  "displayName": "VMFramework",
+  "description": "Reusable Unity gameplay, UI, configuration, resource, localization, and editor framework used by VM233 projects.",
+  "unity": "6000.4",
+  "license": "GPL-3.0-or-later",
+  "author": {
+    "name": "VM233"
+  },
+  "dependencies": {
+    "com.unity.2d.sprite": "1.0.0",
+    "com.unity.2d.tilemap.extras": "7.0.1",
+    "com.unity.addressables": "2.9.1",
+    "com.unity.inputsystem": "1.19.0",
+    "com.unity.localization": "1.5.12",
+    "com.unity.nuget.newtonsoft-json": "3.2.2",
+    "com.unity.ugui": "2.0.0",
+    "com.unity.visualeffectgraph": "17.4.0"
+  },
+  "keywords": [
+    "framework",
+    "ui-toolkit",
+    "configuration",
+    "gameplay",
+    "localization",
+    "addressables"
+  ]
+}

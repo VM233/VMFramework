@@ -1,0 +1,12 @@
+﻿#if UNITY_EDITOR
+using VMFramework.Editor;
+using VMFramework.Editor.GameEditor;
+using VMFramework.GameLogicArchitecture;
+
+#NAMESPACE_BEGIN#
+    public partial class #CLASS_NAME# : IGameEditorMenuTreeNode
+    {
+        string INameOwner.Name => #NAME_IN_GAME_EDITOR#;
+    }
+#NAMESPACE_END#
+#endif

@@ -1,6 +1,0 @@
-@import url("UnityDefaultRuntimeTheme.tss");
-
-
-VisualElement {
-    font-size: 32px;
-}

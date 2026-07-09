@@ -1,0 +1,19 @@
+using FishNet.Serializing;
+using UnityEngine.Scripting;
+using VMFramework.GameLogicArchitecture;
+
+#NAMESPACE_BEGIN#
+    [Preserve]
+    public static class #CLASS_NAME#
+    {
+        public static void Write#GAME_ITEM_NAME#(this Writer writer, #GAME_ITEM_INTERFACE_NAME# #GAME_ITEM_FIELD_NAME#)
+        {
+            writer.WriteGameItem(#GAME_ITEM_FIELD_NAME#);
+        }
+
+        public static #GAME_ITEM_INTERFACE_NAME# Read#GAME_ITEM_NAME#(this Reader reader)
+        {
+            return GameItemSerializationUtility.ReadGameItem<#GAME_ITEM_INTERFACE_NAME#>(reader);
+        }
+    }
+#NAMESPACE_END#
