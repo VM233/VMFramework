@@ -26,7 +26,7 @@ namespace VMFramework.Procedure.Editor
         {
             if (state == PlayModeStateChange.EnteredEditMode)
             {
-                Initialize();
+                EditorApplication.delayCall += Initialize;
             }
         }
         
