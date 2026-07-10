@@ -10,7 +10,6 @@ namespace VMFramework.Procedure.Editor
     internal static class EditorInitializer
     {
         private static InitializerManager initializerManager;
-        private static bool isInitializationScheduled;
         
         public static IReadOnlyInitializerManager InitializerManager => initializerManager;
 
@@ -33,18 +32,24 @@ namespace VMFramework.Procedure.Editor
 
         internal static void ScheduleInitialize()
         {
-            if (isInitializationScheduled || initializerManager is { IsInitializing: true })
+            if (initializerManager is { IsInitializing: true })
             {
                 return;
             }
 
-            isInitializationScheduled = true;
-            EditorApplication.delayCall += RunScheduledInitialization;
+            EditorApplication.update -= RunScheduledInitialization;
+            EditorApplication.update += RunScheduledInitialization;
         }
 
         private static void RunScheduledInitialization()
         {
-            isInitializationScheduled = false;
+            if (Application.isPlaying || EditorApplication.isCompiling || EditorApplication.isUpdating ||
+                EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                return;
+            }
+
+            EditorApplication.update -= RunScheduledInitialization;
             Initialize();
         }
         
@@ -55,6 +60,8 @@ namespace VMFramework.Procedure.Editor
             {
                 return;
             }
+
+            EditorApplication.update -= RunScheduledInitialization;
             
             initializerManager = new();
             
