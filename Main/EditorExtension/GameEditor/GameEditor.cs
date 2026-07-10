@@ -40,6 +40,8 @@ namespace VMFramework.Editor.GameEditor
             
             if (EditorInitializer.IsInitialized == false && Application.isPlaying == false)
             {
+                EditorInitializer.ScheduleInitialize();
+
                 var loadingPreviewTree = new OdinMenuTree(true)
                 {
                     { "Loading...", new GameEditorLoadingPreview() }

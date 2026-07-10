@@ -10,6 +10,7 @@ namespace VMFramework.Procedure.Editor
     internal static class EditorInitializer
     {
         private static InitializerManager initializerManager;
+        private static bool isInitializationScheduled;
         
         public static IReadOnlyInitializerManager InitializerManager => initializerManager;
 
@@ -18,7 +19,7 @@ namespace VMFramework.Procedure.Editor
         [InitializeOnLoadMethod]
         private static void InitializationEntry()
         {
-            EditorApplication.delayCall += Initialize;
+            ScheduleInitialize();
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 
@@ -26,8 +27,25 @@ namespace VMFramework.Procedure.Editor
         {
             if (state == PlayModeStateChange.EnteredEditMode)
             {
-                EditorApplication.delayCall += Initialize;
+                ScheduleInitialize();
             }
+        }
+
+        internal static void ScheduleInitialize()
+        {
+            if (isInitializationScheduled || initializerManager is { IsInitializing: true })
+            {
+                return;
+            }
+
+            isInitializationScheduled = true;
+            EditorApplication.delayCall += RunScheduledInitialization;
+        }
+
+        private static void RunScheduledInitialization()
+        {
+            isInitializationScheduled = false;
+            Initialize();
         }
         
         [MenuItem(UnityMenuItemNames.EDITOR_INITIALIZATION + "Editor Initialize")]
