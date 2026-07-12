@@ -156,9 +156,22 @@ namespace VMFramework.Containers
         protected virtual void OnOwnerChanged(IReadOnlyProperty property, IContainerOwner previous,
             IContainerOwner current, bool initial)
         {
-            foreach (var item in items)
+            var ownerChangingItems = items.ToListDefaultPooled();
+            try
             {
-                item?.Owner.SetValue(current, initial);
+                foreach (var item in ownerChangingItems)
+                {
+                    if (item == null || item.IsDestroyed || ReferenceEquals(item.SourceContainer, this) == false)
+                    {
+                        continue;
+                    }
+
+                    item.Owner.SetValue(current, initial);
+                }
+            }
+            finally
+            {
+                ownerChangingItems.ReturnToDefaultPool();
             }
         }
 
