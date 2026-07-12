@@ -12,12 +12,19 @@ namespace VMFramework.OdinExtensions
     {
         protected override void DrawPropertyLayout(GUIContent label)
         {
-            long value = Property.ValueEntry.WeakSmartValue switch
+            double value = Property.ValueEntry.WeakSmartValue switch
             {
+                sbyte sbyteValue => sbyteValue,
+                byte byteValue => byteValue,
+                short shortValue => shortValue,
+                ushort ushortValue => ushortValue,
                 uint uintValue => uintValue,
                 int intValue => intValue,
                 long longValue => longValue,
-                ulong ulongValue => (long)ulongValue,
+                ulong ulongValue => ulongValue,
+                float floatValue => floatValue,
+                double doubleValue => doubleValue,
+                decimal decimalValue => (double)decimalValue,
                 _ => 0
             };
             var duration = value * LogicTickManager.DEFAULT_TICK_GAP;
