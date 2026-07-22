@@ -17,4 +17,15 @@ namespace VMFramework.GameLogicArchitecture.Editor
                 : GlobalSettingFile.gamePrefabsAssetFolderPath;
     }
 }
+#else
+using UnityEngine;
+using UnityEngine.Scripting;
+
+namespace VMFramework.GameLogicArchitecture.Editor
+{
+    [Preserve]
+    public sealed class EditorSetting : MonoBehaviour
+    {
+    }
+}
 #endif
