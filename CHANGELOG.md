@@ -2,6 +2,19 @@
 
 All notable changes to this package are documented here.
 
+## [Unreleased]
+
+### Changed
+
+- Replaced callback-based initialization actions with cancellation-aware `UniTask` actions.
+- Initialization orders remain sequential while actions in the same order run concurrently.
+- Initialization failures, caller cancellation, and timeouts now propagate to callers and retain per-action status.
+- Procedure and editor initialization no longer use `async void` or completion callbacks.
+
+### Added
+
+- Added Edit Mode coverage for ordering, duplicate delegates, exception propagation, cancellation, and timeout behavior.
+
 ## [1.0.0] - 2026-07-09
 
 ### Added

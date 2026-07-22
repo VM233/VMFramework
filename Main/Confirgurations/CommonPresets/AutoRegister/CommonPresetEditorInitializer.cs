@@ -1,6 +1,8 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using VMFramework.Core;
 using VMFramework.Core.Editor;
 using VMFramework.GameLogicArchitecture;
@@ -26,13 +28,14 @@ namespace VMFramework.Configuration
             actions.Add(new(InitializationOrder.AfterInitComplete, OnAfterInitComplete, this));
         }
 
-        private static void OnAfterInitComplete(Action onDone)
+        private static UniTask OnAfterInitComplete(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var generalSetting = CoreSetting.CommonPresetGeneralSetting;
 
             if (generalSetting == null)
             {
-                goto DONE;
+                return UniTask.CompletedTask;
             }
 
             bool anyChange = false;
@@ -65,8 +68,7 @@ namespace VMFramework.Configuration
                 generalSetting.SetEditorDirty();
             }
 
-            DONE:
-            onDone();
+            return UniTask.CompletedTask;
         }
     }
 }

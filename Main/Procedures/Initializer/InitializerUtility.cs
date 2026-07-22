@@ -23,8 +23,14 @@ namespace VMFramework.Procedure
             {
                 if (actionInfo.action == null)
                 {
-                    Debug.LogError($"The action with order : {actionInfo.order} is null." +
-                                   $"It's provided by {actionInfo.initializer.GetType()}.");
+                    throw new System.InvalidOperationException(
+                        $"The initialization action with order {actionInfo.order} is null.");
+                }
+
+                if (actionInfo.initializer == null)
+                {
+                    throw new System.InvalidOperationException(
+                        $"The initialization action with order {actionInfo.order} has no initializer.");
                 }
             }
 

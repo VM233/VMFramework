@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UnityEngine.Scripting;
 
 namespace VMFramework.Procedure
@@ -16,11 +18,11 @@ namespace VMFramework.Procedure
             actions.Add(new(InitializationOrder.BeforeInitStart, OnBeforeInitStart, this));
         }
 
-        private static void OnBeforeInitStart(Action onDone)
+        private static UniTask OnBeforeInitStart(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ManagerCreator.CreateManagers();
-            
-            onDone();
+            return UniTask.CompletedTask;
         }
     }
 }

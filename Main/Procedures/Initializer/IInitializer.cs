@@ -1,9 +1,10 @@
-using System;
 using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 
 namespace VMFramework.Procedure
 {
-    public delegate void InitActionHandler(Action onDone);
+    public delegate UniTask InitActionHandler(CancellationToken cancellationToken);
     
     public interface IInitializer
     {

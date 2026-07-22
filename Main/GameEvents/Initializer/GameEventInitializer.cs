@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UnityEngine.Scripting;
 using VMFramework.GameLogicArchitecture;
 using VMFramework.Procedure;
@@ -15,15 +17,17 @@ namespace VMFramework.GameEvents
             actions.Add(new(InitializationOrder.PostInit, OnInit, this));
         }
 
-        private static void OnInit(Action onDone)
+        private static UniTask OnInit(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             foreach (var gameEventConfig in GamePrefabManager.GetAllActiveGamePrefabs<IGameEventConfig>())
             {
                 var gameEvent = GameItemManager.Instance.Get<IGameEvent>(gameEventConfig.id);
                 GameEventManager.Instance.Register(gameEvent);
             }
 
-            onDone();
+            return UniTask.CompletedTask;
         }
     }
 }

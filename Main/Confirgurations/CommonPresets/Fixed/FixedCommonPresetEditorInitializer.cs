@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using VMFramework.Core;
 using VMFramework.Procedure;
@@ -34,8 +36,9 @@ namespace VMFramework.Configuration
             actions.Add(new(InitializationOrder.AfterInitComplete, OnAfterInitComplete, this));
         }
 
-        private static void OnAfterInitComplete(Action onDone)
+        private static UniTask OnAfterInitComplete(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             FixedCommonPresetInfo.presets.Clear();
 
             var attributes = new List<FixedCommonPresetRegisterAttribute>();
@@ -161,7 +164,7 @@ namespace VMFramework.Configuration
                 }
             }
 
-            onDone();
+            return UniTask.CompletedTask;
         }
     }
 }

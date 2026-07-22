@@ -1,6 +1,8 @@
 ﻿#if FISHNET
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using FishNet.Object;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -52,10 +54,11 @@ namespace VMFramework.Procedure
             GetInitializationActions(actions);
         }
 
-        private void OnBeforeInitStartInternal(Action onDone)
+        private UniTask OnBeforeInitStartInternal(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             OnBeforeInitStart();
-            onDone();
+            return UniTask.CompletedTask;
         }
     }
 }

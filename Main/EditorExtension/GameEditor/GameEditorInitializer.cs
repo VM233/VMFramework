@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
@@ -16,17 +17,17 @@ namespace VMFramework.Editor.GameEditor
             actions.Add(new(InitializationOrder.InitComplete, OnInitComplete, this));
         }
 
-        private static void OnInitComplete(Action onDone)
+        private static async UniTask OnInitComplete(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             if (Application.isPlaying)
             {
-                onDone();
                 return;
             }
 
             if (EditorWindow.HasOpenInstances<GameEditor>() == false)
             {
-                onDone();
                 return;
             }
 
@@ -34,23 +35,20 @@ namespace VMFramework.Editor.GameEditor
 
             if (gameEditor == null)
             {
-                onDone();
                 return;
             }
-            
-            Refresh(gameEditor);
-            
-            onDone();
+
+            await Refresh(gameEditor, cancellationToken);
         }
 
-        private static async void Refresh(GameEditor gameEditor)
+        private static async UniTask Refresh(GameEditor gameEditor, CancellationToken cancellationToken)
         {
-            await UniTask.Delay(500);
+            await UniTask.Delay(500, cancellationToken: cancellationToken);
 
             gameEditor.Repaint();
             gameEditor.ForceMenuTreeRebuild();
 
-            await UniTask.Delay(1000);
+            await UniTask.Delay(1000, cancellationToken: cancellationToken);
 
             gameEditor.Repaint();
             gameEditor.ForceMenuTreeRebuild();

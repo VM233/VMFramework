@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using VMFramework.Core;
@@ -97,7 +99,7 @@ namespace VMFramework.Procedure
 
         private void Update()
         {
-            if (procedureSwitchQueue.Count == 0)
+            if (procedureSwitchQueue.Count == 0 || IsLoading)
             {
                 return;
             }
@@ -114,7 +116,7 @@ namespace VMFramework.Procedure
                 }
                 else
                 {
-                    ExitProcedureImmediately(fromProcedureID, () => EnterProcedureImmediately(toProcedureID));
+                    SwitchProcedureImmediately(fromProcedureID, toProcedureID);
                 }
             }
             else
@@ -148,27 +150,12 @@ namespace VMFramework.Procedure
                 return;
             }
             
-            StartLoading(procedureID, ProcedureLoadingType.OnEnter, () =>
-            {
-                if (fsm.CanEnterState(procedureID) == false)
-                {
-                    throw new InvalidOperationException($"Failed to enter procedure with ID:{procedureID}.");
-                }
-                
-                fsm.EnterState(procedureID);
-                
-                OnEnterProcedureEvent?.Invoke(procedureID);
-            }).Forget();
+            RunProcedureTransition(EnterProcedureImmediatelyAsync(procedureID,
+                this.GetCancellationTokenOnDestroy()));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ExitProcedureImmediately(string procedureID)
-        {
-            ExitProcedureImmediately(procedureID, () => { });
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ExitProcedureImmediately(string procedureID, Action onExit)
         {
             if (IsLoading)
             {
@@ -188,19 +175,64 @@ namespace VMFramework.Procedure
                 return;
             }
 
-            StartLoading(procedureID, ProcedureLoadingType.OnExit, () =>
+            RunProcedureTransition(ExitProcedureImmediatelyAsync(procedureID,
+                this.GetCancellationTokenOnDestroy()));
+        }
+
+        private async UniTask EnterProcedureImmediatelyAsync(string procedureID,
+            CancellationToken cancellationToken)
+        {
+            await StartLoading(procedureID, ProcedureLoadingType.OnEnter, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (fsm.CanEnterState(procedureID) == false)
             {
-                if (fsm.CanExitState(procedureID) == false)
+                throw new InvalidOperationException($"Failed to enter procedure with ID:{procedureID}.");
+            }
+
+            fsm.EnterState(procedureID);
+            OnEnterProcedureEvent?.Invoke(procedureID);
+        }
+
+        private async UniTask ExitProcedureImmediatelyAsync(string procedureID,
+            CancellationToken cancellationToken)
+        {
+            await StartLoading(procedureID, ProcedureLoadingType.OnExit, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (fsm.CanExitState(procedureID) == false)
+            {
+                throw new InvalidOperationException($"Failed to exit procedure with ID:{procedureID}.");
+            }
+
+            fsm.ExitState(procedureID);
+            OnExitProcedureEvent?.Invoke(procedureID);
+        }
+
+        private void SwitchProcedureImmediately(string fromProcedureID, string toProcedureID)
+        {
+            RunProcedureTransition(SwitchProcedureImmediatelyAsync(fromProcedureID, toProcedureID,
+                this.GetCancellationTokenOnDestroy()));
+        }
+
+        private async UniTask SwitchProcedureImmediatelyAsync(string fromProcedureID, string toProcedureID,
+            CancellationToken cancellationToken)
+        {
+            await ExitProcedureImmediatelyAsync(fromProcedureID, cancellationToken);
+            await EnterProcedureImmediatelyAsync(toProcedureID, cancellationToken);
+        }
+
+        private void RunProcedureTransition(UniTask transition)
+        {
+            transition.Forget(exception =>
+            {
+                if (exception is OperationCanceledException)
                 {
-                    throw new InvalidOperationException($"Failed to exit procedure with ID:{procedureID}.");
+                    return;
                 }
 
-                fsm.ExitState(procedureID);
-                
-                OnExitProcedureEvent?.Invoke(procedureID);
-                
-                onExit();
-            }).Forget();
+                Debug.LogException(exception, this);
+            });
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

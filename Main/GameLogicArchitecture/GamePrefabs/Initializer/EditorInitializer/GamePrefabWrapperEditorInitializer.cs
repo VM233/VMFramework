@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using VMFramework.Procedure;
 using VMFramework.Procedure.Editor;
@@ -18,8 +20,10 @@ namespace VMFramework.GameLogicArchitecture.Editor
             actions.Add(new(InitializationOrder.Init, OnInit, this));
         }
 
-        private static void OnInit(Action onDone)
+        private static UniTask OnInit(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             GamePrefabWrapperCreator.OnGamePrefabWrapperCreated += gamePrefabWrapper =>
             {
                 gamePrefabsCache.Clear();
@@ -62,8 +66,8 @@ namespace VMFramework.GameLogicArchitecture.Editor
             
             GamePrefabWrapperInitializeUtility.Refresh();
             GamePrefabWrapperInitializeUtility.CreateAutoRegisterGamePrefabs();
-            
-            onDone();
+
+            return UniTask.CompletedTask;
         }
     }
 }

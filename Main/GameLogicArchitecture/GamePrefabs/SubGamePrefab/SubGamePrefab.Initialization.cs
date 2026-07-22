@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using VMFramework.Procedure;
 
 namespace VMFramework.GameLogicArchitecture
@@ -21,10 +23,11 @@ namespace VMFramework.GameLogicArchitecture
             
         }
 
-        private void OnInitInternal(Action onDone)
+        private UniTask OnInitInternal(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             OnInit();
-            onDone();
+            return UniTask.CompletedTask;
         }
 
         protected virtual void OnInit()

@@ -1,6 +1,8 @@
 ﻿#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using VMFramework.Procedure;
 using VMFramework.Procedure.Editor;
@@ -14,19 +16,18 @@ namespace VMFramework.GameLogicArchitecture.Editor
             actions.Add(new(InitializationOrder.PreInit, OnPreInit, this));
         }
 
-        private static void OnPreInit(Action onDone)
+        private static UniTask OnPreInit(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             if (CoreSetting.GameTagGeneralSetting == null)
             {
                 Debug.LogError($"{nameof(GameTagGeneralSetting)} is not set. Please set it in the {nameof(CoreSetting)}.");
-                
-                onDone();
-                return;
+                return UniTask.CompletedTask;
             }
             
             CoreSetting.GameTagGeneralSetting.InitGameTags();
-            
-            onDone();
+            return UniTask.CompletedTask;
         }
     }
 }

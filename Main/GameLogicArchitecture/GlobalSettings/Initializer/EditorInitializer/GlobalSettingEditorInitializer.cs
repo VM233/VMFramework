@@ -1,6 +1,7 @@
 ﻿#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using VMFramework.Procedure;
 using VMFramework.Procedure.Editor;
@@ -15,15 +16,16 @@ namespace VMFramework.GameLogicArchitecture.Editor
             actions.Add(new(InitializationOrder.InitStart, OnInitStart, this));
         }
 
-        private static void OnBeforeInitStart(Action onDone)
+        private static UniTask OnBeforeInitStart(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             GlobalSettingFileEditorManager.CheckGlobalSettingsFile();
-            
-            onDone();
+            return UniTask.CompletedTask;
         }
 
-        private static async void OnInitStart(Action onDone)
+        private static async UniTask OnInitStart(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var tasks = new List<UniTask>();
             
             foreach (var manager in ManagerCreator.Managers)
@@ -34,14 +36,13 @@ namespace VMFramework.GameLogicArchitecture.Editor
                 }
             }
 
-            await UniTask.WhenAll(tasks);
+            await UniTask.WhenAll(tasks).AttachExternalCancellation(cancellationToken);
 
             foreach (var globalSettingFile in GlobalSettingFileEditorManager.GetGlobalSettings())
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 globalSettingFile.AutoFindSettings();
             }
-            
-            onDone();
         }
     }
 }

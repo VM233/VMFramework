@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UnityEngine.Scripting;
 using VMFramework.Procedure;
 
@@ -14,8 +16,10 @@ namespace VMFramework.GameLogicArchitecture
             actions.Add(new(InitializationOrder.InitComplete, OnInitComplete, this));
         }
 
-        private static void OnInitComplete(Action onDone)
+        private static UniTask OnInitComplete(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             foreach (var gamePrefab in GamePrefabManager.GetAllGamePrefabs())
             {
                 if (gamePrefab.GameItemPrewarmCount <= 0)
@@ -25,8 +29,8 @@ namespace VMFramework.GameLogicArchitecture
                 
                 GameItemManager.Instance.PrewarmUntil(gamePrefab.id, gamePrefab.GameItemPrewarmCount);
             }
-            
-            onDone();
+
+            return UniTask.CompletedTask;
         }
     }
 }

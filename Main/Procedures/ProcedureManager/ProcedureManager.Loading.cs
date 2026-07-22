@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -82,25 +83,24 @@ namespace VMFramework.Procedure
             return initializers;
         }
 
-        private async UniTask StartLoading(IReadOnlyList<IGameInitializer> initializers)
+        private async UniTask StartLoading(IReadOnlyList<IGameInitializer> initializers,
+            CancellationToken cancellationToken)
         {
             if (IsLoading)
             {
-                UnityEngine.Debug.LogWarning("Loading already in progress.");
-                return;
+                throw new InvalidOperationException("Loading already in progress.");
             }
             
             initializerManager.Set(initializers);
-            await initializerManager.Initialize();
+            await initializerManager.Initialize(cancellationToken);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private async UniTaskVoid StartLoading(string procedureID, ProcedureLoadingType loadingType,
-            Action onFinish = null)
+        private UniTask StartLoading(string procedureID, ProcedureLoadingType loadingType,
+            CancellationToken cancellationToken)
         {
             var initializers = GetGameInitializers(procedureID, loadingType);
-            await StartLoading(initializers);
-            onFinish?.Invoke();
+            return StartLoading(initializers, cancellationToken);
         }
     }
 }

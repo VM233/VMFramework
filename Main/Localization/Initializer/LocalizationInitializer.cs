@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine.Localization.Settings;
 using UnityEngine.Scripting;
@@ -17,19 +18,19 @@ namespace VMFramework.Localization
             actions.Add(new(InitializationOrder.Init, OnInit, this));
         }
 
-        private static async void OnInit(Action onDone)
+        private static async UniTask OnInit(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             if (LocalizationSettings.Instance == null)
             {
-                onDone();
                 return;
             }
             
-            await UniTask.WaitUntil(() => LocalizationSettings.InitializationOperation.IsDone);
+            await UniTask.WaitUntil(() => LocalizationSettings.InitializationOperation.IsDone,
+                cancellationToken: cancellationToken);
             
             UnityEngine.Debug.Log("Localization initialization complete.");
-            
-            onDone();
         }
     }
 }

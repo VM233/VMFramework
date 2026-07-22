@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using EnumsNET;
 using UnityEngine.Scripting;
 using VMFramework.Core;
@@ -17,8 +19,9 @@ namespace VMFramework.ResourcesManagement
             actions.Add(new(InitializationOrder.Init, OnInit, this));
         }
 
-        private static void OnInit(Action onDone)
+        private static UniTask OnInit(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             int count = 0;
             
             foreach (var spritePreset in GamePrefabManager.GetAllActiveGamePrefabs<SpritePreset>())
@@ -35,8 +38,8 @@ namespace VMFramework.ResourcesManagement
             {
                 UnityEngine.Debug.Log($"Preloaded {count} sprites' flip types.");
             }
-            
-            onDone();
+
+            return UniTask.CompletedTask;
         }
     }
 }

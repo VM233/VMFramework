@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UnityEngine.Scripting;
 using VMFramework.Configuration;
 using VMFramework.Procedure;
@@ -16,22 +18,24 @@ namespace VMFramework.GameLogicArchitecture
             actions.Add(new(InitializationOrder.InitComplete, OnInitComplete, this));
         }
 
-        private static async void OnPostInit(Action onDone)
+        private static async UniTask OnPostInit(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             GamePrefabManager.Clear();
 
-            var gamePrefabs = await GamePrefabCollectorManager.Collect();
+            var gamePrefabs = await GamePrefabCollectorManager.Collect()
+                .AttachExternalCancellation(cancellationToken);
 
             foreach (var gamePrefab in gamePrefabs)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 GamePrefabManager.RegisterGamePrefab(gamePrefab);
             }
-
-            onDone();
         }
         
-        private static void OnInitComplete(Action onDone)
+        private static UniTask OnInitComplete(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var checkPipeline = new ActionProcessorPipeline<object, ICheckProcessor>();
             checkPipeline.AutoCollect();
             
@@ -40,8 +44,8 @@ namespace VMFramework.GameLogicArchitecture
                 gamePrefab.CheckSettings();
                 checkPipeline.ProcessTarget(gamePrefab);
             }
-            
-            onDone();
+
+            return UniTask.CompletedTask;
         }
     }
 }

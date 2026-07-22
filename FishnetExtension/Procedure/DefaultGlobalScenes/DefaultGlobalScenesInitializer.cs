@@ -1,6 +1,8 @@
 #if FISHNET
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using FishNet;
 using FishNet.Managing.Scened;
 using UnityEngine.Scripting;
@@ -22,22 +24,22 @@ namespace VMFramework.Procedure
             }
         }
 
-        private static void OnAfterInitComplete(Action onDone)
+        private static UniTask OnAfterInitComplete(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var sceneNames = NetworkSetting.DefaultGlobalScenesGeneralSetting.sceneNames;
 
             if (sceneNames.IsNullOrEmpty())
             {
                 UnityEngine.Debug.LogError($"No Default Global Scenes found");
-                onDone();
-                return;
+                return UniTask.CompletedTask;
             }
 
             UnityEngine.Debug.Log("Loading Default Global Scenes : " + sceneNames.Join(", "));
 
             InstanceFinder.SceneManager.LoadGlobalScenes(new SceneLoadData(sceneNames));
 
-            onDone();
+            return UniTask.CompletedTask;
         }
     }
 }

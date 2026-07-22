@@ -6,9 +6,13 @@ namespace VMFramework.Procedure
     {
         public IReadOnlyList<IInitializer> Initializers { get; }
         
-        public IReadOnlyDictionary<InitActionHandler, InitializationAction> CurrentPriorityLeftActions { get; }
+        public IReadOnlyList<InitializationActionExecution> CurrentOrderExecutions { get; }
         
-        public int CurrentPriority { get; }
+        public int? CurrentOrder { get; }
+
+        public System.TimeSpan InitializationTimeout { get; }
+
+        public System.Exception LastException { get; }
         
         public bool IsInitializing { get; }
         

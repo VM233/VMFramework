@@ -83,7 +83,7 @@ namespace VMFramework.GameLogicArchitecture.Editor
                 globalSettingFile.AutoFindAndCreateSettings();
             }
             
-            EditorInitializer.Initialize();
+            EditorInitializer.ScheduleInitialize();
         }
         
         [Button(ButtonSizes.Medium), TabGroup(TAB_GROUP_NAME, RESOURCES_PATH_CATEGORY)]

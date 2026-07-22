@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine.Scripting;
 using VMFramework.Configuration;
@@ -19,8 +20,9 @@ namespace VMFramework.GameLogicArchitecture
             actions.Add(new(InitializationOrder.Init, OnInit, this));
         }
 
-        private static async void OnInitStart(Action onDone)
+        private static async UniTask OnInitStart(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var tasks = new List<UniTask>();
             
             globalSettings.Clear();
@@ -31,16 +33,14 @@ namespace VMFramework.GameLogicArchitecture
                 globalSettings.Add(globalSetting);
             }
             
-            await UniTask.WhenAll(tasks);
-            
-            onDone();
+            await UniTask.WhenAll(tasks).AttachExternalCancellation(cancellationToken);
         }
 
-        private static void OnInit(Action onDone)
+        private static UniTask OnInit(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             globalSettings.CheckSettings();
-            
-            onDone();
+            return UniTask.CompletedTask;
         }
     }
 }

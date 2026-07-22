@@ -1,18 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.ExceptionServices;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
-using UnityEngine;
 using VMFramework.Core;
 
 namespace VMFramework.Procedure
 {
     public class InitializerManager : IReadOnlyInitializerManager
     {
+        public static readonly TimeSpan DefaultInitializationTimeout = TimeSpan.FromMinutes(2);
+
         private readonly List<IInitializer> initializers = new();
 
-        private readonly Dictionary<InitActionHandler, InitializationAction> currentPriorityLeftActions = new();
+        private readonly List<InitializationActionExecution> currentOrderExecutions = new();
 
         #region Properties
 
@@ -20,11 +23,16 @@ namespace VMFramework.Procedure
         public IReadOnlyList<IInitializer> Initializers => initializers;
 
         [ShowInInspector]
-        public IReadOnlyDictionary<InitActionHandler, InitializationAction> CurrentPriorityLeftActions =>
-            currentPriorityLeftActions;
+        public IReadOnlyList<InitializationActionExecution> CurrentOrderExecutions => currentOrderExecutions;
 
         [ShowInInspector]
-        public int CurrentPriority { get; private set; }
+        public int? CurrentOrder { get; private set; }
+
+        [ShowInInspector]
+        public TimeSpan InitializationTimeout { get; set; } = DefaultInitializationTimeout;
+
+        [ShowInInspector]
+        public Exception LastException { get; private set; }
 
         [ShowInInspector]
         public bool IsInitializing { get; private set; }
@@ -42,13 +50,26 @@ namespace VMFramework.Procedure
                                                     $"while it is still initializing.");
             }
 
-            this.initializers.Clear();
-            this.initializers.AddRange(initializers);
+            if (initializers == null)
+            {
+                throw new ArgumentNullException(nameof(initializers));
+            }
 
+            this.initializers.Clear();
+            foreach (var initializer in initializers)
+            {
+                this.initializers.Add(initializer ??
+                                      throw new ArgumentException("An initializer cannot be null.",
+                                          nameof(initializers)));
+            }
+
+            currentOrderExecutions.Clear();
+            CurrentOrder = null;
+            LastException = null;
             IsInitialized = false;
         }
 
-        public async UniTask Initialize()
+        public async UniTask Initialize(CancellationToken cancellationToken = default)
         {
             if (IsInitializing)
             {
@@ -56,60 +77,160 @@ namespace VMFramework.Procedure
                                                     $"while it is still initializing.");
             }
 
+            var initializationTimeout = InitializationTimeout;
+            if (initializationTimeout <= TimeSpan.Zero)
+            {
+                throw new InvalidOperationException($"{nameof(InitializationTimeout)} must be greater than zero.");
+            }
+
             IsInitialized = false;
             IsInitializing = true;
+            LastException = null;
+            CurrentOrder = null;
+            currentOrderExecutions.Clear();
 
-            var initializersName = initializers.Select(initializer => initializer.GetType().ToString());
+            using var timeoutCancellation = new CancellationTokenSource();
+            using var timeoutRegistration = timeoutCancellation.CancelAfterSlim(initializationTimeout,
+                DelayType.Realtime);
+            using var initializationCancellation = CancellationTokenSource.CreateLinkedTokenSource(
+                cancellationToken, timeoutCancellation.Token);
 
-            var initializersNameWithTag = initializersName.Select(name => name.ColorTag("green")).ToList();
-
-            if (initializersNameWithTag.Count > 0)
+            try
             {
-                var names = initializersNameWithTag.Join(", ");
+                var initializersName = initializers.Select(initializer => initializer.GetType().ToString());
+                var initializersNameWithTag = initializersName.Select(name => name.ColorTag("green")).ToList();
 
-                UnityEngine.Debug.Log($"Initializer: {names} Started!");
-            }
-
-            foreach (var (priority, listOfActions) in initializers.GetInitializationActions())
-            {
-                CurrentPriority = priority;
-                currentPriorityLeftActions.Clear();
-
-                foreach (var actionInfo in listOfActions)
+                if (initializersNameWithTag.Count > 0)
                 {
-                    if (currentPriorityLeftActions.TryAdd(actionInfo.action, actionInfo))
-                    {
-                        continue;
-                    }
-
-                    Debug.LogError($"Duplicate initialization action: {actionInfo.action} detected in " +
-                                   $"priority:{priority} which is provided by {actionInfo.initializer.GetType()}" +
-                                   $"while it's already provided by " +
-                                   $"{currentPriorityLeftActions[actionInfo.action].initializer.GetType()}");
+                    var names = initializersNameWithTag.Join(", ");
+                    UnityEngine.Debug.Log($"Initializer: {names} Started!");
                 }
 
-                foreach (var actionInfo in listOfActions)
+                foreach (var (order, listOfActions) in initializers.GetInitializationActions())
                 {
-                    if (actionInfo.initializer.EnableInitializationDebugLog)
-                    {
-                        var initializerName = actionInfo.initializer.GetType().ToString();
+                    initializationCancellation.Token.ThrowIfCancellationRequested();
 
-                        if (actionInfo.initializer is IIDOwner<string> idOwner)
+                    CurrentOrder = order;
+                    currentOrderExecutions.Clear();
+
+                    foreach (var actionInfo in listOfActions)
+                    {
+                        currentOrderExecutions.Add(new InitializationActionExecution(actionInfo));
+                    }
+
+                    using var orderCancellation = CancellationTokenSource.CreateLinkedTokenSource(
+                        initializationCancellation.Token);
+                    Exception firstActionException = null;
+
+                    void OnActionFailed(Exception exception)
+                    {
+                        if (Interlocked.CompareExchange(ref firstActionException, exception, null) == null)
                         {
-                            initializerName += $": {idOwner.id}";
+                            orderCancellation.Cancel();
                         }
-                        
-                        UnityEngine.Debug.Log($"Initializing {actionInfo.action.Method.Name} of {initializerName}");
                     }
 
-                    actionInfo.action(() => currentPriorityLeftActions.Remove(actionInfo.action));
+                    var actionTasks = new List<UniTask>(currentOrderExecutions.Count);
+                    foreach (var execution in currentOrderExecutions)
+                    {
+                        LogActionStart(execution.InitializationAction);
+                        actionTasks.Add(ExecuteAction(execution, orderCancellation.Token, OnActionFailed));
+                    }
+
+                    await UniTask.WhenAll(actionTasks);
+
+                    if (firstActionException != null)
+                    {
+                        ExceptionDispatchInfo.Capture(firstActionException).Throw();
+                    }
+
+                    initializationCancellation.Token.ThrowIfCancellationRequested();
                 }
 
-                await UniTask.WaitUntil(() => currentPriorityLeftActions.Count == 0);
+                IsInitialized = true;
+            }
+            catch (OperationCanceledException exception) when (timeoutCancellation.IsCancellationRequested &&
+                                                               cancellationToken.IsCancellationRequested == false)
+            {
+                var timeoutException = new TimeoutException(
+                    BuildTimeoutMessage(initializationTimeout), exception);
+                LastException = timeoutException;
+                throw timeoutException;
+            }
+            catch (Exception exception)
+            {
+                LastException = exception;
+                throw;
+            }
+            finally
+            {
+                IsInitializing = false;
+            }
+        }
+
+        private static async UniTask ExecuteAction(InitializationActionExecution execution,
+            CancellationToken cancellationToken, Action<Exception> onFailed)
+        {
+            execution.MarkRunning();
+
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var action = execution.InitializationAction.action;
+                await action(cancellationToken).AttachExternalCancellation(cancellationToken);
+
+                cancellationToken.ThrowIfCancellationRequested();
+                execution.MarkSucceeded();
+            }
+            catch (OperationCanceledException exception)
+            {
+                execution.MarkCanceled(exception);
+
+                if (cancellationToken.IsCancellationRequested == false)
+                {
+                    onFailed(exception);
+                }
+            }
+            catch (Exception exception)
+            {
+                execution.MarkFailed(exception);
+                onFailed(exception);
+            }
+        }
+
+        private static void LogActionStart(InitializationAction actionInfo)
+        {
+            if (actionInfo.initializer.EnableInitializationDebugLog == false)
+            {
+                return;
             }
 
-            IsInitializing = false;
-            IsInitialized = true;
+            var initializerName = actionInfo.initializer.GetType().ToString();
+            if (actionInfo.initializer is IIDOwner<string> idOwner)
+            {
+                initializerName += $": {idOwner.id}";
+            }
+
+            UnityEngine.Debug.Log($"Initializing {actionInfo.action.Method.Name} of {initializerName}");
+        }
+
+        private string BuildTimeoutMessage(TimeSpan initializationTimeout)
+        {
+            var incompleteActions = currentOrderExecutions
+                .Where(execution => execution.Status != InitializationActionStatus.Succeeded)
+                .Select(execution =>
+                {
+                    var actionInfo = execution.InitializationAction;
+                    return $"{actionInfo.initializer.GetType()}.{actionInfo.action.Method.Name} " +
+                           $"({execution.Status})";
+                })
+                .ToList();
+
+            var actionsDescription = incompleteActions.Count == 0 ? "none" : incompleteActions.Join(", ");
+            return $"Initialization timed out after {initializationTimeout}. " +
+                   $"Current order: {CurrentOrder?.ToString() ?? "none"}. " +
+                   $"Incomplete actions: {actionsDescription}.";
         }
     }
 }

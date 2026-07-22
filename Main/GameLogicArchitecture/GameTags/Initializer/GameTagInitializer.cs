@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UnityEngine.Scripting;
 using VMFramework.Procedure;
 
@@ -14,12 +16,12 @@ namespace VMFramework.GameLogicArchitecture
             actions.Add(new(InitializationOrder.PreInit, OnPreInit, this));
         }
 
-        private static void OnPreInit(Action onDone)
+        private static UniTask OnPreInit(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             CoreSetting.GameTagGeneralSetting.CheckGameTags();
             CoreSetting.GameTagGeneralSetting.InitGameTags();
-            
-            onDone();
+            return UniTask.CompletedTask;
         }
     }
 }
