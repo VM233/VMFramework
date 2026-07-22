@@ -134,7 +134,8 @@ namespace VMFramework.Procedure
                     foreach (var execution in currentOrderExecutions)
                     {
                         LogActionStart(execution.InitializationAction);
-                        actionTasks.Add(ExecuteAction(execution, orderCancellation.Token, OnActionFailed));
+                        actionTasks.Add(ExecuteAction(execution, orderCancellation.Token,
+                            initializationCancellation.Token, OnActionFailed));
                     }
 
                     await UniTask.WhenAll(actionTasks);
@@ -169,25 +170,26 @@ namespace VMFramework.Procedure
         }
 
         private static async UniTask ExecuteAction(InitializationActionExecution execution,
-            CancellationToken cancellationToken, Action<Exception> onFailed)
+            CancellationToken actionCancellationToken, CancellationToken forcedCancellationToken,
+            Action<Exception> onFailed)
         {
             execution.MarkRunning();
 
             try
             {
-                cancellationToken.ThrowIfCancellationRequested();
+                actionCancellationToken.ThrowIfCancellationRequested();
 
                 var action = execution.InitializationAction.action;
-                await action(cancellationToken).AttachExternalCancellation(cancellationToken);
+                await action(actionCancellationToken).AttachExternalCancellation(forcedCancellationToken);
 
-                cancellationToken.ThrowIfCancellationRequested();
+                actionCancellationToken.ThrowIfCancellationRequested();
                 execution.MarkSucceeded();
             }
             catch (OperationCanceledException exception)
             {
                 execution.MarkCanceled(exception);
 
-                if (cancellationToken.IsCancellationRequested == false)
+                if (actionCancellationToken.IsCancellationRequested == false)
                 {
                     onFailed(exception);
                 }
