@@ -1,57 +1,30 @@
 #if UNITY_EDITOR
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using Cysharp.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
-using VMFramework.Procedure;
 using VMFramework.Procedure.Editor;
 
 namespace VMFramework.Editor.GameEditor
 {
-    internal sealed class GameEditorInitializer : IEditorInitializer
+    [InitializeOnLoad]
+    internal static class GameEditorInitializer
     {
-        void IInitializer.GetInitializationActions(ICollection<InitializationAction> actions)
+        static GameEditorInitializer()
         {
-            actions.Add(new(InitializationOrder.InitComplete, OnInitComplete, this));
+            EditorInitializer.InitializationCompleted += RefreshOpenGameEditors;
         }
 
-        private static async UniTask OnInitComplete(CancellationToken cancellationToken)
+        private static void RefreshOpenGameEditors()
         {
-            cancellationToken.ThrowIfCancellationRequested();
-
             if (Application.isPlaying)
             {
                 return;
             }
 
-            if (EditorWindow.HasOpenInstances<GameEditor>() == false)
+            foreach (var gameEditor in Resources.FindObjectsOfTypeAll<GameEditor>())
             {
-                return;
+                gameEditor.Repaint();
+                gameEditor.ForceMenuTreeRebuild();
             }
-
-            var gameEditor = EditorWindow.GetWindow<GameEditor>();
-
-            if (gameEditor == null)
-            {
-                return;
-            }
-
-            await Refresh(gameEditor, cancellationToken);
-        }
-
-        private static async UniTask Refresh(GameEditor gameEditor, CancellationToken cancellationToken)
-        {
-            await UniTask.Delay(500, cancellationToken: cancellationToken);
-
-            gameEditor.Repaint();
-            gameEditor.ForceMenuTreeRebuild();
-
-            await UniTask.Delay(1000, cancellationToken: cancellationToken);
-
-            gameEditor.Repaint();
-            gameEditor.ForceMenuTreeRebuild();
         }
     }
 }

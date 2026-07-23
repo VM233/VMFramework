@@ -10,6 +10,7 @@ All notable changes to this package are documented here.
 - Initialization orders remain sequential while actions in the same order run concurrently.
 - Initialization failures, caller cancellation, and timeouts now propagate to callers and retain per-action status.
 - Procedure and editor initialization no longer use `async void` or completion callbacks.
+- Game Editor windows now rebuild after editor initialization has actually completed, preventing a completed initialization from leaving an open window on its loading preview.
 
 ### Added
 

@@ -15,6 +15,8 @@ namespace VMFramework.Procedure.Editor
         private static InitializerManager initializerManager;
         private static CancellationTokenSource initializationCancellation;
 
+        internal static event Action InitializationCompleted;
+
         public static IReadOnlyInitializerManager InitializerManager => initializerManager;
 
         public static bool IsInitialized => initializerManager is { IsInitialized: true };
@@ -97,6 +99,8 @@ namespace VMFramework.Procedure.Editor
 
                 cancellation.Dispose();
             }
+
+            InitializationCompleted?.Invoke();
         }
 
         internal static async UniTask Initialize(CancellationToken cancellationToken = default)
