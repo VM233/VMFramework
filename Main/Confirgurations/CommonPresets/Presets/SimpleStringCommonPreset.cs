@@ -20,6 +20,11 @@ namespace VMFramework.Configuration
             return presets.Select(preset => new ValueDropdownItem(preset, preset));
         }
 
+        public override bool ContainsItem(string key)
+        {
+            return presets.Contains(key);
+        }
+
         public override void AddItem(string key, object value)
         {
             presets.Add(key);

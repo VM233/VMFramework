@@ -20,6 +20,11 @@ namespace VMFramework.Configuration
             }
         }
 
+        public override bool ContainsItem(string key)
+        {
+            return entries.Exists(entry => entry.presetName == key);
+        }
+
         public override void AddItem(string key, object value)
         {
             entries.Add(new CommonPresetEntry<TValue>(key, (TValue)value));

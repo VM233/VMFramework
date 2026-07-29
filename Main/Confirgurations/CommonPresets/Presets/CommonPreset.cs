@@ -10,6 +10,8 @@ namespace VMFramework.Configuration
 
         string INameOwner.Name => name;
 
+        public abstract bool ContainsItem(string key);
+
         public abstract void AddItem(string key, object value);
         
         public abstract void ClearItems();

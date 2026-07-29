@@ -11,10 +11,12 @@ All notable changes to this package are documented here.
 - Initialization failures, caller cancellation, and timeouts now propagate to callers and retain per-action status.
 - Procedure and editor initialization no longer use `async void` or completion callbacks.
 - Game Editor windows now rebuild after editor initialization has actually completed, preventing a completed initialization from leaving an open window on its loading preview.
+- Auto-registered common presets now restore missing initial entries and save repaired preset assets immediately.
 
 ### Added
 
-- Added Edit Mode coverage for ordering, duplicate delegates, exception propagation, cancellation, and timeout behavior.
+- Added Edit Mode coverage for ordering, duplicate delegates, exception propagation, cancellation, timeout behavior,
+  and common-preset seed reconciliation.
 
 ## [1.0.0] - 2026-07-09
 

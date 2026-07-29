@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using UnityEditor;
 using VMFramework.Core;
 using VMFramework.Core.Editor;
 using VMFramework.GameLogicArchitecture;
@@ -55,7 +56,7 @@ namespace VMFramework.Configuration
                         continue;
                     }
 
-                    if (generalSetting.AddPresetIfNotExists(attribute.Key, presetType, attribute.InitialKeys,
+                    if (generalSetting.EnsurePreset(attribute.Key, presetType, attribute.InitialKeys,
                             attribute.InitialValues))
                     {
                         anyChange = true;
@@ -66,6 +67,7 @@ namespace VMFramework.Configuration
             if (anyChange)
             {
                 generalSetting.SetEditorDirty();
+                AssetDatabase.SaveAssetIfDirty(generalSetting);
             }
 
             return UniTask.CompletedTask;
