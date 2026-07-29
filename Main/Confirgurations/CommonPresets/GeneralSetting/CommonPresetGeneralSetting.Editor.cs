@@ -23,7 +23,8 @@ namespace VMFramework.Configuration
                 return false;
             }
 
-            bool anyChange = false;
+            bool settingChanged = false;
+            bool presetChanged = false;
 
             if (presets.TryGetValue(key, out var preset))
             {
@@ -51,7 +52,7 @@ namespace VMFramework.Configuration
 
                 preset = createdPreset;
                 presets[key] = preset;
-                anyChange = true;
+                settingChanged = true;
             }
 
             if (initialKeys.IsNullOrEmpty() == false)
@@ -75,11 +76,20 @@ namespace VMFramework.Configuration
                     }
 
                     preset.AddItem(initialKey, initialValue);
-                    anyChange = true;
+                    presetChanged = true;
                 }
             }
 
-            if (anyChange)
+            if (settingChanged)
+            {
+                this.SetEditorDirty();
+                if (EditorUtility.IsPersistent(this))
+                {
+                    AssetDatabase.SaveAssetIfDirty(this);
+                }
+            }
+
+            if (presetChanged)
             {
                 preset.SetEditorDirty();
                 if (EditorUtility.IsPersistent(preset))
@@ -88,7 +98,7 @@ namespace VMFramework.Configuration
                 }
             }
 
-            return anyChange;
+            return settingChanged || presetChanged;
         }
     }
 }
