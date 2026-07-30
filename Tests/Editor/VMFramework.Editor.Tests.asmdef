@@ -3,16 +3,17 @@
     "rootNamespace": "VMFramework.Tests",
     "references": [
         "GUID:43af6a4c78dc69b49987558f8d89ed62",
-        "GUID:f51ebe6a0ceec4240a699833d6309b23",
-        "Sirenix.Serialization"
+        "GUID:f51ebe6a0ceec4240a699833d6309b23"
     ],
     "includePlatforms": [
         "Editor"
     ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Sirenix.Serialization.dll"
+    ],
     "autoReferenced": false,
     "defineConstraints": [],
     "versionDefines": [],
