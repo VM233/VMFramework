@@ -10,6 +10,8 @@ All notable changes to this package are documented here.
   override field, so disabling the override and calling `SetTickGap` affect the real cadence.
 - Tick-gap and elapsed-time APIs now reject non-finite or invalid values instead of allowing an
   infinite scheduler loop.
+- The Editor test assembly now declares its public Odin serialization dependency, allowing
+  package tests that instantiate serialized settings to compile.
 
 ### Changed
 
