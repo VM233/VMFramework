@@ -6,6 +6,10 @@ namespace VMFramework.Timers
     {
         public double TickGap { get; }
 
+        /// <summary>
+        /// The immutable duration admitted for the currently executing tick. Outside a tick,
+        /// returns the active gap that will admit the next tick.
+        /// </summary>
         public float TickDeltaTime { get; }
 
         public float TickInterpolationAlpha { get; }

@@ -106,6 +106,7 @@ namespace VMFramework.Tests
         {
             manager.SetTickGap(0.25);
             manager.StartTick();
+            var simulationDeltaTime = 0f;
             manager.OnTick += () =>
             {
                 if (manager.Tick == 1)
@@ -113,14 +114,32 @@ namespace VMFramework.Tests
                     manager.SetTickGap(0.5);
                 }
             };
+            manager.OnSimulationTick += () =>
+                simulationDeltaTime = manager.TickDeltaTime;
 
             var advanced = manager.AdvanceTime(0.6);
 
             Assert.That(advanced, Is.EqualTo(1));
             Assert.That(manager.Tick, Is.EqualTo(1));
+            Assert.That(simulationDeltaTime,
+                Is.EqualTo(0.25f));
             Assert.That(manager.TimeLeftOver,
                 Is.EqualTo(0.35).Within(0.000001));
             Assert.That(manager.TickGap, Is.EqualTo(0.5));
+            Assert.That(manager.TickDeltaTime,
+                Is.EqualTo(0.5f));
+        }
+
+        [Test]
+        public void RecursiveTickAdvancementIsRejected()
+        {
+            manager.OnTick += manager.IncreaseTick;
+
+            Assert.Throws<InvalidOperationException>(
+                manager.IncreaseTick);
+            Assert.That(manager.Tick, Is.EqualTo(1));
+            Assert.That(manager.TickDeltaTime,
+                Is.EqualTo((float)manager.TickGap));
         }
 
         [TestCase(0)]

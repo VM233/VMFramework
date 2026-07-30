@@ -30,7 +30,9 @@ namespace VMFramework.Timers
         public double TickGap { get; private set; }
 
         [ShowInInspector, DisplayAsString]
-        public float TickDeltaTime => (float)TickGap;
+        public float TickDeltaTime => isIncreasingTick
+            ? admittedTickDeltaTime
+            : (float)TickGap;
 
         [ShowInInspector, DisplayAsString]
         public float TickInterpolationAlpha =>
@@ -63,6 +65,9 @@ namespace VMFramework.Timers
         protected readonly HashSet<Action> nextTickActions = new();
         protected readonly List<Action> nextTickActionsTemp = new();
 
+        private bool isIncreasingTick;
+        private float admittedTickDeltaTime;
+
         protected override void Awake()
         {
             base.Awake();
@@ -70,6 +75,8 @@ namespace VMFramework.Timers
             IsTicking = false;
             Tick = 0;
             TimeLeftOver = 0;
+            isIncreasingTick = false;
+            admittedTickDeltaTime = 0;
             SetTickGap(enableTickGapOverride
                 ? tickGapOverride
                 : DEFAULT_TICK_GAP);
@@ -89,31 +96,51 @@ namespace VMFramework.Timers
 
         public void IncreaseTick()
         {
-            Tick++;
-            
-            OnPreTick?.Invoke();
-            
-            OnTick?.Invoke();
-            
-            if (nextTickActions.Count > 0)
-            {
-                nextTickActionsTemp.Clear();
-                nextTickActionsTemp.AddRange(nextTickActions);
-                nextTickActions.Clear();
+            IncreaseTick(TickGap);
+        }
 
-                foreach (var action in nextTickActionsTemp)
-                {
-                    action.Invoke();
-                }
+        private void IncreaseTick(double admittedTickGap)
+        {
+            if (isIncreasingTick)
+            {
+                throw new InvalidOperationException(
+                    "A Logic Tick cannot be advanced recursively.");
             }
 
-            OnPreSimulationTick?.Invoke();
+            isIncreasingTick = true;
+            admittedTickDeltaTime = (float)admittedTickGap;
+            try
+            {
+                Tick++;
 
-            OnSimulationTick?.Invoke();
+                OnPreTick?.Invoke();
 
-            OnPostSimulationTick?.Invoke();
-            
-            OnPostTick?.Invoke();
+                OnTick?.Invoke();
+
+                if (nextTickActions.Count > 0)
+                {
+                    nextTickActionsTemp.Clear();
+                    nextTickActionsTemp.AddRange(nextTickActions);
+                    nextTickActions.Clear();
+
+                    foreach (var action in nextTickActionsTemp)
+                    {
+                        action.Invoke();
+                    }
+                }
+
+                OnPreSimulationTick?.Invoke();
+
+                OnSimulationTick?.Invoke();
+
+                OnPostSimulationTick?.Invoke();
+
+                OnPostTick?.Invoke();
+            }
+            finally
+            {
+                isIncreasingTick = false;
+            }
         }
 
         protected virtual void Update()
@@ -155,7 +182,7 @@ namespace VMFramework.Timers
                     break;
                 }
 
-                IncreaseTick();
+                IncreaseTick(admittedTickGap);
                 TimeLeftOver -= admittedTickGap;
                 advancedTickCount++;
             }

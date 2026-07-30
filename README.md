@@ -67,9 +67,11 @@ use `OnSimulationTick`, and achieved-state or collision observers should use
 `OnPostSimulationTick`. Actions registered from simulation callbacks remain queued until the next
 logic tick.
 
-Use `TickDeltaTime` for per-step simulation math and `TickInterpolationAlpha` for presentation
-interpolation. `AdvanceTime` is available to deterministic clock owners and tests; it uses the
-active `TickGap` configured through `SetTickGap`.
+Use `TickDeltaTime` for per-step simulation math. It remains the immutable admitted duration
+throughout the current tick even if a callback changes `TickGap`; outside a tick it reports the
+active gap for the next admission. Use `TickInterpolationAlpha` for presentation interpolation.
+`AdvanceTime` is available to deterministic clock owners and tests; it uses the active `TickGap`
+configured through `SetTickGap`.
 
 ## Notes
 

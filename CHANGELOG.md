@@ -27,7 +27,8 @@ All notable changes to this package are documented here.
 - Added ordered pre-simulation, simulation-owner, and post-simulation Logic Tick phases.
 - Added `TickDeltaTime`, `TickInterpolationAlpha`, and deterministic `AdvanceTime` APIs.
 - Added Edit Mode coverage for Logic Tick phase ordering, deferred next-tick callbacks, active
-  cadence, interpolation progress, pause gating, and invalid input.
+  cadence, immutable admitted step duration, recursive-advance rejection, interpolation progress,
+  pause gating, and invalid input.
 - Added Edit Mode coverage for ordering, duplicate delegates, exception propagation, cancellation, timeout behavior,
   and common-preset seed reconciliation.
 - Added an enabled-by-default `disableExistingSlotsWhenContainerUnbound` option to
