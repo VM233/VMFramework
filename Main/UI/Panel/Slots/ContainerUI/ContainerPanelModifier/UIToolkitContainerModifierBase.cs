@@ -21,23 +21,35 @@ namespace VMFramework.UI
         [TitleGroup(ComponentNames.CONFIG)]
         public List<ContainerSlotDistributorConfig> slotDistributorConfigs = new();
 
+        [TitleGroup(ComponentNames.CONFIG)]
+        public bool disableExistingSlotsWhenContainerUnbound = true;
+
         public event ISlotsPanelModifier.OnSlotChangedHandler OnSlotChanged;
 
         public event ISlotsPanelModifier.OnSlotSourceChangedHandler OnSlotSourceChanged;
 
         protected bool refreshTag = false;
 
+        private readonly HashSet<SlotVisualElement> slotsDisabledWhileContainerUnbound = new();
+
         protected override void OnInitialize()
         {
             base.OnInitialize();
 
+            Panel.OnOpen += OnOpen;
             Panel.OnPostClose += OnPostClose;
             Panel.BindObjectsManager.OnBindObjectChanged += OnBindObjectChanged;
+        }
+
+        protected virtual void OnOpen(IUIPanel panel)
+        {
+            RefreshUnboundSlotsEnabledState();
         }
 
         protected virtual void OnPostClose(IUIPanel panel)
         {
             ClearSlots();
+            RestoreSlotsDisabledWhileContainerUnbound();
         }
 
         protected virtual void Update()
@@ -117,6 +129,8 @@ namespace VMFramework.UI
             {
                 if (added)
                 {
+                    RestoreSlotsDisabledWhileContainerUnbound();
+
                     container.OnAfterItemChangedEvent += OnItemChanged;
                     container.OnItemDirtyEvent += OnItemDirty;
                     container.OnSizeChangedEvent += OnContainerSizeChanged;
@@ -130,6 +144,7 @@ namespace VMFramework.UI
                     container.OnSizeChangedEvent -= OnContainerSizeChanged;
 
                     ClearSlots();
+                    RefreshUnboundSlotsEnabledState();
                 }
             }
         }
@@ -161,6 +176,7 @@ namespace VMFramework.UI
             }
 
             UpdateAllSlots();
+            RefreshUnboundSlotsEnabledState();
 
             Refresh();
         }
@@ -278,6 +294,101 @@ namespace VMFramework.UI
             }
 
             return root.QueryStrictly(distributorConfig.parentName, nameof(distributorConfig.parentName));
+        }
+
+        private void RefreshUnboundSlotsEnabledState()
+        {
+            if (disableExistingSlotsWhenContainerUnbound &&
+                Panel.BindObjectsManager.GetObject(bindObjectsName) is not IContainer)
+            {
+                DisableExistingSlotsWhileContainerUnbound();
+                return;
+            }
+
+            RestoreSlotsDisabledWhileContainerUnbound();
+        }
+
+        private void DisableExistingSlotsWhileContainerUnbound()
+        {
+            RestoreSlotsDisabledWhileContainerUnbound();
+
+            var existingSlots = HashSetPool<SlotVisualElement>.Default.Get();
+            existingSlots.Clear();
+
+            foreach (var distributorConfig in slotDistributorConfigs)
+            {
+                CollectExistingSlots(distributorConfig, existingSlots);
+            }
+
+            foreach (var slot in existingSlots)
+            {
+                if (slot.enabledSelf == false)
+                {
+                    continue;
+                }
+
+                slot.SetEnabled(false);
+                slotsDisabledWhileContainerUnbound.Add(slot);
+            }
+
+            existingSlots.Clear();
+            existingSlots.ReturnToDefaultPool();
+        }
+
+        private void RestoreSlotsDisabledWhileContainerUnbound()
+        {
+            foreach (var slot in slotsDisabledWhileContainerUnbound)
+            {
+                slot.SetEnabled(true);
+            }
+
+            slotsDisabledWhileContainerUnbound.Clear();
+        }
+
+        private void CollectExistingSlots(ContainerSlotDistributorConfig distributorConfig,
+            ICollection<SlotVisualElement> existingSlots)
+        {
+            var parent = GetSlotsParent(distributorConfig);
+
+            if (distributorConfig.findMethod == SlotFindMethod.Default)
+            {
+                foreach (var slot in parent.QueryAll<SlotVisualElement>())
+                {
+                    existingSlots.Add(slot);
+                }
+
+                return;
+            }
+
+            if (distributorConfig.findMethod == SlotFindMethod.ByName)
+            {
+                foreach (var slot in parent.QueryAllByName<SlotVisualElement>(distributorConfig.slotName))
+                {
+                    existingSlots.Add(slot);
+                }
+
+                return;
+            }
+
+            if (distributorConfig.findMethod == SlotFindMethod.BySlotNames)
+            {
+                foreach (var binding in distributorConfig.slotNameBindings)
+                {
+                    if (string.IsNullOrWhiteSpace(binding.slotName) || binding.slotIndex < 0)
+                    {
+                        continue;
+                    }
+
+                    foreach (var slot in parent.QueryAllByName<SlotVisualElement>(binding.slotName))
+                    {
+                        existingSlots.Add(slot);
+                    }
+                }
+
+                return;
+            }
+
+            UnityEngine.Debug.LogError($"Unsupported find method: {distributorConfig.findMethod}!");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

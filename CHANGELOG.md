@@ -17,6 +17,9 @@ All notable changes to this package are documented here.
 
 - Added Edit Mode coverage for ordering, duplicate delegates, exception propagation, cancellation, timeout behavior,
   and common-preset seed reconciliation.
+- Added an enabled-by-default `disableExistingSlotsWhenContainerUnbound` option to
+  `UIToolkitContainerModifierBase`. Authored slots are disabled while no container is bound and restored when a
+  container is bound again.
 
 ## [1.0.0] - 2026-07-09
 
