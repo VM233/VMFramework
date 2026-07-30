@@ -50,6 +50,27 @@ BattleIdle currently supplies these dependencies from its project manifest and e
 - `Experimental`: experimental framework code.
 - `GameResources`: package-owned fonts and script templates. Runtime project global setting assets are expected under `Assets/GameResources/Configurations/GlobalSettings`.
 
+## Logic Tick Simulation Phases
+
+`LogicTickManager` publishes one ordered deterministic step:
+
+1. `OnPreTick`
+2. `OnTick`
+3. the current `OnNextTick` snapshot
+4. `OnPreSimulationTick`
+5. `OnSimulationTick`
+6. `OnPostSimulationTick`
+7. `OnPostTick`
+
+Simulation command producers should use `OnPreSimulationTick`, the single simulation owner should
+use `OnSimulationTick`, and achieved-state or collision observers should use
+`OnPostSimulationTick`. Actions registered from simulation callbacks remain queued until the next
+logic tick.
+
+Use `TickDeltaTime` for per-step simulation math and `TickInterpolationAlpha` for presentation
+interpolation. `AdvanceTime` is available to deterministic clock owners and tests; it uses the
+active `TickGap` configured through `SetTickGap`.
+
 ## Notes
 
 - This repository is now a Unity Package Manager package root, not a full Unity project.

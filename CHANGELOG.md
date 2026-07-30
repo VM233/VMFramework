@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- Logic tick accumulation now advances against the active `TickGap` instead of the serialized
+  override field, so disabling the override and calling `SetTickGap` affect the real cadence.
+- Tick-gap and elapsed-time APIs now reject non-finite or invalid values instead of allowing an
+  infinite scheduler loop.
+
 ### Changed
 
 - Replaced callback-based initialization actions with cancellation-aware `UniTask` actions.
@@ -15,6 +22,10 @@ All notable changes to this package are documented here.
 
 ### Added
 
+- Added ordered pre-simulation, simulation-owner, and post-simulation Logic Tick phases.
+- Added `TickDeltaTime`, `TickInterpolationAlpha`, and deterministic `AdvanceTime` APIs.
+- Added Edit Mode coverage for Logic Tick phase ordering, deferred next-tick callbacks, active
+  cadence, interpolation progress, pause gating, and invalid input.
 - Added Edit Mode coverage for ordering, duplicate delegates, exception propagation, cancellation, timeout behavior,
   and common-preset seed reconciliation.
 - Added an enabled-by-default `disableExistingSlotsWhenContainerUnbound` option to
