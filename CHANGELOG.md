@@ -35,6 +35,13 @@ All notable changes to this package are documented here.
   `UIToolkitContainerModifierBase`. Authored slots are disabled while no container is bound and restored when a
   container is bound again.
 
+### Removed
+
+- Removed the unused `GameTagBasedConfigBase`, `KeyCodeTranslation`,
+  `SingleArgumentLocalizedString`, and `InitialTilemapConfig` legacy configuration types.
+- Removed the unused GameTag extra-info API: `GameTagExtraInfo`,
+  `IGameTagExtraInfosOwner`, and `GameTagExtraInfoUtility`.
+
 ## [1.0.0] - 2026-07-09
 
 ### Added
