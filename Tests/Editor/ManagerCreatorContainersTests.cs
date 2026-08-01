@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -10,11 +11,32 @@ namespace VMFramework.Tests
     {
         private Scene originalScene;
         private Scene testScene;
+        private bool usesRunnerScene;
+        private bool runnerSceneWasDirty;
+        private HashSet<GameObject> runnerSceneRoots;
 
         [SetUp]
         public void SetUp()
         {
             originalScene = SceneManager.GetActiveScene();
+
+            if (originalScene.IsValid() && originalScene.isLoaded &&
+                string.IsNullOrEmpty(originalScene.path))
+            {
+                var roots = originalScene.GetRootGameObjects();
+                if (originalScene.isDirty || roots.Length > 0)
+                {
+                    Assert.Ignore(
+                        "The active untitled scene contains unsaved user content and cannot be used for isolation.");
+                }
+
+                testScene = originalScene;
+                usesRunnerScene = true;
+                runnerSceneWasDirty = originalScene.isDirty;
+                runnerSceneRoots = new HashSet<GameObject>(roots);
+                return;
+            }
+
             testScene = EditorSceneManager.NewScene(
                 NewSceneSetup.EmptyScene,
                 NewSceneMode.Additive);
@@ -24,6 +46,24 @@ namespace VMFramework.Tests
         [TearDown]
         public void TearDown()
         {
+            if (usesRunnerScene && testScene.IsValid() && testScene.isLoaded)
+            {
+                foreach (var root in testScene.GetRootGameObjects())
+                {
+                    if (runnerSceneRoots.Contains(root) == false)
+                    {
+                        Object.DestroyImmediate(root);
+                    }
+                }
+
+                if (runnerSceneWasDirty == false)
+                {
+                    EditorSceneManager.MarkSceneClean(testScene);
+                }
+
+                return;
+            }
+
             if (originalScene.IsValid() && originalScene.isLoaded)
             {
                 SceneManager.SetActiveScene(originalScene);
