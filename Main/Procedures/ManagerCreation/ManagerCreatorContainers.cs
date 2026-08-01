@@ -19,9 +19,14 @@ namespace VMFramework.Procedure
         
         public static void Init()
         {
+            Init(SceneManager.GetActiveScene());
+        }
+
+        internal static void Init(Scene targetScene)
+        {
             managerTypeContainers.Clear();
 
-            ManagerContainer = GetOrCreateManagerContainer();
+            ManagerContainer = GetOrCreateManagerContainer(targetScene);
             
             ManagerContainer.SetAsFirstSibling();
             
@@ -44,28 +49,32 @@ namespace VMFramework.Procedure
             return managerTypeContainer;
         }
 
-        private static Transform GetOrCreateManagerContainer()
+        private static Transform GetOrCreateManagerContainer(Scene targetScene)
         {
-            var activeScene = SceneManager.GetActiveScene();
-            if (activeScene.IsValid() == false || activeScene.isLoaded == false)
+            if (targetScene.IsValid() == false || targetScene.isLoaded == false)
             {
                 throw new InvalidOperationException(
-                    "Manager containers require a valid, loaded active scene.");
+                    "Manager containers require a valid, loaded target scene.");
             }
 
-            var matchingRoots = activeScene.GetRootGameObjects()
+            var matchingRoots = targetScene.GetRootGameObjects()
                 .Where(gameObject => gameObject.name == CONTAINER_NAME)
                 .ToArray();
 
             if (matchingRoots.Length > 1)
             {
                 throw new InvalidOperationException(
-                    $"The active scene contains multiple root '{CONTAINER_NAME}' objects.");
+                    $"The target scene contains multiple root '{CONTAINER_NAME}' objects.");
             }
 
-            return matchingRoots.Length == 1
-                ? matchingRoots[0].transform
-                : new GameObject(CONTAINER_NAME).transform;
+            if (matchingRoots.Length == 1)
+            {
+                return matchingRoots[0].transform;
+            }
+
+            var managerContainer = new GameObject(CONTAINER_NAME);
+            SceneManager.MoveGameObjectToScene(managerContainer, targetScene);
+            return managerContainer.transform;
         }
 
         private static Transform GetOrCreateDirectChild(Transform parent, string childName)
@@ -86,6 +95,7 @@ namespace VMFramework.Procedure
             }
 
             var childObject = new GameObject(childName);
+            SceneManager.MoveGameObjectToScene(childObject, parent.gameObject.scene);
             childObject.transform.SetParent(parent, false);
             return childObject.transform;
         }
