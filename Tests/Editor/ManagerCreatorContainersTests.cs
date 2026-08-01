@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -9,54 +8,26 @@ namespace VMFramework.Tests
 {
     public sealed class ManagerCreatorContainersTests
     {
+        private const string TEST_SCENE_PATH =
+            "Packages/com.vm233.vmframework/Tests/Editor/Fixtures/EmptyScene.unity";
+
         private Scene originalScene;
         private Scene testScene;
-        private bool usesRunnerScene;
-        private HashSet<GameObject> runnerSceneRoots;
 
         [SetUp]
         public void SetUp()
         {
             originalScene = SceneManager.GetActiveScene();
+            testScene = EditorSceneManager.OpenScene(
+                TEST_SCENE_PATH,
+                OpenSceneMode.Additive);
 
-            if (originalScene.IsValid() && originalScene.isLoaded &&
-                string.IsNullOrEmpty(originalScene.path))
-            {
-                var roots = originalScene.GetRootGameObjects();
-                if (roots.Length > 0)
-                {
-                    Assert.Ignore(
-                        "The active untitled scene contains unsaved user content and cannot be used for isolation.");
-                }
-
-                testScene = originalScene;
-                usesRunnerScene = true;
-                runnerSceneRoots = new HashSet<GameObject>(roots);
-                return;
-            }
-
-            testScene = EditorSceneManager.NewScene(
-                NewSceneSetup.EmptyScene,
-                NewSceneMode.Additive);
-            SceneManager.SetActiveScene(testScene);
+            Assert.That(SceneManager.SetActiveScene(testScene), Is.True);
         }
 
         [TearDown]
         public void TearDown()
         {
-            if (usesRunnerScene && testScene.IsValid() && testScene.isLoaded)
-            {
-                foreach (var root in testScene.GetRootGameObjects())
-                {
-                    if (runnerSceneRoots.Contains(root) == false)
-                    {
-                        Object.DestroyImmediate(root);
-                    }
-                }
-
-                return;
-            }
-
             if (originalScene.IsValid() && originalScene.isLoaded)
             {
                 SceneManager.SetActiveScene(originalScene);

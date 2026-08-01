@@ -6,8 +6,8 @@ All notable changes to this package are documented here.
 
 ### Fixed
 
-- The Manager container Edit Mode test now reuses the Test Runner's empty untitled scene and cleans
-  only test-owned roots, avoiding an invalid additive-scene creation during package test runs.
+- The Manager container Edit Mode test now opens a package-owned empty scene additively, avoiding
+  invalid untitled-scene creation without mutating or skipping tests around the Test Runner scene.
 - Manager creation now resolves `^Core` only from active-scene roots and category containers only
   from its direct children, preventing unrelated nested objects with reserved names from being
   reparented and used as unconfigured manager owners.
