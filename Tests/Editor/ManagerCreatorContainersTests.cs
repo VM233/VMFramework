@@ -12,7 +12,6 @@ namespace VMFramework.Tests
         private Scene originalScene;
         private Scene testScene;
         private bool usesRunnerScene;
-        private bool runnerSceneWasDirty;
         private HashSet<GameObject> runnerSceneRoots;
 
         [SetUp]
@@ -24,7 +23,7 @@ namespace VMFramework.Tests
                 string.IsNullOrEmpty(originalScene.path))
             {
                 var roots = originalScene.GetRootGameObjects();
-                if (originalScene.isDirty || roots.Length > 0)
+                if (roots.Length > 0)
                 {
                     Assert.Ignore(
                         "The active untitled scene contains unsaved user content and cannot be used for isolation.");
@@ -32,7 +31,6 @@ namespace VMFramework.Tests
 
                 testScene = originalScene;
                 usesRunnerScene = true;
-                runnerSceneWasDirty = originalScene.isDirty;
                 runnerSceneRoots = new HashSet<GameObject>(roots);
                 return;
             }
@@ -54,11 +52,6 @@ namespace VMFramework.Tests
                     {
                         Object.DestroyImmediate(root);
                     }
-                }
-
-                if (runnerSceneWasDirty == false)
-                {
-                    EditorSceneManager.MarkSceneClean(testScene);
                 }
 
                 return;
