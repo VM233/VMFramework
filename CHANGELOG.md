@@ -6,6 +6,9 @@ All notable changes to this package are documented here.
 
 ### Fixed
 
+- Manager creation now resolves `^Core` only from active-scene roots and category containers only
+  from its direct children, preventing unrelated nested objects with reserved names from being
+  reparented and used as unconfigured manager owners.
 - Logic tick accumulation now advances against the active `TickGap` instead of the serialized
   override field, so disabling the override and calling `SetTickGap` affect the real cadence.
 - Tick-gap and elapsed-time APIs now reject non-finite or invalid values instead of allowing an

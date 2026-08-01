@@ -50,6 +50,12 @@ BattleIdle currently supplies these dependencies from its project manifest and e
 - `Experimental`: experimental framework code.
 - `GameResources`: package-owned fonts and script templates. Runtime project global setting assets are expected under `Assets/GameResources/Configurations/GlobalSettings`.
 
+## Manager Containers
+
+`ManagerCreator` owns the root `^Core` object in the active scene. Manager category containers are
+resolved only among the direct children of that root. Business and configuration hierarchies may
+therefore reuse category names such as `Audio` without being moved or treated as manager owners.
+
 ## Logic Tick Simulation Phases
 
 `LogicTickManager` publishes one ordered deterministic step:
