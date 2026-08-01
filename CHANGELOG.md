@@ -18,6 +18,12 @@ All notable changes to this package are documented here.
 
 ### Changed
 
+- Editor-only General Setting and Game Prefab folder paths now live in
+  `ProjectSettings/VMFrameworkEditorSettings.asset` and are configured through
+  `Edit > Project Settings > VMFramework`, so editor tools no longer depend on framework manager or
+  Global Setting initialization.
+- Maintenance actions previously exposed as `EditorSettingFile` inspector buttons are now Unity
+  menu commands under `VMFramework > Global Settings` and `VMFramework > Game Prefabs Tools`.
 - Replaced callback-based initialization actions with cancellation-aware `UniTask` actions.
 - Initialization orders remain sequential while actions in the same order run concurrently.
 - Initialization failures, caller cancellation, and timeouts now propagate to callers and retain per-action status.
@@ -40,6 +46,9 @@ All notable changes to this package are documented here.
 
 ### Removed
 
+- Removed the legacy `EditorSettingFile` Global Setting and its Game Editor node. Projects should
+  remove the corresponding asset, Addressables entry, and `EditorSetting` scene component after
+  migrating any custom folder paths to Project Settings.
 - Removed the unused `GameTagBasedConfigBase`, `KeyCodeTranslation`,
   `SingleArgumentLocalizedString`, and `InitialTilemapConfig` legacy configuration types.
 - Removed the unused GameTag extra-info API: `GameTagExtraInfo`,

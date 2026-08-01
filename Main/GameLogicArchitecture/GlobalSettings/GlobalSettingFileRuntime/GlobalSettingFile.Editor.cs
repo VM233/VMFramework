@@ -40,8 +40,6 @@ namespace VMFramework.GameLogicArchitecture
         [Button(ButtonSizes.Medium), TabGroup(TAB_GROUP_NAME, DEBUGGING_CATEGORY)]
         public void AutoFindAndCreateSettings()
         {
-            EditorSetting.AssertGlobalSettingFileIsLoaded();
-
             var folderPath = EditorSetting.GeneralSettingsAssetFolderPath;
             
             bool valuesChanged = false;

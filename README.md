@@ -56,6 +56,24 @@ BattleIdle currently supplies these dependencies from its project manifest and e
 resolved only among the direct children of that root. Business and configuration hierarchies may
 therefore reuse category names such as `Audio` without being moved or treated as manager owners.
 
+## Editor Project Settings
+
+Open `Edit > Project Settings > VMFramework` to configure the project-relative folders used for
+`GeneralSetting` assets and Game Prefab wrapper assets. The values are stored in
+`ProjectSettings/VMFrameworkEditorSettings.asset` and are available directly to editor tooling;
+they do not depend on VMFramework manager creation, global-setting loading, Addressables, or scene
+initialization.
+
+Framework maintenance commands are available from the Unity menu:
+
+- `VMFramework > Global Settings`: check, locate, create, move, and address settings.
+- `VMFramework > Game Prefabs Tools`: collect providers, remove empty wrappers, and move wrappers to
+  the configured folder.
+
+Projects upgrading from the legacy `EditorSettingFile` should copy any non-default folder paths into
+Project Settings, then remove the old `EditorSettingFile.asset`, its Addressables entry, and the
+`EditorSetting` scene component. Those legacy objects are no longer configuration authorities.
+
 ## Logic Tick Simulation Phases
 
 `LogicTickManager` publishes one ordered deterministic step:

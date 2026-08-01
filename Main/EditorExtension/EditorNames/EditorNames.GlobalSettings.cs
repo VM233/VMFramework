@@ -2,8 +2,6 @@
 {
     public partial class EditorNames
     {
-        public const string EDITOR_SETTINGS = "Editor";
-        
         public const string CORE_SETTINGS = "Core Runtime";
         
         public const string BUILT_IN_MODULES_SETTINGS = "Built-In Modules";
