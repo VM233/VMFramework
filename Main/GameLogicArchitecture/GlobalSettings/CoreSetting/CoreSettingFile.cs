@@ -25,8 +25,5 @@ namespace VMFramework.GameLogicArchitecture
         [Required]
         public GeneralConfigGeneralSetting generalConfigGeneralSetting;
         
-        [TabGroup(TAB_GROUP_NAME, CORE_CATEGORY)]
-        [Required]
-        public CommonPresetGeneralSetting commonPresetGeneralSetting;
     }
 }

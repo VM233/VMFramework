@@ -34,6 +34,7 @@ The package declares Unity registry dependencies in `package.json` for Addressab
 
 These external packages or plugins must also be available in the consuming Unity project because the current `VMFramework.asmdef` references their assemblies:
 
+- VM Common Preset (`com.vm233.common-preset` 1.0.0 or newer)
 - VMCore (`com.vm233.vmcore` or an embedded `Assets/Plugins/VMCore` copy)
 - VM Odin Extensions (`https://github.com/VM233/VMOdinExtensions.git`)
 - UniTask (`com.cysharp.unitask` or an embedded UniTask copy)
@@ -41,6 +42,10 @@ These external packages or plugins must also be available in the consuming Unity
 - FishNet, when using `FishnetExtension`
 
 BattleIdle currently supplies these dependencies from its project manifest and embedded plugins.
+
+Because VM Common Preset is distributed as a Git package, consuming projects must pin its Git URL
+directly in `Packages/manifest.json`; the semantic dependency in this package only expresses the
+required version to Unity's resolver.
 
 ## Layout
 
@@ -73,6 +78,17 @@ Framework maintenance commands are available from the Unity menu:
 Projects upgrading from the legacy `EditorSettingFile` should copy any non-default folder paths into
 Project Settings, then remove the old `EditorSettingFile.asset`, its Addressables entry, and the
 `EditorSetting` scene component. Those legacy objects are no longer configuration authorities.
+
+## Common Presets
+
+Common Preset runtime types, Odin drawers, registration, and Project Settings ownership now live in
+the independent `com.vm233.common-preset` package. VMFramework retains only its
+`PriorityDefinesPreset` declaration and consumes the package API.
+
+Projects upgrading from VMFramework 2.x should install VM Common Preset and VMFramework 3.x in the
+same Package Manager resolve. Configure existing preset asset references directly in
+`ProjectSettings/VMCommonPresetSettings.asset` through `Edit > Project Settings > VM Common Preset`;
+the legacy VMFramework `CommonPresetGeneralSetting` asset is no longer an authority.
 
 ## Logic Tick Simulation Phases
 

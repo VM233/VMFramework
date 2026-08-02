@@ -4,6 +4,24 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-08-02
+
+### Changed
+
+- Common Preset is now consumed from the independent `com.vm233.common-preset` package instead of
+  being implemented inside VMFramework.
+- Asset-backed preset mappings now use the VM Common Preset package's Unity-serialized Project
+  Settings list as their sole authority.
+- `PriorityDefinesPreset` now uses the package's explicit fixed-preset definition and value
+  attributes.
+
+### Removed
+
+- Removed VMFramework's Common Preset runtime types, editor initializers, Odin drawer, fixed-preset
+  registry, legacy `GeneralSetting`, and embedded Common Preset tests.
+- Removed Common Preset ownership from `CoreSetting`, `CoreSettingFile`, and VMFramework's global
+  configuration paths. Asset-backed mappings now belong directly to VM Common Preset Project Settings.
+
 ## [2.0.0] - 2026-08-02
 
 ### Fixed

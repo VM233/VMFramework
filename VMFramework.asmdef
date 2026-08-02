@@ -2,6 +2,7 @@
     "name": "VMFramework",
     "rootNamespace": "",
     "references": [
+        "GUID:2a4c34c2f0a84b5091ab84b832a2f3ef",
         "GUID:f5b42f5d067c7814d9b2dbeddfb9cb99",
         "GUID:c6e19d63eaa36bc49941accf213dda33",
         "GUID:f7476dd33af1a434b907ab43f8ec6be3",

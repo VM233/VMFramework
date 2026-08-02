@@ -16,8 +16,6 @@
         
         public const string DEFAULT_GAME_PREFABS_PATH = DEFAULT_CONFIGURATIONS_PATH + "/GamePrefabs";
         
-        public const string DEFAULT_COMMON_PRIORITIES_PATH = DEFAULT_CONFIGURATIONS_PATH + "/CommonPriorities";
-
         public const string INTERNAL_GLOBAL_SETTINGS_PATH = DEFAULT_GLOBAL_SETTINGS_PATH;
     }
 }

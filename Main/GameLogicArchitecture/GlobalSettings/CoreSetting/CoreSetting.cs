@@ -19,7 +19,5 @@ namespace VMFramework.GameLogicArchitecture
         public static GeneralConfigGeneralSetting GeneralConfigGeneralSetting =>
             GlobalSettingFile == null ? null : GlobalSettingFile.generalConfigGeneralSetting;
         
-        public static CommonPresetGeneralSetting CommonPresetGeneralSetting =>
-            GlobalSettingFile == null ? null : GlobalSettingFile.commonPresetGeneralSetting;
     }
 }
