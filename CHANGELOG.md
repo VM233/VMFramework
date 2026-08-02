@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-08-03
+
+### Added
+
+- Added a virtual `Common Presets` branch under `Core Runtime` in Game Editor. It displays the
+  ordered Project Settings mappings and opens each concrete preset asset without adding serialized
+  state back to `CoreSettingFile`.
+
 ## [3.0.0] - 2026-08-02
 
 ### Changed

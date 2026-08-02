@@ -34,7 +34,7 @@ The package declares Unity registry dependencies in `package.json` for Addressab
 
 These external packages or plugins must also be available in the consuming Unity project because the current `VMFramework.asmdef` references their assemblies:
 
-- VM Common Preset (`com.vm233.common-preset` 1.0.0 or newer)
+- VM Common Preset (`com.vm233.common-preset` 1.1.0 or newer)
 - VMCore (`com.vm233.vmcore` or an embedded `Assets/Plugins/VMCore` copy)
 - VM Odin Extensions (`https://github.com/VM233/VMOdinExtensions.git`)
 - UniTask (`com.cysharp.unitask` or an embedded UniTask copy)
@@ -89,6 +89,10 @@ Projects upgrading from VMFramework 2.x should install VM Common Preset and VMFr
 same Package Manager resolve. Configure existing preset asset references directly in
 `ProjectSettings/VMCommonPresetSettings.asset` through `Edit > Project Settings > VM Common Preset`;
 the legacy VMFramework `CommonPresetGeneralSetting` asset is no longer an authority.
+
+Game Editor displays a virtual `Common Presets` branch under `Core Runtime`. Its children mirror the
+ordered Project Settings list and open the concrete preset assets; neither the branch nor its items
+are serialized into `CoreSettingFile`.
 
 ## Logic Tick Simulation Phases
 
