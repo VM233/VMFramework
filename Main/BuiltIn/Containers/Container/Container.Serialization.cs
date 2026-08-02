@@ -9,11 +9,12 @@ namespace VMFramework.Containers
 {
     public partial class Container : IJSONSerializationReceiver, IStateCloneable
     {
-        public virtual void CloneFrom(IStateCloneable stateCloneable, StateCloneHint hint)
+        public virtual void CloneFrom(IStateCloneable stateCloneable, StateCloneContext context)
         {
             var other = (Container)stateCloneable;
             var items = ListPool<IContainerItem>.Default.Get();
             items.Clear();
+            var itemCloneContext = context.WithTag(StateCloneTags.OwnerStateIncluded);
             foreach (var otherItem in other.items)
             {
                 if (otherItem == null)
@@ -22,9 +23,7 @@ namespace VMFramework.Containers
                     continue;
                 }
 
-                var itemCloneHint = hint;
-                itemCloneHint.isNested = true;
-                var item = otherItem.GetClone(itemCloneHint);
+                var item = otherItem.GetClone(itemCloneContext);
                 items.Add(item);
             }
 

@@ -97,6 +97,33 @@ active gap for the next admission. Use `TickInterpolationAlpha` for presentation
 `AdvanceTime` is available to deterministic clock owners and tests; it uses the active `TickGap`
 configured through `SetTickGap`.
 
+## State Clone Contexts
+
+`StateCloneContext` is an immutable, allocation-free tag set passed through `IStateCloner` and
+`IStateCloneable`. Each module owns its clone semantics by registering tags once in static fields:
+
+```csharp
+public static readonly StateCloneTag CustomBehavior = StateCloneTag.Create();
+```
+
+Root callers can build a context from stack memory:
+
+```csharp
+Span<StateCloneTag> tags = stackalloc[] { CustomBehavior };
+var context = new StateCloneContext(tags);
+var clone = source.GetClone(context);
+```
+
+Nested producers use `context.WithTag(tag)`; consumers use `context.HasTag(tag)`. VMFramework
+defines only `StateCloneTags.OwnerStateIncluded`, which its Container clone path adds when cloning
+items together with their owner state. Projects may define their own tags without changing
+VMFramework. Tags are process-local, must not be serialized, and are limited to 64 registrations.
+Use `StateCloneContext.Empty` when a root clone has no tags.
+
+Projects migrating from 1.x must replace `StateCloneHint` parameters with `StateCloneContext`,
+replace `isNested = false` roots with `StateCloneContext.Empty`, and replace nested boolean
+mutation with explicit `WithTag` production and `HasTag` consumption.
+
 ## Notes
 
 - This repository is now a Unity Package Manager package root, not a full Unity project.

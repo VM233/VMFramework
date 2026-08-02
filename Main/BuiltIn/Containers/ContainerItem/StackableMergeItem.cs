@@ -315,9 +315,7 @@ namespace VMFramework.Containers
                     return true;
                 }
 
-                StateCloneHint hint;
-                hint.isNested = false;
-                var clonedItem = item.GetClone(hint);
+                var clonedItem = item.GetClone(StateCloneContext.Empty);
                 clonedItem.Count.Value = maxCountToMerge;
                 splitItems.Add(new(index, clonedItem));
 
@@ -339,9 +337,7 @@ namespace VMFramework.Containers
 
             var count = item.Count.GetValue().Min(targetCount);
 
-            StateCloneHint hint;
-            hint.isNested = false;
-            var clonedItem = item.GetClone(hint);
+            var clonedItem = item.GetClone(StateCloneContext.Empty);
             clonedItem.Count.Value = count;
 
             item.Count.Value -= count;

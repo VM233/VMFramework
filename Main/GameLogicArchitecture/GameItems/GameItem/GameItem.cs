@@ -86,7 +86,7 @@ namespace VMFramework.GameLogicArchitecture
 
         #endregion
 
-        public virtual void CloneFrom(IStateCloner cloner, StateCloneHint hint)
+        public virtual void CloneFrom(IStateCloner cloner, StateCloneContext context)
         {
             
         }

@@ -21,14 +21,14 @@ namespace VMFramework.GameLogicArchitecture
             }
         }
 
-        public virtual void CloneFrom(IStateCloner cloner, StateCloneHint hint)
+        public virtual void CloneFrom(IStateCloner cloner, StateCloneContext context)
         {
             var stateCloner = (StateCloner)cloner;
             foreach (var (priority, list) in stateCloneables)
             {
                 for (int i = 0;  i < list.Count; i++)
                 {
-                    list[i].CloneFrom(stateCloner.stateCloneables[priority][i], hint);
+                    list[i].CloneFrom(stateCloner.stateCloneables[priority][i], context);
                 }
             }
         }

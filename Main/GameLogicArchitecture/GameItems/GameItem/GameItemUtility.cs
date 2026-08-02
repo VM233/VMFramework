@@ -19,7 +19,7 @@ namespace VMFramework.GameLogicArchitecture
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static TGameItem GetClone<TGameItem>(this TGameItem gameItem, StateCloneHint hint)
+        public static TGameItem GetClone<TGameItem>(this TGameItem gameItem, StateCloneContext context)
             where TGameItem : IGameItem
         {
             if (gameItem == null)
@@ -36,7 +36,7 @@ namespace VMFramework.GameLogicArchitecture
                 throw new ArgumentNullException($"{clone} does not have a {nameof(StateCloner)}.");
             }
 
-            clone.StateCloner.CloneFrom(gameItem.StateCloner, hint);
+            clone.StateCloner.CloneFrom(gameItem.StateCloner, context);
 
             return clone;
         }

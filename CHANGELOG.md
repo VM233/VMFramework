@@ -4,6 +4,8 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-08-02
+
 ### Fixed
 
 - The Manager container Edit Mode test now uses an isolated preview scene through an internal
@@ -20,6 +22,9 @@ All notable changes to this package are documented here.
 
 ### Changed
 
+- Replaced the mutable, boolean-based `StateCloneHint` API with the immutable
+  `StateCloneContext` tag set. Clone producers now add explicit tags and consumers query only the
+  semantics they own.
 - Editor-only General Setting and Game Prefab folder paths now live in
   `ProjectSettings/VMFrameworkEditorSettings.asset` and are configured through
   `Edit > Project Settings > VMFramework`, so editor tools no longer depend on framework manager or
@@ -35,6 +40,9 @@ All notable changes to this package are documented here.
 
 ### Added
 
+- Added process-local `StateCloneTag` registration, allocation-free span construction, immutable
+  `WithTag` derivation, and the framework-owned `OwnerStateIncluded` tag used when cloning owned
+  items together with their owner state.
 - Added ordered pre-simulation, simulation-owner, and post-simulation Logic Tick phases.
 - Added `TickDeltaTime`, `TickInterpolationAlpha`, and deterministic `AdvanceTime` APIs.
 - Added Edit Mode coverage for Logic Tick phase ordering, deferred next-tick callbacks, active
@@ -48,6 +56,8 @@ All notable changes to this package are documented here.
 
 ### Removed
 
+- Removed `StateCloneHint` and its ambiguous `isNested` field. Root clones should use
+  `StateCloneContext.Empty`; owned-child producers should derive an explicit tagged context.
 - Removed the legacy `EditorSettingFile` Global Setting and its Game Editor node. Projects should
   remove the corresponding asset, Addressables entry, and `EditorSetting` scene component after
   migrating any custom folder paths to Project Settings.

@@ -6,6 +6,6 @@ namespace VMFramework.GameLogicArchitecture
     {
         public int ClonePriority => PriorityDefines.MEDIUM;
         
-        public void CloneFrom(IStateCloneable stateCloneable, StateCloneHint hint);
+        public void CloneFrom(IStateCloneable stateCloneable, StateCloneContext context);
     }
 }
