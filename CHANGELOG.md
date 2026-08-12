@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [5.0.0] - 2026-08-12
+
+### Removed
+
+- Removed `BoolStateVisualElement` from VMFramework. The general-purpose control now belongs to
+  `com.vm233.ui-toolkit-extensions` as `VM233.UIElements.BoolStateVisualElement`.
+
 ## [4.1.0] - 2026-08-12
 
 ### Added
