@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [6.0.1] - 2026-08-12
+
+### Changed
+
+- Documented that `ILocalizedPanelModifier.OnCurrentLanguageChanged` runs once before modifier
+  `IUIPanel.OnOpen` handlers during panel opening, so open-time UI bindings are not available to
+  that initial localization callback.
+
 ## [6.0.0] - 2026-08-12
 
 ### Removed
