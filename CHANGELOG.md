@@ -4,6 +4,20 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-08-12
+
+### Changed
+
+- `SlotVisualElement` now uses Unity UI Toolkit's native boolean-field contract. Its `value`
+  drives the `:checked` pseudo-state, and its inherited click manipulator supplies the `:active`
+  pseudo-state without changing the slot's authored visual hierarchy or inheriting base-field
+  theme styling.
+
+### Removed
+
+- Removed the configurable slot content-container type and its UXML attribute. Authored children
+  now always use the slot itself as the content container.
+
 ## [3.1.0] - 2026-08-03
 
 ### Added

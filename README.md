@@ -117,6 +117,12 @@ active gap for the next admission. Use `TickInterpolationAlpha` for presentation
 `AdvanceTime` is available to deterministic clock owners and tests; it uses the active `TickGap`
 configured through `SetTickGap`.
 
+## UI Toolkit Slots
+
+`SlotVisualElement` is a native boolean field. Use its `value`, `SetValueWithoutNotify`, and
+`ChangeEvent<bool>` contract to own selection state. USS can style the slot directly with
+`.slot:checked` and `.slot:active`; consumer projects decide what the boolean state means.
+
 ## State Clone Contexts
 
 `StateCloneContext` is an immutable, allocation-free tag set passed through `IStateCloner` and

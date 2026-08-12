@@ -1,12 +1,11 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UIElements;
 using VMFramework.Core;
 
 namespace VMFramework.UI
 {
     [UxmlElement(visibility = LibraryVisibility.Visible)]
-    public partial class SlotVisualElement : BasicVisualElement, IToken
+    public partial class SlotVisualElement : BaseBoolField, IToken
     {
         private const string DEEPER_BACKGROUND_UI_NAME = "deeper-background";
         private const string BACKGROUND_UI_NAME = "background";
@@ -25,6 +24,9 @@ namespace VMFramework.UI
         private const string BORDER_CONTENT_CLASS_STYLE = "slot-border-content";
         private const string ICON_CLASS_STYLE = "slot-icon";
         private const string COUNT_CLASS_STYLE = "slot-description";
+        private const string INPUT_CLASS_STYLE = "slot-input";
+
+        public readonly VisualElementTooltip tooltipManager;
 
         public VisualElement DeeperBackgroundElement { get; protected set; }
         public VisualElement BackgroundElement { get; protected set; }
@@ -56,22 +58,16 @@ namespace VMFramework.UI
             set => DescriptionLabel.text = value;
         }
 
-        [UxmlAttribute]
-        public SlotContainerType ContainerType { get; set; } = SlotContainerType.This;
+        public override VisualElement contentContainer => this;
 
-        public override VisualElement contentContainer =>
-            ContainerType switch
-            {
-                SlotContainerType.This => this,
-                SlotContainerType.Background => BackgroundElement,
-                _ => throw new ArgumentOutOfRangeException()
-            };
-
-        private bool displayNoneIfNull;
         private Sprite defaultBackgroundImage;
 
-        public SlotVisualElement() : base()
+        public SlotVisualElement() : base(null)
         {
+            ConfigureInheritedFieldVisual();
+
+            tooltipManager = new VisualElementTooltip(this);
+
             AddToClassList(CLASS_NAME);
 
             DeeperBackgroundElement = new VisualElement
@@ -125,6 +121,23 @@ namespace VMFramework.UI
             hierarchy.Add(BorderElement);
             BorderElement.Add(BorderContentLabel);
             hierarchy.Add(DescriptionLabel);
+        }
+
+        private void ConfigureInheritedFieldVisual()
+        {
+            var inputElement = this.Q<VisualElement>(className: BaseField<bool>.inputUssClassName);
+            inputElement.Clear();
+            inputElement.RemoveFromClassList(BaseField<bool>.inputUssClassName);
+            inputElement.AddToClassList(INPUT_CLASS_STYLE);
+            inputElement.pickingMode = PickingMode.Ignore;
+            inputElement.style.position = Position.Absolute;
+            inputElement.style.left = 0;
+            inputElement.style.top = 0;
+            inputElement.style.right = 0;
+            inputElement.style.bottom = 0;
+
+            RemoveFromClassList(BaseField<bool>.ussClassName);
+            RemoveFromClassList(BaseField<bool>.noLabelVariantUssClassName);
         }
     }
 }
