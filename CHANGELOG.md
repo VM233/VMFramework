@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [6.0.0] - 2026-08-12
+
+### Removed
+
+- Removed the unused `BasicToggle`, `CarouselGroupVisualElement`, and `ToggleVisualElement` UI
+  Toolkit controls.
+
 ## [5.0.0] - 2026-08-12
 
 ### Removed
