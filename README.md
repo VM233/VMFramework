@@ -117,7 +117,11 @@ active gap for the next admission. Use `TickInterpolationAlpha` for presentation
 `AdvanceTime` is available to deterministic clock owners and tests; it uses the active `TickGap`
 configured through `SetTickGap`.
 
-## UI Toolkit Slots
+## UI Toolkit Boolean Elements
+
+`BoolStateVisualElement` owns a programmatic boolean state without accepting pointer or keyboard
+input. Set `value` or call `SetValueWithoutNotify`; USS can consume the state through `:checked`.
+It intentionally has no interactive `:active` contract.
 
 `SlotVisualElement` is a native boolean field. Use its `value`, `SetValueWithoutNotify`, and
 `ChangeEvent<bool>` contract to own selection state. USS can style the slot directly with

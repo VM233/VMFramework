@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-08-12
+
+### Added
+
+- Added `BoolStateVisualElement`, a non-interactive native boolean field for decorative two-state
+  visuals. Scripts and UXML set its `value`, while USS consumes its `:checked` pseudo-state without
+  exposing pointer or keyboard interaction.
+
 ## [4.0.0] - 2026-08-12
 
 ### Changed
