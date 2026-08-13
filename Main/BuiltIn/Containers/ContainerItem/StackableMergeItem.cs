@@ -21,6 +21,7 @@ namespace VMFramework.Containers
             item.OnCheckInsertable += OnCheckInsertable;
             item.OnInsert += OnInsert;
             item.OnSplit += OnSplit;
+            item.OnCheckRemovable += OnCheckRemovable;
             item.OnRemove += OnRemove;
         }
 
@@ -349,14 +350,31 @@ namespace VMFramework.Containers
 
         protected virtual void OnRemove(IContainerItem containerItem, int targetRemoveCount, ref int actualRemoveCount)
         {
-            if (item.IsDestroyed || item.Count.GetValue() <= 0)
+            var count = CalculateRemovableCount(item.IsDestroyed, item.Count.GetValue(), targetRemoveCount);
+            if (count == 0)
             {
                 return;
             }
 
-            var count = item.Count.GetValue().Min(targetRemoveCount);
             item.Count.Value -= count;
             actualRemoveCount += count;
+        }
+
+        protected virtual void OnCheckRemovable(IContainerItem containerItem, int targetRemoveCount,
+            ref int actualRemoveCount)
+        {
+            actualRemoveCount += CalculateRemovableCount(
+                item.IsDestroyed, item.Count.GetValue(), targetRemoveCount);
+        }
+
+        internal static int CalculateRemovableCount(bool isDestroyed, int itemCount, int targetRemoveCount)
+        {
+            if (isDestroyed || itemCount <= 0)
+            {
+                return 0;
+            }
+
+            return itemCount.Min(targetRemoveCount);
         }
     }
 }

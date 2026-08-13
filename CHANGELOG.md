@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [6.0.2] - 2026-08-13
+
+### Fixed
+
+- Made `StackableMergeItem` report the same removable count that its removal operation can
+  actually remove, allowing callers to preflight multi-item removals without rejecting valid
+  stackable items.
+
 ## [6.0.1] - 2026-08-12
 
 ### Changed
