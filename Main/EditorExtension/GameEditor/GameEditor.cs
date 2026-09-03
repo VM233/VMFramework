@@ -26,6 +26,12 @@ namespace VMFramework.Editor.GameEditor
 
         private readonly Dictionary<object, object> visualNodeParentsLookup = new();
 
+        [SerializeField]
+        private string[] selectedGameTags = Array.Empty<string>();
+
+        [SerializeField]
+        private bool matchAllGameTags = true;
+
         [MenuItem(UnityMenuItemNames.VMFRAMEWORK + GameEditorNames.GAME_EDITOR + " #G", false, 100)]
         private static void OpenWindow()
         {
@@ -222,9 +228,17 @@ namespace VMFramework.Editor.GameEditor
                 }
             }
 
+            var visibleNodes = GameEditorTagFilter.SelectVisibleNodes(
+                nodesInfo.Values, selectedGameTags, matchAllGameTags);
+
             visualNodeParentsLookup.Clear();
             foreach (var (node, info) in nodesInfo)
             {
+                if (visibleNodes.Contains(info) == false)
+                {
+                    continue;
+                }
+
                 var path = info.name;
                 
                 foreach (var parentInfo in info.TraverseToRoot(false))
@@ -255,6 +269,74 @@ namespace VMFramework.Editor.GameEditor
             tree.EnumerateTree().Examine(AddRightClickContextMenu);
 
             return tree;
+        }
+
+        protected override void DrawMenu()
+        {
+            bool rebuild = false;
+            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
+            {
+                var label = selectedGameTags.Length == 0 ? "Tags: All" : $"Tags: {selectedGameTags.Length}";
+                var tooltip = selectedGameTags.Length == 0
+                    ? "Filter by registered Game Tags."
+                    : string.Join("\n", selectedGameTags);
+                if (GUILayout.Button(new GUIContent(label, tooltip), EditorStyles.toolbarDropDown))
+                {
+                    ShowGameTagSelector();
+                }
+
+                using (new EditorGUI.DisabledScope(selectedGameTags.Length == 0))
+                {
+                    var mode = matchAllGameTags ? "All" : "Any";
+                    if (GUILayout.Button(new GUIContent(mode, "Match all or any of the selected tags."),
+                            EditorStyles.toolbarButton, GUILayout.Width(34)))
+                    {
+                        matchAllGameTags = !matchAllGameTags;
+                        rebuild = true;
+                    }
+
+                    if (GUILayout.Button("Clear", EditorStyles.toolbarButton, GUILayout.Width(40)))
+                    {
+                        selectedGameTags = Array.Empty<string>();
+                        rebuild = true;
+                    }
+                }
+            }
+
+            if (rebuild)
+            {
+                RebuildFilteredMenuTree();
+            }
+
+            base.DrawMenu();
+        }
+
+        private void ShowGameTagSelector()
+        {
+            var choices = GameTagNameEditorUtility.GetAllGameTagsIDList()
+                .Select(item => new GenericSelectorItem<string>(item.Text, (string)item.Value));
+            var selector = new GenericSelector<string>("Game Tags", false, choices)
+            {
+                CheckboxToggle = true,
+                DrawConfirmSelectionButton = true
+            };
+            selector.SelectionTree.Selection.SupportsMultiSelect = true;
+            selector.SelectionTree.Config.DrawSearchToolbar = true;
+            selector.SetSelection(selectedGameTags);
+            selector.SelectionConfirmed += selection =>
+            {
+                selectedGameTags = selection.ToArray();
+                RebuildFilteredMenuTree();
+            };
+            selector.ShowInPopup();
+        }
+
+        private void RebuildFilteredMenuTree()
+        {
+            var searchTerm = MenuTree.Config.SearchTerm;
+            ForceMenuTreeRebuild();
+            MenuTree.Config.SearchTerm = searchTerm;
+            Repaint();
         }
 
         private void AddRightClickContextMenu(OdinMenuItem menuItem)

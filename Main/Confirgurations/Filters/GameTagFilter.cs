@@ -31,40 +31,17 @@ namespace VMFramework.Configuration
             {
                 if (gameTags is { Length: > 0 })
                 {
-                    var gameTags = gameTagsOwner.GameTags;
-                    if (isAll)
-                    {
-                        bool isTargetGameTag = true;
-                        foreach (var gameTag in gameTags)
-                        {
-                            if (gameTag.Contains(gameTag) == false)
-                            {
-                                isTargetGameTag = false;
-                                break;
-                            }
-                        }
-                        return isTargetGameTag ^ inversed;
-                    }
-                    else
-                    {
-                        bool isTargetGameTag = false;
-                        foreach (var gameTag in gameTags)
-                        {
-                            if (gameTag.Contains(gameTag))
-                            {
-                                isTargetGameTag = true;
-                                break;
-                            }
-                        }
-                        return isTargetGameTag ^ inversed;
-                    }
+                    bool matches = isAll
+                        ? gameTagsOwner.HasAllTags(gameTags)
+                        : gameTagsOwner.HasAnyTags(gameTags);
+                    return matches ^ inversed;
                 }
             }
             else
             {
                 if (gameTag.IsNullOrEmpty() == false)
                 {
-                    var isTargetGameTag = gameTagsOwner.GameTags.Contains(gameTag);
+                    var isTargetGameTag = gameTagsOwner.HasTag(gameTag);
                     return isTargetGameTag ^ inversed;
                 }
             }

@@ -4,6 +4,21 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [6.1.0] - 2026-09-03
+
+### Added
+
+- Game Editor has a searchable, multi-select Game Tag filter above its existing text search.
+  All/Any matching reads the configs inside single and multiple wrappers, keeps navigation ancestors,
+  and hides unrelated branches. Clear restores the complete tree without clearing the text search.
+- Focused Editor tests cover tag matching, inversion, empty selections, wrapper ownership and
+  filtered-tree ancestry.
+
+### Fixed
+
+- Multi-tag `GameTagFilter` now compares the requested tags with the owner's tags instead of
+  comparing each owned tag with itself.
+
 ## [6.0.2] - 2026-08-13
 
 ### Fixed

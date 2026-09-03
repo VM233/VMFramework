@@ -35,13 +35,13 @@ The package declares Unity registry dependencies in `package.json` for Addressab
 These external packages or plugins must also be available in the consuming Unity project because the current `VMFramework.asmdef` references their assemblies:
 
 - VM Common Preset (`com.vm233.common-preset` 1.1.0 or newer)
-- VMCore (`com.vm233.vmcore` or an embedded `Assets/Plugins/VMCore` copy)
+- VMCore (`com.vm233.vmcore`)
 - VM Odin Extensions (`https://github.com/VM233/VMOdinExtensions.git`)
-- UniTask (`com.cysharp.unitask` or an embedded UniTask copy)
+- UniTask (`com.cysharp.unitask`)
 - Odin Inspector
 - FishNet, when using `FishnetExtension`
 
-BattleIdle currently supplies these dependencies from its project manifest and embedded plugins.
+Pin package dependencies to registry versions or remote Git URLs with full immutable commit SHAs.
 
 Because VM Common Preset is distributed as a Git package, consuming projects must pin its Git URL
 directly in `Packages/manifest.json`; the semantic dependency in this package only expresses the
@@ -68,6 +68,19 @@ Open `Edit > Project Settings > VMFramework` to configure the project-relative f
 `ProjectSettings/VMFrameworkEditorSettings.asset` and are available directly to editor tooling;
 they do not depend on VMFramework manager creation, global-setting loading, Addressables, or scene
 initialization.
+
+## Game Editor Tag Filtering
+
+Use **Tags: All** above the menu tree's text search to select registered Game Tag IDs, then confirm
+the selection. **All** requires every selected tag on the same Game Prefab; **Any** requires at least
+one. The selector uses the current Game Tag registry, not a separate list of item categories.
+
+Filtering reads the real configs in single/multiple Game Prefab wrappers. It preserves the ancestors
+of matching entries but does not include unrelated siblings. **Clear** restores all entries; the
+existing text search continues to apply. Filter selections belong to each Game Editor window and
+do not modify Game Prefab assets or runtime tags.
+
+## Editor Maintenance
 
 Framework maintenance commands are available from the Unity menu:
 
