@@ -80,6 +80,12 @@ of matching entries but does not include unrelated siblings. **Clear** restores 
 existing text search continues to apply. Filter selections belong to each Game Editor window and
 do not modify Game Prefab assets or runtime tags.
 
+Every Game Tag field, including entries in tag collections, also has a **funnel** button on its
+right. Click it to open/focus Game Editor, replace the selected tags with that exact tag, clear
+the old text search, and expand the matching branches. The adjacent magnifier still opens the
+Game Tag settings. The funnel is disabled for empty or mixed-value fields. Editor integrations
+can apply the same query with `GameEditor.FilterByGameTag(tagId)` on their target window.
+
 ## Editor Maintenance
 
 Framework maintenance commands are available from the Unity menu:

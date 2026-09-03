@@ -13,7 +13,8 @@
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "Sirenix.Serialization.dll"
+        "Sirenix.Serialization.dll",
+        "Sirenix.OdinInspector.Editor.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [],

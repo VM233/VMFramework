@@ -4,6 +4,18 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [6.2.0] - 2026-09-03
+
+### Added
+
+- Every Game Tag field has a funnel button that opens Game Editor with that tag as its only
+  filter. It clears any previous text search and expands the matching navigation branches.
+  The existing tag-settings shortcut remains available; empty and mixed-value fields cannot
+  start a tag query.
+- `GameEditor.FilterByGameTag` exposes the same navigation action to editor integrations.
+- Focused Editor tests cover replacing prior selections, clearing stale searches, repeated
+  navigation, filter persistence across tree rebuilds, and rejection of empty tag IDs.
+
 ## [6.1.0] - 2026-09-03
 
 ### Added

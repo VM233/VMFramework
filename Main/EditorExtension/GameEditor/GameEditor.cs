@@ -39,6 +39,23 @@ namespace VMFramework.Editor.GameEditor
             window.position = GUIHelper.GetEditorWindowRect().AlignCenter(800, 600);
         }
 
+        /// <summary>
+        /// Shows the Game Prefabs with this tag, replacing the current tag and text filters.
+        /// </summary>
+        public void FilterByGameTag(string gameTag)
+        {
+            if (string.IsNullOrWhiteSpace(gameTag))
+            {
+                throw new ArgumentException("A non-empty Game Tag ID is required.", nameof(gameTag));
+            }
+
+            selectedGameTags = new[] { gameTag };
+            matchAllGameTags = true;
+            MenuTree.Config.SearchTerm = string.Empty;
+            RebuildFilteredMenuTree();
+            MenuTree.EnumerateTree(item => item.Toggled = true);
+        }
+
         protected override OdinMenuTree BuildMenuTree()
         {
             contextMenuProcessors.AutoCollect();
