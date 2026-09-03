@@ -16,6 +16,10 @@ All notable changes to this package are documented here.
 - Focused Editor tests cover replacing prior selections, clearing stale searches, repeated
   navigation, filter persistence across tree rebuilds, and rejection of empty tag IDs.
 
+### Fixed
+
+- Removed an orphaned test-fixture folder meta from the Git package.
+
 ## [6.1.0] - 2026-09-03
 
 ### Added
