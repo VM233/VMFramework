@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [6.2.1] - 2026-09-03
+
+### Fixed
+
+- The Editor test assembly now references VM Odin Extensions, required by the Game Prefab
+  type-validation interface used by the tag-filter tests.
+
 ## [6.2.0] - 2026-09-03
 
 ### Added
