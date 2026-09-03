@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [6.2.2] - 2026-09-03
+
+### Fixed
+
+- Tag navigation builds the Game Editor menu before accessing its search configuration,
+  so opening a new window works before its first repaint. Tests cover both new windows
+  and already-built windows with prior filters.
+
 ## [6.2.1] - 2026-09-03
 
 ### Fixed

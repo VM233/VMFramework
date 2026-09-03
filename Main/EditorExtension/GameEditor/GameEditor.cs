@@ -51,8 +51,7 @@ namespace VMFramework.Editor.GameEditor
 
             selectedGameTags = new[] { gameTag };
             matchAllGameTags = true;
-            MenuTree.Config.SearchTerm = string.Empty;
-            RebuildFilteredMenuTree();
+            RebuildFilteredMenuTree(string.Empty);
             MenuTree.EnumerateTree(item => item.Toggled = true);
         }
 
@@ -322,7 +321,7 @@ namespace VMFramework.Editor.GameEditor
 
             if (rebuild)
             {
-                RebuildFilteredMenuTree();
+                RebuildFilteredMenuTree(MenuTree.Config.SearchTerm);
             }
 
             base.DrawMenu();
@@ -343,14 +342,13 @@ namespace VMFramework.Editor.GameEditor
             selector.SelectionConfirmed += selection =>
             {
                 selectedGameTags = selection.ToArray();
-                RebuildFilteredMenuTree();
+                RebuildFilteredMenuTree(MenuTree.Config.SearchTerm);
             };
             selector.ShowInPopup();
         }
 
-        private void RebuildFilteredMenuTree()
+        private void RebuildFilteredMenuTree(string searchTerm)
         {
-            var searchTerm = MenuTree.Config.SearchTerm;
             ForceMenuTreeRebuild();
             MenuTree.Config.SearchTerm = searchTerm;
             Repaint();

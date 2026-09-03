@@ -24,6 +24,18 @@ namespace VMFramework.Tests
         }
 
         [Test]
+        public void BuildsTheMenuTreeBeforeTheNewWindowsFirstRepaint()
+        {
+            Assert.That(window.MenuTree, Is.Null);
+
+            window.FilterByGameTag("selected");
+
+            Assert.That(window.MenuTree, Is.Not.Null);
+            AssertSingleTag("selected");
+            Assert.That(window.MenuTree.Config.SearchTerm, Is.Empty);
+        }
+
+        [Test]
         public void ReplacesExistingTagsAndTextSearchWithTheClickedTag()
         {
             using (var state = new SerializedObject(window))
@@ -36,6 +48,7 @@ namespace VMFramework.Tests
                 state.ApplyModifiedPropertiesWithoutUndo();
             }
 
+            window.ForceMenuTreeRebuild();
             window.MenuTree.Config.SearchTerm = "an unrelated text search";
             window.FilterByGameTag("selected");
 
