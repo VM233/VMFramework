@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [6.3.1] - 2026-09-05
+
+### Added
+
+- Expanded GamePrefab native-serialization tests to cover the wrapper field contract, every loaded
+  GamePrefab config type, the production wrapper creator, nested managed references, Unity object
+  references, edit-save-reload mutations, and every discoverable consumer-project wrapper asset.
+
 ## [6.3.0] - 2026-09-05
 
 ### Changed

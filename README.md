@@ -82,6 +82,12 @@ canonical string form. Code that edits tags should use list operations and avoid
 This contract applies to Game Prefab wrappers only; `GeneralSetting` assets retain their independent
 storage contract.
 
+The Editor test suite verifies the wrapper field contract, all loaded GamePrefab config types,
+single and multiple wrapper round trips, the production wrapper creator, nested managed references,
+Unity object references, second-save mutations, and every GamePrefab wrapper discoverable in a
+consumer project. Consumer projects can expose the package tests through Unity's `testables`
+manifest entry to run the asset-wide checks against their own content.
+
 ## Editor Project Settings
 
 Open `Edit > Project Settings > VMFramework` to configure the project-relative folders used for

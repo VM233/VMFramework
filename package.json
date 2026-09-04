@@ -1,6 +1,6 @@
 {
   "name": "com.vm233.vmframework",
-  "version": "6.3.0",
+  "version": "6.3.1",
   "displayName": "VMFramework",
   "description": "Reusable Unity gameplay, UI, configuration, resource, localization, and editor framework used by VM233 projects.",
   "unity": "6000.4",
