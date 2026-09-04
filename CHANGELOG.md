@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [6.2.3] - 2026-09-05
+
+### Fixed
+
+- Runtime initialization now validates every registered `IPrefabProvider` after
+  Game Prefab registration and throws one aggregated exception listing all missing
+  or destroyed Prefab references before any gameplay system can instantiate them.
+
 ## [6.2.2] - 2026-09-03
 
 ### Fixed

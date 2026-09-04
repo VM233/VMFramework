@@ -31,6 +31,9 @@ namespace VMFramework.GameLogicArchitecture
                 cancellationToken.ThrowIfCancellationRequested();
                 GamePrefabManager.RegisterGamePrefab(gamePrefab);
             }
+
+            GamePrefabReferenceValidator.Validate(
+                GamePrefabManager.GetAllGamePrefabs());
         }
         
         private static UniTask OnInitComplete(CancellationToken cancellationToken)

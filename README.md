@@ -61,6 +61,14 @@ required version to Unity's resolver.
 resolved only among the direct children of that root. Business and configuration hierarchies may
 therefore reuse category names such as `Audio` without being moved or treated as manager owners.
 
+## Game Prefab Startup Validation
+
+After all Game Prefabs are registered, VMFramework validates every registered
+`IPrefabProvider` before gameplay managers and procedures consume the registry. Missing or
+destroyed Prefab references stop initialization with one `MissingGamePrefabReferencesException`
+that lists every invalid Game Prefab ID and concrete config type, so projects can repair the
+complete invalid set instead of discovering failures one instantiation at a time.
+
 ## Editor Project Settings
 
 Open `Edit > Project Settings > VMFramework` to configure the project-relative folders used for
