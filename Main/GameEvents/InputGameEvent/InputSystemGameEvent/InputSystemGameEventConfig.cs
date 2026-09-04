@@ -11,14 +11,19 @@ namespace VMFramework.GameEvents
     public class InputSystemGameEventConfig : GameEventConfig
     {
         public override Type GameItemType => typeof(InputSystemGameEvent);
-        
-        [TabGroup(TAB_GROUP_NAME, BASIC_CATEGORY)]
-        [InputActionID]
-        public Guid inputActionID;
 
         [SerializeField]
         [HideInInspector]
-        private string nativeInputActionID;
+        private string nativeInputActionID = Guid.Empty.ToString("D");
+
+        [TabGroup(TAB_GROUP_NAME, BASIC_CATEGORY)]
+        [InputActionID]
+        [ShowInInspector]
+        public Guid inputActionID
+        {
+            get => Guid.ParseExact(nativeInputActionID, "D");
+            set => nativeInputActionID = value.ToString("D");
+        }
         
         public InputAction InputAction { get; private set; }
 
@@ -34,10 +39,5 @@ namespace VMFramework.GameEvents
             }
         }
 
-        protected override void OnPrepareNativeSerializationMigration()
-        {
-            base.OnPrepareNativeSerializationMigration();
-            nativeInputActionID = inputActionID.ToString("D");
-        }
     }
 }

@@ -46,32 +46,20 @@ namespace VMFramework.GameLogicArchitecture
         public int gameItemPrewarmCount = 0;
 
         [TabGroup(TAB_GROUP_NAME, BASIC_CATEGORY)]
+        [LabelText("Game Tags")]
         [GameTagID]
-        public HashSet<string> gameTags = new();
-
         [SerializeField]
-        [HideInInspector]
         private List<string> nativeGameTags = new();
 
         #endregion
 
-        public void PrepareNativeSerializationMigration()
-        {
-            nativeGameTags.Clear();
-            if (gameTags != null)
-            {
-                nativeGameTags.AddRange(gameTags);
-                nativeGameTags.Sort(StringComparer.Ordinal);
-            }
-
-            OnPrepareNativeSerializationMigration();
-        }
-
-        protected virtual void OnPrepareNativeSerializationMigration()
-        {
-        }
-
         #region Properties
+
+        public List<string> gameTags
+        {
+            get => nativeGameTags;
+            set => nativeGameTags = value;
+        }
 
         [LabelText("ID", SdfIconType.Globe)]
         [ShowInInspector]
@@ -172,7 +160,7 @@ namespace VMFramework.GameLogicArchitecture
 
         int IGamePrefab.GameItemPrewarmCount => gameItemPrewarmCount;
 
-        ICollection<string> IGameTagsOwner.GameTags => gameTags;
+        ICollection<string> IGameTagsOwner.GameTags => nativeGameTags;
 
         #endregion
 

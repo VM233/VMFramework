@@ -4,6 +4,19 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [6.3.0-rc.1] - 2026-09-05
+
+### Changed
+
+- GamePrefab Wrapper assets now persist their polymorphic GamePrefab graphs with Unity
+  managed-reference serialization. Game tags use a native serialized list, and Input System
+  event action IDs use a native string representation.
+
+### Removed
+
+- GamePrefab Wrapper persistence no longer uses Odin `SerializedScriptableObject` or manually
+  writes Odin `serializationData` payloads.
+
 ## [6.3.0-migration.1] - 2026-09-05
 
 ### Changed

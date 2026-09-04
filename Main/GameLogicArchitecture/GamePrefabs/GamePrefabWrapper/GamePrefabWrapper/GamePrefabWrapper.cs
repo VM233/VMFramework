@@ -1,11 +1,11 @@
 using System.Collections.Generic;
-using Sirenix.OdinInspector;
+using UnityEngine;
 using VMFramework.Core;
 
 namespace VMFramework.GameLogicArchitecture
 {
     public abstract partial class GamePrefabWrapper
-        : SerializedScriptableObject, IGamePrefabsProvider, INameOwner, IIDOwner<string>
+        : ScriptableObject, IGamePrefabsProvider, INameOwner, IIDOwner<string>
     {
         public abstract void GetGamePrefabs(ICollection<IGamePrefab> gamePrefabsCollection);
 

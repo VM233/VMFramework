@@ -1,9 +1,6 @@
 #if UNITY_EDITOR
 using System;
-using System.Reflection;
 using System.Runtime.CompilerServices;
-using Sirenix.OdinInspector;
-using Sirenix.Serialization;
 using UnityEditor;
 using VMFramework.Core;
 using VMFramework.Core.Editor;
@@ -14,10 +11,6 @@ namespace VMFramework.GameLogicArchitecture.Editor
 {
     public static class GamePrefabWrapperCreator
     {
-        private static readonly FieldInfo serializationDataField =
-            typeof(SerializedScriptableObject).GetField("serializationData",
-                BindingFlags.Instance | BindingFlags.NonPublic);
-
         public static event Action<GamePrefabWrapper> OnGamePrefabWrapperCreated;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -243,14 +236,6 @@ namespace VMFramework.GameLogicArchitecture.Editor
             if (gamePrefabWrapper == null)
             {
                 return;
-            }
-
-            if (serializationDataField != null)
-            {
-                var serializationData = (SerializationData)serializationDataField.GetValue(gamePrefabWrapper);
-                UnitySerializationUtility.SerializeUnityObject(gamePrefabWrapper, ref serializationData, true,
-                    null);
-                serializationDataField.SetValue(gamePrefabWrapper, serializationData);
             }
 
             gamePrefabWrapper.EnforceSave();
