@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
@@ -9,7 +8,7 @@ namespace VMFramework.Tests
 {
     public sealed class GamePrefabReferenceValidatorTests
     {
-        [Serializable]
+        [System.Serializable]
         private sealed class TestGamePrefab : GamePrefab, IPrefabProvider
         {
             private readonly GameObject prefab;

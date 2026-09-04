@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [6.3.4] - 2026-09-05
+
+### Fixed
+
+- Qualified the serialization attributes on legacy GamePrefab test doubles without importing
+  `System`, preserving the existing unambiguous `UnityEngine.Object` test calls.
+
 ## [6.3.3] - 2026-09-05
 
 ### Fixed
