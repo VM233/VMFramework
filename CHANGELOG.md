@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [6.3.3] - 2026-09-05
+
+### Fixed
+
+- Marked the package's legacy GamePrefab test doubles as serializable so the full package
+  test suite satisfies the same native managed-reference contract as production config types.
+
 ## [6.3.2] - 2026-09-05
 
 ### Fixed

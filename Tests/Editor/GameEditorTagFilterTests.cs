@@ -1,3 +1,4 @@
+using System;
 using NUnit.Framework;
 using UnityEngine;
 using VMFramework.Editor.GameEditor;
@@ -85,6 +86,7 @@ namespace VMFramework.Tests
             }
         }
 
+        [Serializable]
         private sealed class Config : GamePrefab
         {
             public Config(params string[] tags)
