@@ -1,9 +1,11 @@
 ﻿using Sirenix.OdinInspector;
+using System;
 using UnityEngine.UIElements;
 using VMFramework.GameLogicArchitecture;
 
 namespace VMFramework.UI
 {
+    [Serializable]
     public class SlotFilterConfig : GamePrefab
     {
         public override string IDSuffix => "slot_filter";

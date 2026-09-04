@@ -10,7 +10,7 @@ namespace VMFramework.GameLogicArchitecture
         menuName = FrameworkMeta.NAME + "/GamePrefabMultipleWrapper")]
     public sealed partial class GamePrefabMultipleWrapper : GamePrefabWrapper, INameOwner
     {
-        [SerializeField]
+        [SerializeReference]
 #if UNITY_EDITOR
         [OnCollectionChanged(nameof(OnGamePrefabsChanged))]
         [ListDrawerSettings(HideAddButton = true)]

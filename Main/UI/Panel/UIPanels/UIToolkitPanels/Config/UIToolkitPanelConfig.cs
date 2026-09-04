@@ -7,6 +7,7 @@ using VMFramework.Core;
 
 namespace VMFramework.UI
 {
+    [Serializable]
     public class UIToolkitPanelConfig : UIPanelConfig, IUIToolkitPanelConfig
     {
         public const string UI_TOOLKIT_CATEGORY = "UI Toolkit";

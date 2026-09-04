@@ -10,6 +10,7 @@ using Object = UnityEngine.Object;
 
 namespace VMFramework.Containers
 {
+    [Serializable]
     public class ContainerConfig : GamePrefab, IContainerConfig, IPrefabConfig
     {
         public override string IDSuffix => "container";

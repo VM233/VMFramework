@@ -10,7 +10,7 @@ namespace VMFramework.GameLogicArchitecture
     public sealed partial class GamePrefabSingleWrapper : GamePrefabWrapper, INameOwner
     {
         [HideLabel]
-        [SerializeField]
+        [SerializeReference]
         private IGamePrefab gamePrefab;
 
         public override string id => gamePrefab?.id;

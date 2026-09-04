@@ -3,6 +3,7 @@ using VMFramework.GameLogicArchitecture;
 
 namespace VMFramework.GameEvents
 {
+    [Serializable]
     [GamePrefabTypeAutoRegister(ID)]
     public class ColliderMouseEventConfig : GameEventConfig
     {

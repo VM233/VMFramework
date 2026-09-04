@@ -10,6 +10,7 @@ using Object = UnityEngine.Object;
 
 namespace VMFramework.UI
 {
+    [Serializable]
     public class UIPanelConfig : GamePrefab, IUIPanelConfig, IPrefabConfig
     {
         public override string IDSuffix => "ui";

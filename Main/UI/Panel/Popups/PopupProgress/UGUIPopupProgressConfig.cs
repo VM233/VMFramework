@@ -4,6 +4,7 @@ using VMFramework.OdinExtensions;
 
 namespace VMFramework.UI
 {
+    [Serializable]
     public class UGUIPopupProgressConfig : UGUIPanelConfig
     {
         public override Type GameItemType => typeof(UGUIPopupProgress);

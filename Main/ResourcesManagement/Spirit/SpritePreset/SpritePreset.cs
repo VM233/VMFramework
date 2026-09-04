@@ -1,4 +1,5 @@
 ﻿using VMFramework.GameLogicArchitecture;
+using System;
 using VMFramework.Core;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -6,6 +7,7 @@ using VMFramework.Procedure;
 
 namespace VMFramework.ResourcesManagement
 {
+    [Serializable]
     public partial class SpritePreset : GamePrefab, IInitializer
     {
         protected const string SPRITE_PREVIEW_GROUP =

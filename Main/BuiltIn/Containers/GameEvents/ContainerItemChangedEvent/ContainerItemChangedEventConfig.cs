@@ -4,6 +4,7 @@ using VMFramework.GameLogicArchitecture;
 
 namespace VMFramework.Containers
 {
+    [Serializable]
     [GamePrefabTypeAutoRegister(ADDED_EVENT_ID)]
     [GamePrefabTypeAutoRegister(REMOVED_EVENT_ID)]
     public sealed class ContainerItemChangedEventConfig : GameEventConfig

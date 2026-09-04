@@ -4,6 +4,7 @@ using VMFramework.GameLogicArchitecture;
 
 namespace VMFramework.Maps
 {
+    [Serializable]
     [GamePrefabTypeAutoRegister(ID)]
     public sealed class GridChunkChangedEventConfig : GameEventConfig
     {

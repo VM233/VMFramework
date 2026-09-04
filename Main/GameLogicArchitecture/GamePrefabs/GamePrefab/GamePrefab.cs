@@ -8,6 +8,7 @@ using VMFramework.OdinExtensions;
 
 namespace VMFramework.GameLogicArchitecture
 {
+    [Serializable]
     public abstract partial class GamePrefab : IGamePrefab
     {
         #region Constants
@@ -48,7 +49,27 @@ namespace VMFramework.GameLogicArchitecture
         [GameTagID]
         public HashSet<string> gameTags = new();
 
+        [SerializeField]
+        [HideInInspector]
+        private List<string> nativeGameTags = new();
+
         #endregion
+
+        public void PrepareNativeSerializationMigration()
+        {
+            nativeGameTags.Clear();
+            if (gameTags != null)
+            {
+                nativeGameTags.AddRange(gameTags);
+                nativeGameTags.Sort(StringComparer.Ordinal);
+            }
+
+            OnPrepareNativeSerializationMigration();
+        }
+
+        protected virtual void OnPrepareNativeSerializationMigration()
+        {
+        }
 
         #region Properties
 

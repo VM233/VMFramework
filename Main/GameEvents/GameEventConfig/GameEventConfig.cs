@@ -3,6 +3,7 @@ using VMFramework.GameLogicArchitecture;
 
 namespace VMFramework.GameEvents
 {
+    [Serializable]
     public class GameEventConfig : LocalizedGamePrefab, IGameEventConfig
     {
         public override string IDSuffix => "event";

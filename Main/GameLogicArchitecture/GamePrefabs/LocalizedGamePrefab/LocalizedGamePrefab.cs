@@ -1,9 +1,11 @@
 ﻿using Sirenix.OdinInspector;
+using System;
 using UnityEngine.Localization;
 using VMFramework.Localization;
 
 namespace VMFramework.GameLogicArchitecture
 {
+    [Serializable]
     public abstract partial class LocalizedGamePrefab : GamePrefab, ILocalizedGamePrefab
     {
         #region Configs

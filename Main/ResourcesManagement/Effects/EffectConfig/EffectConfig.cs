@@ -9,6 +9,7 @@ using Object = UnityEngine.Object;
 
 namespace VMFramework.Effects
 {
+    [Serializable]
     public partial class EffectConfig : GamePrefab, IEffectConfig, IPrefabConfig
     {
         public override string IDSuffix => "effect";
