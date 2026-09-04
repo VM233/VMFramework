@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [6.3.2] - 2026-09-05
+
+### Fixed
+
+- Added the Input System assembly reference required by the expanded native-serialization Editor
+  tests when package tests are enabled in a consumer project.
+
 ## [6.3.1] - 2026-09-05
 
 ### Added
