@@ -69,6 +69,19 @@ destroyed Prefab references stop initialization with one `MissingGamePrefabRefer
 that lists every invalid Game Prefab ID and concrete config type, so projects can repair the
 complete invalid set instead of discovering failures one instantiation at a time.
 
+## Game Prefab Serialization
+
+Game Prefab wrappers are ordinary `ScriptableObject` assets. Their polymorphic Game Prefab graphs
+are stored by Unity through `[SerializeReference]`; wrapper persistence does not use Odin's
+`SerializedScriptableObject` payload. Every concrete Game Prefab type must be marked
+`[Serializable]`, and its persisted fields must follow Unity's serialization rules. Unity object
+references remain regular serialized references.
+
+Game tags are stored in an ordered `List<string>`, and Input System action GUIDs are stored as their
+canonical string form. Code that edits tags should use list operations and avoid adding duplicates.
+This contract applies to Game Prefab wrappers only; `GeneralSetting` assets retain their independent
+storage contract.
+
 ## Editor Project Settings
 
 Open `Edit > Project Settings > VMFramework` to configure the project-relative folders used for

@@ -4,7 +4,7 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
-## [6.3.0-rc.1] - 2026-09-05
+## [6.3.0] - 2026-09-05
 
 ### Changed
 
@@ -16,13 +16,6 @@ All notable changes to this package are documented here.
 
 - GamePrefab Wrapper persistence no longer uses Odin `SerializedScriptableObject` or manually
   writes Odin `serializationData` payloads.
-
-## [6.3.0-migration.1] - 2026-09-05
-
-### Changed
-
-- Added the temporary native fields required to migrate GamePrefab Wrapper object graphs from
-  Odin payloads to Unity managed-reference serialization.
 
 ## [6.2.3] - 2026-09-05
 

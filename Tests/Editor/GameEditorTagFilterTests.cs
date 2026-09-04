@@ -89,7 +89,7 @@ namespace VMFramework.Tests
         {
             public Config(params string[] tags)
             {
-                gameTags.UnionWith(tags);
+                gameTags.AddRange(tags);
             }
         }
     }
