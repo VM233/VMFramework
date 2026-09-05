@@ -7,6 +7,7 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using VMFramework.Configuration;
 using VMFramework.GameEvents;
 using VMFramework.GameLogicArchitecture;
 using VMFramework.GameLogicArchitecture.Editor;
@@ -40,6 +41,10 @@ namespace VMFramework.Editor.Tests
 
             [SerializeReference]
             public TestPayload payload;
+
+            public SerializableType serializedType;
+
+            public List<SerializableType> serializedTypes = new();
         }
 
         [SetUp]
@@ -94,6 +99,24 @@ namespace VMFramework.Editor.Tests
             Assert.That(nonSerializableTypes, Is.Empty,
                 "Every GamePrefab config type in the loaded project must " +
                 "declare [Serializable].");
+        }
+
+        [Test]
+        public void AllLoadedGamePrefabConfigTypes_AvoidRawSystemTypeFields()
+        {
+            string[] unsupportedFields = TypeCache
+                .GetTypesDerivedFrom<GamePrefab>()
+                .Append(typeof(GamePrefab))
+                .SelectMany(GetSerializableFields)
+                .Where(field => UsesRawSystemType(field.FieldType))
+                .Select(field => $"{field.DeclaringType?.FullName}." +
+                                 field.Name)
+                .OrderBy(name => name, StringComparer.Ordinal)
+                .ToArray();
+
+            Assert.That(unsupportedFields, Is.Empty,
+                "Unity does not serialize raw System.Type fields. Use " +
+                $"{nameof(SerializableType)} instead.");
         }
 
         [Test]
@@ -180,6 +203,13 @@ namespace VMFramework.Editor.Tests
                     {
                         label = "payload",
                         offset = new Vector3(1.25f, -2.5f, 4.75f)
+                    },
+                    serializedType = typeof(TestPayloadImplementation),
+                    serializedTypes = new List<SerializableType>
+                    {
+                        typeof(string),
+                        new(),
+                        typeof(Dictionary<string, int>)
                     }
                 }
             });
@@ -198,7 +228,39 @@ namespace VMFramework.Editor.Tests
             Assert.That(config.payload.label, Is.EqualTo("payload"));
             Assert.That(((TestPayloadImplementation)config.payload).offset,
                 Is.EqualTo(new Vector3(1.25f, -2.5f, 4.75f)));
+            Assert.That(config.serializedType.Value,
+                Is.EqualTo(typeof(TestPayloadImplementation)));
+            Type implicitlyConvertedType = config.serializedType;
+            Assert.That(implicitlyConvertedType,
+                Is.EqualTo(typeof(TestPayloadImplementation)));
+            Assert.That(config.serializedTypes.Select(type => type.Value),
+                Is.EqualTo(new Type[]
+                {
+                    typeof(string),
+                    null,
+                    typeof(Dictionary<string, int>)
+                }));
+            Assert.That(File.ReadAllText(wrapperPath),
+                Does.Contain("assemblyQualifiedName:"));
             AssertNativeYaml(wrapperPath);
+        }
+
+        [Test]
+        public void SerializableType_InvalidIdentifierFailsAtReadBoundary()
+        {
+            const string invalidIdentifier =
+                "Missing.Namespace.Type, Missing.Assembly";
+            var serializableType = new SerializableType();
+            FieldInfo field = typeof(SerializableType).GetField(
+                "assemblyQualifiedName",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+
+            Assert.That(field, Is.Not.Null);
+            field.SetValue(serializableType, invalidIdentifier);
+
+            TypeLoadException exception = Assert.Throws<TypeLoadException>(
+                () => _ = serializableType.Value);
+            Assert.That(exception.Message, Does.Contain(invalidIdentifier));
         }
 
         [Test]
@@ -332,6 +394,50 @@ namespace VMFramework.Editor.Tests
             Assert.That(field.FieldType, Is.EqualTo(expectedFieldType));
             Assert.That(field.IsDefined(typeof(SerializeReference), false),
                 Is.True);
+        }
+
+        private static IEnumerable<FieldInfo> GetSerializableFields(Type type)
+        {
+            for (Type current = type;
+                 current != null && current != typeof(object);
+                 current = current.BaseType)
+            {
+                foreach (FieldInfo field in current.GetFields(
+                             BindingFlags.Instance | BindingFlags.Public |
+                             BindingFlags.NonPublic |
+                             BindingFlags.DeclaredOnly))
+                {
+                    if (field.IsStatic || field.IsInitOnly ||
+                        field.IsDefined(typeof(NonSerializedAttribute), false))
+                    {
+                        continue;
+                    }
+
+                    if (field.IsPublic ||
+                        field.IsDefined(typeof(SerializeField), false) ||
+                        field.IsDefined(typeof(SerializeReference), false))
+                    {
+                        yield return field;
+                    }
+                }
+            }
+        }
+
+        private static bool UsesRawSystemType(Type fieldType)
+        {
+            if (fieldType == typeof(Type))
+            {
+                return true;
+            }
+
+            if (fieldType.IsArray)
+            {
+                return fieldType.GetElementType() == typeof(Type);
+            }
+
+            return fieldType.IsGenericType &&
+                   fieldType.GetGenericTypeDefinition() == typeof(List<>) &&
+                   fieldType.GetGenericArguments()[0] == typeof(Type);
         }
 
         private static HashSet<Guid> GetInputActionIDs()

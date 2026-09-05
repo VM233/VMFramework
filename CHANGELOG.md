@@ -4,6 +4,15 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [6.4.0] - 2026-09-05
+
+### Added
+
+- Added `SerializableType`, a Unity-native serializable Type reference backed by an
+  assembly-qualified name. It supports fields and collection elements inside GamePrefab managed
+  reference graphs, preserves null values, and fails directly when a persisted type cannot be
+  resolved.
+
 ## [6.3.5] - 2026-09-05
 
 ### Fixed

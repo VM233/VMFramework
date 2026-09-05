@@ -89,6 +89,21 @@ Unity object references, second-save mutations, and every GamePrefab wrapper dis
 consumer project. Consumer projects can expose the package tests through Unity's `testables`
 manifest entry to run the asset-wide checks against their own content.
 
+Unity does not serialize `System.Type` fields directly. Use `SerializableType` when a persisted
+configuration needs a type reference; it stores the assembly-qualified name through Unity's native
+serializer while exposing the resolved `Type` through `Value` and implicit conversion:
+
+```csharp
+[SerializeField]
+private SerializableType implementationType = new(typeof(DefaultImplementation));
+
+public Type ImplementationType => implementationType;
+```
+
+`SerializableType` can also be used as an array or `List<T>` element. A persisted non-empty type
+identifier that no longer resolves throws `TypeLoadException` at the first read instead of silently
+becoming null.
+
 ## Editor Project Settings
 
 Open `Edit > Project Settings > VMFramework` to configure the project-relative folders used for
