@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
+using UnityEngine;
 using VMFramework.Core;
 using VMFramework.Properties;
 
@@ -17,6 +18,7 @@ namespace VMFramework.Parameters
 
         [TitleGroup(ComponentNames.CONFIG)]
         [ShowIf(nameof(enableBaseMin))]
+        [SerializeReference]
         public IParameterSourceConfig<float> baseMinConfig;
 
         [TitleGroup(ComponentNames.CONFIG)]
@@ -24,6 +26,7 @@ namespace VMFramework.Parameters
 
         [TitleGroup(ComponentNames.CONFIG)]
         [ShowIf(nameof(enableBoostMin))]
+        [SerializeReference]
         public IParameterSourceConfig<float> boostMinConfig;
 
         [TitleGroup(ComponentNames.CONFIG)]
@@ -31,6 +34,7 @@ namespace VMFramework.Parameters
 
         [TitleGroup(ComponentNames.CONFIG)]
         [ShowIf(nameof(enableBaseMax))]
+        [SerializeReference]
         public IParameterSourceConfig<float> baseMaxConfig;
 
         [TitleGroup(ComponentNames.CONFIG)]
@@ -38,6 +42,7 @@ namespace VMFramework.Parameters
 
         [TitleGroup(ComponentNames.CONFIG)]
         [ShowIf(nameof(enableBoostMax))]
+        [SerializeReference]
         public IParameterSourceConfig<float> boostMaxConfig;
 
         protected IParameterSource<float> baseMin;

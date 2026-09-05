@@ -78,6 +78,10 @@ Every concrete Game Prefab type and managed configuration class must be marked
 `[Serializable]`, and its persisted fields must follow Unity's serialization rules. Unity object
 references remain regular serialized references.
 
+Parameter source fields, including the optional base/boost limits on
+`BaseBoostFloatParameterConverter`, use `[SerializeReference]` to preserve their concrete source
+configurations when a Prefab is saved and reloaded.
+
 Game tags are stored in an ordered `List<string>`, and Input System action GUIDs are stored as their
 canonical string form. The Game Prefab Inspector selector enforces unique registered tags while
 authoring. Code that edits tags should use list operations and avoid adding duplicates.

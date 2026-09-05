@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [7.0.2] - 2026-09-05
+
+### Fixed
+
+- Preserve the four polymorphic base/boost limit sources on `BaseBoostFloatParameterConverter`
+  through native Unity Prefab serialization.
+
 ## [7.0.1] - 2026-09-05
 
 ### Fixed
