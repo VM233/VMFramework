@@ -78,7 +78,8 @@ are stored by Unity through `[SerializeReference]`; wrapper persistence does not
 references remain regular serialized references.
 
 Game tags are stored in an ordered `List<string>`, and Input System action GUIDs are stored as their
-canonical string form. Code that edits tags should use list operations and avoid adding duplicates.
+canonical string form. The Game Prefab Inspector selector enforces unique registered tags while
+authoring. Code that edits tags should use list operations and avoid adding duplicates.
 This contract applies to Game Prefab wrappers only; `GeneralSetting` assets retain their independent
 storage contract.
 

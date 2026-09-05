@@ -10,6 +10,7 @@ using UnityEngine.InputSystem;
 using VMFramework.GameEvents;
 using VMFramework.GameLogicArchitecture;
 using VMFramework.GameLogicArchitecture.Editor;
+using VMFramework.OdinExtensions;
 
 namespace VMFramework.Editor.Tests
 {
@@ -64,6 +65,19 @@ namespace VMFramework.Editor.Tests
                 "gamePrefab", typeof(IGamePrefab));
             AssertSerializeReferenceField(typeof(GamePrefabMultipleWrapper),
                 "gamePrefabs", typeof(List<IGamePrefab>));
+        }
+
+        [Test]
+        public void GameTags_UseUniqueRegisteredTagSelector()
+        {
+            FieldInfo field = typeof(GamePrefab).GetField("nativeGameTags",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+
+            Assert.That(field, Is.Not.Null);
+            GameTagIDAttribute attribute =
+                field.GetCustomAttribute<GameTagIDAttribute>();
+            Assert.That(attribute, Is.Not.Null);
+            Assert.That(attribute.IsUniqueList, Is.True);
         }
 
         [Test]

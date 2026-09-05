@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [6.3.5] - 2026-09-05
+
+### Fixed
+
+- Game Prefab Game Tag selectors now enforce unique list entries while authoring, preventing the
+  same registered tag from being selected more than once.
+
 ## [6.3.4] - 2026-09-05
 
 ### Fixed

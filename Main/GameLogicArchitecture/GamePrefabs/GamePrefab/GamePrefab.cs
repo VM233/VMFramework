@@ -47,7 +47,7 @@ namespace VMFramework.GameLogicArchitecture
 
         [TabGroup(TAB_GROUP_NAME, BASIC_CATEGORY)]
         [LabelText("Game Tags")]
-        [GameTagID]
+        [GameTagID(IsUniqueList = true)]
         [SerializeField]
         private List<string> nativeGameTags = new();
 
