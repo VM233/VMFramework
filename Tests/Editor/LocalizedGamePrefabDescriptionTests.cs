@@ -104,8 +104,18 @@ namespace VMFramework.Editor.Tests
             DescriptionManager manager = RegisterDescription(config, copyDescription);
 
             Assert.That(manager.GetLocalizedStrings().Count, Is.EqualTo(1));
-            Assert.Throws<ArgumentException>(() =>
-                manager.TryGetDescription(DescriptionType, out _));
+            var locale = Locale.CreateLocale("en-US");
+            try
+            {
+                // Edit Mode has no selected locale; provide the runtime lookup precondition explicitly.
+                manager.GetLocalizedStrings().Single().LocaleOverride = locale;
+                Assert.Throws<ArgumentException>(() =>
+                    manager.TryGetDescription(DescriptionType, out _));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(locale);
+            }
         }
 
         private static LocalizedString CreateDescription()

@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [7.0.4] - 2026-09-05
+
+### Fixed
+
+- Supply an explicit locale in the invalid-description regression so Edit Mode verifies the same
+  table-reference failure boundary as runtime without changing the Editor's selected locale.
+
 ## [7.0.3] - 2026-09-05
 
 ### Fixed
