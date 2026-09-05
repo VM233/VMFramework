@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using UnityEngine.InputSystem;
@@ -6,10 +6,18 @@ using VMFramework.Configuration;
 using VMFramework.Core;
 using VMFramework.Core.Linq;
 using VMFramework.GameLogicArchitecture;
+#if UNITY_EDITOR
+using VMFramework.Editor;
+using VMFramework.Editor.GameEditor;
+using VMFramework.Localization;
+#endif
 
 namespace VMFramework.GameEvents
 {
-    public sealed partial class GameEventGeneralSetting : GamePrefabGeneralSetting
+    public sealed class GameEventGeneralSetting : GamePrefabGeneralSetting
+#if UNITY_EDITOR
+        , IGameEditorMenuTreeNode
+#endif
     {
         #region Meta Data
 
@@ -20,6 +28,7 @@ namespace VMFramework.GameEvents
         #endregion
 
         [TabGroup(TAB_GROUP_NAME, DEPENDENCY_CATEGORY)]
+        [UnityEngine.SerializeReference]
         public List<GameEventDependencyNode> dependencyNodes = new();
 
         [TabGroup(TAB_GROUP_NAME, DEPENDENCY_CATEGORY)]
@@ -68,5 +77,17 @@ namespace VMFramework.GameEvents
         }
 
         #endregion
+#if UNITY_EDITOR
+        string INameOwner.Name => "Game Event";
+
+        EditorIcon IEditorIconProvider.Icon => new(SdfIconType.Dpad);
+#endif
+#if UNITY_EDITOR
+        public override void SetDefaultKeyValue(LocalizedStringAutoConfigSettings setting)
+        {
+            base.SetDefaultKeyValue(setting);
+
+        }
+#endif
     }
 }

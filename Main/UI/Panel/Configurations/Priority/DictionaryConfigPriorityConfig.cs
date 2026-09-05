@@ -1,8 +1,13 @@
-﻿using VMFramework.Configuration;
+using VMFramework.Configuration;
+#if UNITY_EDITOR
+using System.Collections.Generic;
+using Sirenix.OdinInspector;
+#endif
 
 namespace VMFramework.UI
 {
-    public abstract partial class DictionaryConfigPriorityConfig : PriorityConfig
+    [System.Serializable]
+    public abstract class DictionaryConfigPriorityConfig : PriorityConfig
     {
         protected DictionaryConfigPriorityConfig()
         {
@@ -27,7 +32,7 @@ namespace VMFramework.UI
                 priority = 0;
                 return false;
             }
-            
+
             if (configs.TryGetConfigRuntime(presetID, out var config))
             {
                 priority = config.priority;
@@ -37,5 +42,11 @@ namespace VMFramework.UI
             priority = 0;
             return false;
         }
+#if UNITY_EDITOR
+        public sealed override IEnumerable<ValueDropdownItem> GetPriorityNameList()
+        {
+            return GetDictionaryConfigs()?.GetNameList();
+        }
+#endif
     }
 }

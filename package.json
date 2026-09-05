@@ -1,6 +1,6 @@
 {
   "name": "com.vm233.vmframework",
-  "version": "6.4.0",
+  "version": "7.0.0",
   "displayName": "VMFramework",
   "description": "Reusable Unity gameplay, UI, configuration, resource, localization, and editor framework used by VM233 projects.",
   "unity": "6000.4",
@@ -9,6 +9,7 @@
     "name": "VM233"
   },
   "dependencies": {
+    "com.vm233.vmcore": "1.0.2",
     "com.vm233.common-preset": "1.1.0",
     "com.cysharp.unitask": "2.5.11",
     "com.unity.2d.sprite": "1.0.0",

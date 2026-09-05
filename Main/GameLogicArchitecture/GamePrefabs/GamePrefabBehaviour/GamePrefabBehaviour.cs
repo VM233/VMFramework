@@ -5,10 +5,19 @@ using Sirenix.OdinInspector;
 using UnityEngine;
 using VMFramework.Core;
 using VMFramework.OdinExtensions;
+using System.Threading;
+using Cysharp.Threading.Tasks;
+using VMFramework.Procedure;
 
 namespace VMFramework.GameLogicArchitecture
 {
-    public abstract partial class GamePrefabBehaviour : SerializedMonoBehaviour, IGamePrefabBehaviour, IGamePrefabsProvider
+#if UNITY_EDITOR
+    [TypeValidation(DrawCurrentRect = true)]
+#endif
+    public abstract class GamePrefabBehaviour : MonoBehaviour, IGamePrefabBehaviour, IGamePrefabsProvider
+#if UNITY_EDITOR
+        , ITypeValidationProvider
+#endif
     {
         #region Constants
 
@@ -46,7 +55,8 @@ namespace VMFramework.GameLogicArchitecture
 
         [TabGroup(TAB_GROUP_NAME, BASIC_CATEGORY)]
         [GameTagID]
-        public HashSet<string> gameTags = new();
+        [DisallowDuplicateElements]
+        public List<string> gameTags = new();
 
         #endregion
 
@@ -152,7 +162,7 @@ namespace VMFramework.GameLogicArchitecture
         int IGamePrefab.GameItemPrewarmCount => gameItemPrewarmCount;
 
         ICollection<string> IGameTagsOwner.GameTags => gameTags;
-        
+
         public void GetGamePrefabs(ICollection<IGamePrefab> gamePrefabsCollection)
         {
             gamePrefabsCollection.Add(this);
@@ -168,5 +178,62 @@ namespace VMFramework.GameLogicArchitecture
         }
 
         #endregion
+#if UNITY_EDITOR
+        #region ID
+
+        private const string PLACEHOLDER_TEXT = "Please enter an ID";
+
+        private string GetIDPlaceholderText()
+        {
+            if (IDSuffix.IsNullOrWhiteSpace())
+            {
+                return PLACEHOLDER_TEXT;
+            }
+
+            return PLACEHOLDER_TEXT + $"and end with: _{IDSuffix}";
+        }
+
+        #endregion
+#endif
+        protected virtual void GetInitializationActions(ICollection<InitializationAction> actions)
+        {
+            actions.Add(new(InitializationOrder.Init, OnInitInternal, this));
+        }
+
+        void IInitializer.GetInitializationActions(ICollection<InitializationAction> actions)
+        {
+            GetInitializationActions(actions);
+        }
+
+        public virtual void CheckSettings()
+        {
+
+        }
+
+        private UniTask OnInitInternal(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            OnInit();
+            return UniTask.CompletedTask;
+        }
+
+        protected virtual void OnInit()
+        {
+
+        }
+#if UNITY_EDITOR
+        public IEnumerable<ValidationResult> GetValidationResults(GUIContent label)
+        {
+            if (IsIDStartsWithPrefix == false)
+            {
+                yield return new($"ID should start with prefix : {IDPrefix}", ValidateType.Warning);
+            }
+
+            if (IsIDEndsWithSuffix == false)
+            {
+                yield return new($"ID should end with suffix : {IDSuffix}", ValidateType.Warning);
+            }
+        }
+#endif
     }
 }

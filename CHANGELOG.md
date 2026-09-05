@@ -4,6 +4,25 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [7.0.0] - 2026-09-05
+
+### Changed
+
+- Migrate all framework settings, filters, MonoBehaviour roots, and Editor containers to Unity
+  serialization. Odin Inspector remains an authoring UI dependency.
+- Store General Settings provider membership as Unity object references, preserve polymorphic
+  configuration lists and dependency graphs, and serialize type-filter and grid configuration values.
+- Rebuild runtime configuration indexes during initialization, including repeated initialization.
+- Keep transient Editor selections in session memory and read registry viewers from their owner.
+- Consolidate the modified configuration and component declarations and remove the serializer
+  dependency from the framework test assembly.
+
+### Migration
+
+- Existing assets must be captured before upgrading and verified after native save/reload.
+- Provider enumeration is read-only; authoring membership changes use the setting's add/remove API.
+- VMCore 1.0.2 supplies native serialization for CubeInteger values in grid settings.
+
 ## [6.4.0] - 2026-09-05
 
 ### Added

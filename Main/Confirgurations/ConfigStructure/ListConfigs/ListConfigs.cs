@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Sirenix.OdinInspector;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,27 +7,27 @@ using UnityEngine;
 using VMFramework.Core.Linq;
 using VMFramework.GameLogicArchitecture;
 using VMFramework.OdinExtensions;
+using System.Collections;
 
 namespace VMFramework.Configuration
 {
-    public interface IListConfig<TConfig>
-        where TConfig : BaseConfig, INameOwner, IListConfig<TConfig>
-    {
-        public ListConfigs<TConfig> listConfigs { set; }
-
-        public int index { set; }
-    }
-
+    [Serializable]
     [PreviewComposite]
-    public partial class ListConfigs<TConfig> : BaseConfig
+#if UNITY_EDITOR
+    [TypeValidation]
+#endif
+    public class ListConfigs<TConfig> : BaseConfig, IEnumerable<TConfig>
+#if UNITY_EDITOR
+        , ITypeValidationProvider
+#endif
         where TConfig : BaseConfig, INameOwner, IListConfig<TConfig>
     {
-        [LabelText("配置")]
+        [LabelText("Configurations")]
 #if UNITY_EDITOR
         [ListDrawerSettings(DefaultExpandedState = true, ShowFoldout = false)]
         [OnCollectionChanged(nameof(OnConfigsCollectionChanged))]
 #endif
-        [SerializeField]
+        [SerializeReference]
         [IsNotNullOrEmpty]
         private List<TConfig> configs = new();
 
@@ -72,7 +72,7 @@ namespace VMFramework.Configuration
             if (index < 0 || index >= configs.Count)
             {
                 throw new ArgumentOutOfRangeException(
-                    $"索引 {index} 超出范围:[0, {configs.Count - 1}]");
+                    $"Index {index} is outside the configuration range [0, {configs.Count - 1}].");
             }
 
             return configs[index];
@@ -116,5 +116,48 @@ namespace VMFramework.Configuration
         public TConfig this[int index] => GetConfig(index);
 
         #endregion
+#if UNITY_EDITOR
+        protected override void OnInspectorInit()
+        {
+            base.OnInspectorInit();
+
+
+            OnConfigsCollectionChanged();
+        }
+
+        private void OnConfigsCollectionChanged()
+        {
+            foreach (var (index, config) in configs.Enumerate())
+            {
+                config.index = index;
+                config.listConfigs = this;
+            }
+        }
+
+        public IEnumerable<ValueDropdownItem<int>> GetNameList()
+        {
+            return configs.Select((config, index) =>
+                new ValueDropdownItem<int>(config.Name, index));
+        }
+#endif
+        public IEnumerator<TConfig> GetEnumerator()
+        {
+            return configs.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+#if UNITY_EDITOR
+        public IEnumerable<ValidationResult> GetValidationResults(GUIContent label)
+        {
+            if (configs.Count == 0)
+            {
+                var labelName = label?.text;
+                yield return new ($"{labelName} has no configurations.", ValidateType.Warning);
+            }
+        }
+#endif
     }
 }

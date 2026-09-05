@@ -1,4 +1,4 @@
-﻿using Sirenix.OdinInspector;
+using Sirenix.OdinInspector;
 using VMFramework.Configuration;
 using VMFramework.Core;
 using VMFramework.GameLogicArchitecture;
@@ -6,6 +6,7 @@ using VMFramework.OdinExtensions;
 
 namespace VMFramework.UI
 {
+    [System.Serializable]
     public sealed class PriorityPreset : BaseConfig, IIDOwner<string>, INameOwner
     {
         [HorizontalGroup]

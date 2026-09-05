@@ -69,19 +69,30 @@ destroyed Prefab references stop initialization with one `MissingGamePrefabRefer
 that lists every invalid Game Prefab ID and concrete config type, so projects can repair the
 complete invalid set instead of discovering failures one instantiation at a time.
 
-## Game Prefab Serialization
+## Native Unity Serialization
 
-Game Prefab wrappers are ordinary `ScriptableObject` assets. Their polymorphic Game Prefab graphs
-are stored by Unity through `[SerializeReference]`; wrapper persistence does not use Odin's
-`SerializedScriptableObject` payload. Every concrete Game Prefab type must be marked
+Framework settings, global setting files, filters, and Game Prefab wrappers are ordinary
+`ScriptableObject` assets; framework components inherit `MonoBehaviour`. Persisted polymorphic
+graphs use Unity's `[SerializeReference]`. Odin Inspector is used for authoring UI only.
+Every concrete Game Prefab type and managed configuration class must be marked
 `[Serializable]`, and its persisted fields must follow Unity's serialization rules. Unity object
 references remain regular serialized references.
 
 Game tags are stored in an ordered `List<string>`, and Input System action GUIDs are stored as their
 canonical string form. The Game Prefab Inspector selector enforces unique registered tags while
 authoring. Code that edits tags should use list operations and avoid adding duplicates.
-This contract applies to Game Prefab wrappers only; `GeneralSetting` assets retain their independent
-storage contract.
+General Settings store provider membership as native Unity object references and expose a typed
+enumeration. Use `AddToInitialGamePrefabProviders` and `RemoveFromInitialGamePrefabProviders` to edit
+membership. The authoring selector only offers providers, and those operations save the setting.
+Configuration lists preserve their concrete element types. Runtime dictionaries are rebuilt by
+`Init`, independently of authoring validation. Native grid settings require VMCore 1.0.2 or later.
+
+Transient Editor viewers and batch selections use session state. They do not persist arbitrary
+managed objects through a serializer; registry viewers read the current registry directly.
+
+Version 7 changes the serialization schema. Capture existing authoring graphs before upgrading,
+then restore, save, unload, and verify them through Unity after adopting the new packages. The
+staged migration commands belong to VMFramework-Pipeline; runtime code contains no legacy reader.
 
 The Editor test suite verifies the wrapper field contract, all loaded GamePrefab config types,
 single and multiple wrapper round trips, the production wrapper creator, nested managed references,

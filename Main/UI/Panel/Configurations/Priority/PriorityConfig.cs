@@ -5,16 +5,20 @@ using UnityEngine;
 using VMFramework.Configuration;
 using VMFramework.Core;
 using VMFramework.OdinExtensions;
+#if UNITY_EDITOR
+using System.Collections.Generic;
+#endif
 
 namespace VMFramework.UI
 {
+    [Serializable]
     [PreviewComposite]
-    public abstract partial class PriorityConfig : BaseConfig
+    public abstract class PriorityConfig : BaseConfig
     {
         [JsonProperty, SerializeField]
         [EnumToggleButtons]
         private PriorityType priorityType;
-        
+
         [ShowIf(nameof(priorityType), PriorityType.Preset)]
 #if UNITY_EDITOR
         [ValueDropdown(nameof(GetPriorityNameList))]
@@ -28,7 +32,7 @@ namespace VMFramework.UI
 
         protected PriorityConfig() : this(0)
         {
-            
+
         }
 
         protected PriorityConfig(string presetID)
@@ -36,7 +40,7 @@ namespace VMFramework.UI
             priorityType = PriorityType.Preset;
             this.presetID = presetID;
         }
-        
+
         protected PriorityConfig(int priority)
         {
             priorityType = PriorityType.Custom;
@@ -65,12 +69,12 @@ namespace VMFramework.UI
                         UnityEngine.Debug.LogWarning("No Tooltip Priority Preset ID set.");
                         return 0;
                     }
-                    
+
                     if (TryGetPriorityFromPreset(presetID, out int priorityInConfig))
                     {
                         return priorityInConfig;
                     }
-                    
+
                     UnityEngine.Debug.LogWarning($"No Tooltip Priority Preset found with ID: {presetID}");
                     return 0;
                 case PriorityType.Custom:
@@ -84,5 +88,8 @@ namespace VMFramework.UI
         {
             return config.GetPriority();
         }
+#if UNITY_EDITOR
+        public abstract IEnumerable<ValueDropdownItem> GetPriorityNameList();
+#endif
     }
 }

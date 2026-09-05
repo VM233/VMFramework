@@ -5,16 +5,26 @@ using UnityEngine;
 using VMFramework.Core;
 using VMFramework.Core.Linq;
 using VMFramework.GameLogicArchitecture;
+#if UNITY_EDITOR
+using VMFramework.OdinExtensions;
+#endif
 
 namespace VMFramework.Configuration
 {
-    public abstract partial class StructureConfigs<TConfig> : BaseConfig, IStructureConfigs<TConfig>
+    [System.Serializable]
+#if UNITY_EDITOR
+    [TypeValidation]
+#endif
+    public abstract class StructureConfigs<TConfig> : BaseConfig, IStructureConfigs<TConfig>
+#if UNITY_EDITOR
+        , ITypeValidationProvider
+#endif
         where TConfig : IConfig
     {
         [ListDrawerSettings(ShowFoldout = false)]
-        [SerializeField]
+        [SerializeReference]
         protected List<TConfig> configs = new();
-        
+
         public override void CheckSettings()
         {
             base.CheckSettings();
@@ -25,7 +35,7 @@ namespace VMFramework.Configuration
         protected override void OnInit()
         {
             base.OnInit();
-            
+
             configs.Init();
 
             foreach (var config in configs)
@@ -36,16 +46,16 @@ namespace VMFramework.Configuration
                 }
             }
         }
-        
+
         public abstract bool HasConfigEditor(TConfig config);
-        
+
         public abstract bool HasConfigRuntime(TConfig config);
 
         public IEnumerable<TConfig> GetAllConfigsEditor()
         {
             return configs;
         }
-        
+
         public abstract IEnumerable<TConfig> GetAllConfigsRuntime();
 
         public bool TryAddConfigEditor(TConfig config)
@@ -58,12 +68,36 @@ namespace VMFramework.Configuration
 
             return false;
         }
-        
+
         public abstract bool TryAddConfigRuntime(TConfig config);
-        
+
         public override string ToString()
         {
             return configs.Select<TConfig, INameOwner>().Select(nameOwner => nameOwner.Name).Join(",");
         }
+#if UNITY_EDITOR
+        protected virtual IEnumerable<ValidationResult> GetValidationResults(GUIContent label)
+        {
+            var labelName = label?.text;
+
+            if (configs.Count == 0)
+            {
+                yield return new($"{labelName} is lacking any configuration", ValidateType.Info);
+            }
+
+            foreach (var config in configs)
+            {
+                if (config == null)
+                {
+                    yield return new($"{labelName} configs contain null", ValidateType.Error);
+                }
+            }
+        }
+
+        IEnumerable<ValidationResult> ITypeValidationProvider.GetValidationResults(GUIContent label)
+        {
+            return GetValidationResults(label);
+        }
+#endif
     }
 }

@@ -1,5 +1,4 @@
-﻿using System;
-using Sirenix.OdinInspector;
+using System;
 using UnityEngine;
 
 namespace VMFramework.Core
@@ -9,7 +8,7 @@ namespace VMFramework.Core
     /// </summary>
     /// <typeparam name="T"></typeparam>
     [DisallowMultipleComponent]
-    public abstract class UniqueMonoBehaviour<T> : SerializedMonoBehaviour
+    public abstract class UniqueMonoBehaviour<T> : MonoBehaviour
         where T : UniqueMonoBehaviour<T>
     {
         public static T Instance { get; set; }

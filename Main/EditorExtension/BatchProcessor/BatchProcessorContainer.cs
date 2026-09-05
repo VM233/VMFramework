@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+#if UNITY_EDITOR
 using System.Collections.Generic;
 using System.Linq;
 using Sirenix.OdinInspector;
@@ -7,14 +7,14 @@ using VMFramework.Core;
 
 namespace VMFramework.Editor.BatchProcessor
 {
-    public sealed class BatchProcessorContainer : SerializedScriptableObject
+    public sealed class BatchProcessorContainer : ScriptableObject
     {
         private List<BatchProcessorUnit> allUnits = new();
 
         [HorizontalGroup]
         [ListDrawerSettings(ShowFoldout = false)]
         [Searchable]
-        [SerializeField]
+        [System.NonSerialized, ShowInInspector]
         private List<object> selectedObjects = new();
 
         [HorizontalGroup]
@@ -22,13 +22,14 @@ namespace VMFramework.Editor.BatchProcessor
             DraggableItems = false)]
         [Searchable]
         [OnCollectionChanged(nameof(UpdateValidUnits))]
-        [SerializeField]
+        [ShowInInspector]
         private readonly List<BatchProcessorUnit> validUnits = new();
 
         public void Init()
         {
+            allUnits.Clear();
             var allUnitsByPriority = new SortedDictionary<int, List<BatchProcessorUnit>>();
-            
+
             foreach (var unitType in typeof(BatchProcessorUnit).GetDerivedClasses(false, false))
             {
                 if (unitType.IsAbstract)
@@ -48,7 +49,7 @@ namespace VMFramework.Editor.BatchProcessor
                 var list = allUnitsByPriority.GetOrCreate(priority);
                 list.Add(unit);
             }
-            
+
             allUnits.AddRange(allUnitsByPriority.Values.SelectMany(list => list));
 
             foreach (var unit in allUnits)
@@ -93,7 +94,7 @@ namespace VMFramework.Editor.BatchProcessor
                 if (unit.IsValid(selectedObjects))
                 {
                     validUnits.Add(unit);
-                    
+
                     unit.OnSelectedObjectsChanged(selectedObjects);
                 }
             }

@@ -1,20 +1,21 @@
-﻿using System;
+using System;
 using Sirenix.OdinInspector;
 using VMFramework.Core;
 using VMFramework.OdinExtensions;
 
 namespace VMFramework.Configuration
 {
+    [Serializable]
     public struct TypeFilter : IFilter
     {
         public bool isMultiple;
-        
+
         [HideIf(nameof(isMultiple))]
-        public Type type;
-        
+        public SerializableType type;
+
         [ShowIf(nameof(isMultiple))]
         [IsNotNullOrEmpty]
-        public Type[] types;
+        public SerializableType[] types;
 
         [ShowIf(nameof(isMultiple))]
         public bool isAll;
@@ -58,7 +59,7 @@ namespace VMFramework.Configuration
             }
             else
             {
-                if (type != null)
+                if (type?.Value != null)
                 {
                     var isTargetType = obj.GetType().IsDerivedFrom(type, true);
                     return isTargetType ^ inversed;

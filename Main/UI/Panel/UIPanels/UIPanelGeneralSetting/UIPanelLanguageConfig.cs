@@ -1,4 +1,4 @@
-﻿using Sirenix.OdinInspector;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.UIElements;
 using VMFramework.Configuration;
@@ -8,6 +8,7 @@ using VMFramework.OdinExtensions;
 
 namespace VMFramework.UI
 {
+    [System.Serializable]
     public class UIPanelLanguageConfig : BaseConfig, IIDOwner<string>, INameOwner
     {
         [LocaleName]
@@ -23,7 +24,7 @@ namespace VMFramework.UI
         public override void CheckSettings()
         {
             base.CheckSettings();
-            
+
             styleSheet.WarnIfNull(nameof(styleSheet));
         }
 

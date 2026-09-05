@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+#if UNITY_EDITOR
 using System;
 using Sirenix.OdinInspector;
 using Sirenix.OdinInspector.Editor;
@@ -6,14 +6,14 @@ using UnityEngine;
 
 namespace VMFramework.Editor
 {
-    public sealed class TempConfirmContainer : SerializedScriptableObject
+    public sealed class TempConfirmContainer : ScriptableObject
     {
-        [field: HideLabel]
-        [field: SerializeField]
+        [HideLabel, ShowInInspector]
+        [field: NonSerialized]
         public object obj { get; private set; }
-        
+
         private Action onConfirm;
-        
+
         [HideInInspector]
         [SerializeField]
         private OdinEditorWindow window;

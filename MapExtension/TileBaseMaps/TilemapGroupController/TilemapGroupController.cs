@@ -7,7 +7,7 @@ using UnityEngine.Tilemaps;
 
 namespace VMFramework.Maps
 {
-    public sealed partial class TilemapGroupController : SerializedMonoBehaviour, IClearableMap
+    public sealed class TilemapGroupController : MonoBehaviour, IClearableMap
     {
         #region Base Order
 
@@ -26,7 +26,7 @@ namespace VMFramework.Maps
 
         [field: SerializeField]
         public Vector3 TileAnchor { get; private set; } = new(0.5f, 0.5f, 0);
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetTileAnchor(Vector3 anchor)
         {
@@ -43,7 +43,7 @@ namespace VMFramework.Maps
         public void SetColor(Color color)
         {
             this.color = color;
-            
+
             foreach (var tilemap in allTilemaps.Values)
             {
                 tilemap.color = color;
@@ -51,7 +51,7 @@ namespace VMFramework.Maps
         }
 
         #endregion
-        
+
         [ShowInInspector]
         private readonly Dictionary<int, Tilemap> allTilemaps = new();
 
@@ -60,7 +60,7 @@ namespace VMFramework.Maps
 
         [Required]
         public Grid grid;
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetTilemapPrefabController(TilemapPrefabController controller)
         {
@@ -68,7 +68,7 @@ namespace VMFramework.Maps
             {
                 UnityEngine.Debug.LogWarning($"{nameof(TilemapPrefabController)} has already been set.");
             }
-            
+
             tilemapPrefabController = controller;
         }
 
@@ -79,7 +79,7 @@ namespace VMFramework.Maps
         {
             tilemap.SetActive(true);
             tilemap.enabled = true;
-            
+
             tilemap.tileAnchor = TileAnchor;
             tilemap.color = color;
 
@@ -89,7 +89,7 @@ namespace VMFramework.Maps
 
             allTilemaps.Add(layer, tilemap);
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Tilemap GetTilemap(int layer)
         {
@@ -165,5 +165,12 @@ namespace VMFramework.Maps
                 tilemap.ClearAllTiles();
             }
         }
+#if UNITY_EDITOR
+        private void Reset()
+        {
+            tilemapPrefabController = GetComponent<TilemapPrefabController>();
+            grid = GetComponent<Grid>();
+        }
+#endif
     }
 }

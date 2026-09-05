@@ -1,22 +1,20 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using VMFramework.Core;
+using VMFramework.GameLogicArchitecture;
+using VMFramework.OdinExtensions;
 
 namespace VMFramework.Maps
 {
-    public abstract partial class TileBaseMap
-        : SerializedMonoBehaviour, IReadableMap<Vector3Int, TileBase>, ITileFillableMap<Vector3Int, TileBase>,
-            ITileReplaceableMap<Vector3Int, TileBase>, ITileDestructibleMap<Vector3Int, TileBase>,
-            ITilesCubeFillableGridMap<TileBase>, ITilesCubeReplaceableGridMap<TileBase>, ITilesCubeDestructibleGridMap,
-            IClearableMap
+    public abstract class TileBaseMap : MonoBehaviour, IReadableMap<Vector3Int, TileBase>, ITileFillableMap<Vector3Int, TileBase>, ITileReplaceableMap<Vector3Int, TileBase>, ITileDestructibleMap<Vector3Int, TileBase>, ITilesCubeFillableGridMap<TileBase>, ITilesCubeReplaceableGridMap<TileBase>, ITilesCubeDestructibleGridMap, IClearableMap
     {
         [field: SerializeField]
         public Color Color { get; private set; } = Color.white;
-        
+
         [SerializeField]
         private bool clearMapOnAwake = false;
 
@@ -29,12 +27,12 @@ namespace VMFramework.Maps
             {
                 ClearMap();
             }
-            
+
             SetColor(Color);
         }
-        
+
         protected abstract void SetTile(Vector3Int pos, TileBase tile);
-        
+
         protected abstract void SetCubeTiles(CubeInteger cube, TileBase tile);
 
         #region Query Tile
@@ -77,7 +75,7 @@ namespace VMFramework.Maps
         {
             return allTileBases.ContainsKey(point);
         }
-        
+
         public abstract Sprite GetSprite(Vector3Int pos);
 
         #endregion
@@ -121,7 +119,7 @@ namespace VMFramework.Maps
             {
                 return false;
             }
-            
+
             SetTile(position, tileBase);
 
             return true;
@@ -150,11 +148,11 @@ namespace VMFramework.Maps
             {
                 return DestructTile(position, out _);
             }
-            
+
             allTileBases[position] = tileBase;
 
             SetTile(position, tileBase);
-            
+
             return true;
         }
 
@@ -171,7 +169,7 @@ namespace VMFramework.Maps
             {
                 allTileBases[position] = tileBase;
             }
-            
+
             SetCubeTiles(cube, tileBase);
         }
 
@@ -187,7 +185,7 @@ namespace VMFramework.Maps
                 SetEmpty(position);
                 return true;
             }
-            
+
             return false;
         }
 
@@ -198,7 +196,7 @@ namespace VMFramework.Maps
             {
                 allTileBases.Remove(position, out _);
             }
-            
+
             SetCubeEmpty(cube);
         }
 
@@ -231,9 +229,51 @@ namespace VMFramework.Maps
         public abstract void SetBaseOrder(short order);
 
         public abstract void SetTileAnchor(Vector3 anchor);
-        
+
         public abstract void SetColor(Color color);
 
         public abstract void SetColor(Vector3Int position, Color? color);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private TileBase GetTileBase(string id)
+        {
+            var config = GamePrefabManager.GetGamePrefab<ITileBaseConfig>(id);
+            return config.GetTileBase();
+        }
+
+        [Button]
+        private void _FillTile([HideLabel] Vector3Int position, [GamePrefabID(typeof(ITileBaseConfig))] string id)
+        {
+            FillTile(position, GetTileBase(id));
+        }
+
+        [Button]
+        private void _FillCubeTiles(CubeInteger cube, [GamePrefabID(typeof(ITileBaseConfig))] string id)
+        {
+            FillCubeTiles(cube, GetTileBase(id));
+        }
+
+        [Button]
+        private void _ReplaceTile(Vector3Int position, [GamePrefabID(typeof(ITileBaseConfig))] string id)
+        {
+            ReplaceTile(position, GetTileBase(id));
+        }
+
+        [Button]
+        private void _ReplaceCubeTiles(CubeInteger cube, [GamePrefabID(typeof(ITileBaseConfig))] string id)
+        {
+            ReplaceCubeTiles(cube, GetTileBase(id));
+        }
+
+        [Button]
+        private void _DestructTile(Vector3Int position)
+        {
+            this.DestructTile(position);
+        }
+
+        [Button]
+        private void _DestructCubeTiles(CubeInteger cube)
+        {
+            DestructCubeTiles(cube);
+        }
     }
 }

@@ -1,5 +1,6 @@
 using System.Linq;
 using NUnit.Framework;
+using Assert = NUnit.Framework.Assert;
 using UnityEngine;
 using VMFramework.Core;
 using VMFramework.GameLogicArchitecture;

@@ -1,18 +1,19 @@
-﻿using Sirenix.OdinInspector;
+using Sirenix.OdinInspector;
 using VMFramework.Core;
 using VMFramework.GameLogicArchitecture;
 using VMFramework.OdinExtensions;
 
 namespace VMFramework.Configuration
 {
+    [System.Serializable]
     public struct GameTagFilter : IFilter
     {
         public bool isMultiple;
-        
+
         [GameTagID]
         [HideIf(nameof(isMultiple))]
         public string gameTag;
-        
+
         [GameTagID]
         [ShowIf(nameof(isMultiple))]
         [IsNotNullOrEmpty]
@@ -26,7 +27,7 @@ namespace VMFramework.Configuration
         public bool IsMatch(object obj)
         {
             var gameTagsOwner = (IGameTagsOwner)obj;
-            
+
             if (isMultiple)
             {
                 if (gameTags is { Length: > 0 })

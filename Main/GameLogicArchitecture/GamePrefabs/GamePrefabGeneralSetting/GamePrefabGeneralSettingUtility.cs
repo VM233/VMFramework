@@ -19,7 +19,7 @@ namespace VMFramework.GameLogicArchitecture
                 gamePrefabGeneralSetting.RefreshInitialGamePrefabProviders();
             }
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IEnumerable<GamePrefabGeneralSetting> GetAllGamePrefabGeneralSettings()
         {
@@ -42,7 +42,7 @@ namespace VMFramework.GameLogicArchitecture
                     return gamePrefabSetting;
                 }
             }
-            
+
             return null;
         }
 
@@ -61,10 +61,10 @@ namespace VMFramework.GameLogicArchitecture
             {
                 return null;
             }
-            
+
             return GetGamePrefabGeneralSetting(gamePrefab.GetType());
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryGetGamePrefabGeneralSetting(this IGamePrefab gamePrefab,
             out GamePrefabGeneralSetting gamePrefabSetting)
@@ -81,7 +81,7 @@ namespace VMFramework.GameLogicArchitecture
             {
                 return true;
             }
-            
+
             Debug.LogError(
                 $"Could not find {nameof(GamePrefabGeneralSetting)} for {gamePrefab?.GetType()}.");
             return false;
@@ -111,10 +111,10 @@ namespace VMFramework.GameLogicArchitecture
             {
                 return;
             }
-            
+
             var gamePrefabs = ListPool<IGamePrefab>.Default.Get();
             gamePrefabs.Clear();
-            
+
             gamePrefabWrapper.GetGamePrefabs(gamePrefabs);
 
             if (gamePrefabs.Count == 0)
@@ -125,7 +125,7 @@ namespace VMFramework.GameLogicArchitecture
             {
                 gamePrefabs.GetGamePrefabGeneralSettings(gamePrefabGeneralSettings);
             }
-            
+
             gamePrefabs.ReturnToDefaultPool();
         }
 

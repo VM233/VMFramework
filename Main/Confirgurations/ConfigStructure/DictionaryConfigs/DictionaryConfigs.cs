@@ -1,26 +1,31 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using VMFramework.Core;
 using Sirenix.OdinInspector;
 using VMFramework.OdinExtensions;
+using System.Collections;
+using System.Linq;
+#if UNITY_EDITOR
+using UnityEngine;
+using VMFramework.Core.Linq;
+#endif
 
 namespace VMFramework.Configuration
 {
+    [System.Serializable]
     [PreviewComposite]
-    public sealed partial class DictionaryConfigs<TID, TConfig>
-        : StructureConfigs<TConfig>, IDictionaryConfigs<TID, TConfig>
+    public sealed class DictionaryConfigs<TID, TConfig> : StructureConfigs<TConfig>, IDictionaryConfigs<TID, TConfig>, IReadOnlyCollection<KeyValuePair<TID, TConfig>>
         where TConfig : IConfig, IIDOwner<TID>
     {
         [ShowInInspector]
         [HideInEditorMode]
-        private Dictionary<TID, TConfig> configsRuntime = new();
+        private Dictionary<TID, TConfig> configsRuntime;
 
-        #region CheckSettings
+        #region Initialization
 
-        public override void CheckSettings()
+        protected override void OnInit()
         {
-            base.CheckSettings();
-
             configsRuntime = new();
+            base.OnInit();
         }
 
         #endregion
@@ -112,5 +117,58 @@ namespace VMFramework.Configuration
         {
             return configsRuntime;
         }
+        public int Count
+        {
+            get
+            {
+                if (InitDone)
+                {
+                    return configsRuntime.Count;
+                }
+
+                return configs.Count;
+            }
+        }
+
+        public IEnumerator<KeyValuePair<TID, TConfig>> GetEnumerator()
+        {
+            if (InitDone)
+            {
+                return configsRuntime.GetEnumerator();
+            }
+
+            return configs.Select(config => new KeyValuePair<TID, TConfig>(config.id, config))
+                .GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+#if UNITY_EDITOR
+        protected override IEnumerable<ValidationResult> GetValidationResults(GUIContent label)
+        {
+            foreach (var result in base.GetValidationResults(label))
+            {
+                yield return result;
+            }
+
+            if (configs.IsAnyNull())
+            {
+                yield return new("All Configs must be non-null.", ValidateType.Error);
+                yield break;
+            }
+
+            if (configs.Any(config => config.id == null || config.id is ""))
+            {
+                yield return new("All Configs must have a non-empty ID.", ValidateType.Error);
+            }
+
+            if (configs.Select(config => config.id).ContainsSame())
+            {
+                yield return new("All Configs must have unique IDs.", ValidateType.Error);
+            }
+        }
+#endif
     }
 }

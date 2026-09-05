@@ -1,14 +1,15 @@
-﻿using UnityEngine;
+using UnityEngine;
 using VMFramework.Core;
 
 namespace VMFramework.Maps
 {
-    public readonly struct DynamicGridMapConfig
+    [System.Serializable]
+    public struct DynamicGridMapConfig
     {
-        public readonly Vector3Int chunkSize;
-        
-        public readonly CubeInteger chunkBounds;
-        
+        public Vector3Int chunkSize;
+
+        public CubeInteger chunkBounds;
+
         public DynamicGridMapConfig(Vector3Int chunkSize, CubeInteger chunkBounds)
         {
             this.chunkSize = chunkSize;
