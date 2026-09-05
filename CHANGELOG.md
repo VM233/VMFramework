@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [7.0.6] - 2026-09-05
+
+### Fixed
+
+- Use Unity's persistent setup lifecycle for the script-reload regression, preserving its fixture
+  across the intentional domain reload.
+
 ## [7.0.5] - 2026-09-05
 
 ### Fixed

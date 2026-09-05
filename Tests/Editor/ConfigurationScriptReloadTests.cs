@@ -16,11 +16,12 @@ namespace VMFramework.Editor.Tests
         private const string AssetPath = TestFolder + "/Procedures.asset";
         private const string ProcedureID = "reload_procedure";
 
-        [SetUp]
-        public void SetUp()
+        [UnitySetUp]
+        public IEnumerator SetUp()
         {
             Assert.That(AssetDatabase.IsValidFolder(TestFolder), Is.False);
             AssetDatabase.CreateFolder("Assets", "__VMFrameworkConfigurationReloadTests");
+            yield break;
         }
 
         [TearDown]
