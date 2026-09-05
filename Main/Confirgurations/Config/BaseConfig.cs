@@ -14,6 +14,7 @@ namespace VMFramework.Configuration
 #endif
     public abstract class BaseConfig : IConfig
     {
+        [field: System.NonSerialized]
         public bool InitDone { get; private set; } = false;
 
         public virtual void CheckSettings()

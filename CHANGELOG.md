@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [7.0.5] - 2026-09-05
+
+### Fixed
+
+- Keep configuration initialization flags out of Unity script-reload serialization so authoring
+  queries cannot select a runtime dictionary discarded by the reload. Verify hot-reload state,
+  unsaved authoring values, and subsequent repeated initialization in an Editor regression.
+
 ## [7.0.4] - 2026-09-05
 
 ### Fixed

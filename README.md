@@ -93,7 +93,9 @@ General Settings store provider membership as native Unity object references and
 enumeration. Use `AddToInitialGamePrefabProviders` and `RemoveFromInitialGamePrefabProviders` to edit
 membership. The authoring selector only offers providers, and those operations save the setting.
 Configuration lists preserve their concrete element types. Runtime dictionaries are rebuilt by
-`Init`, independently of authoring validation. Native grid settings require VMCore 1.0.2 or later.
+`Init`, independently of authoring validation. Initialization flags are transient, including during
+Unity script reload, so authoring queries never depend on a runtime dictionary lost in that reload.
+Native grid settings require VMCore 1.0.2 or later.
 
 Transient Editor viewers and batch selections use session state. They do not persist arbitrary
 managed objects through a serializer; registry viewers read the current registry directly.

@@ -2,8 +2,9 @@
 
 namespace VMFramework.Configuration
 {
-    public abstract partial class GeneralConfig : ScriptableObject, IConfig
+    public abstract class GeneralConfig : ScriptableObject, IConfig
     {
+        [field: System.NonSerialized]
         public bool InitDone { get; private set; } = false;
         
         public virtual void CheckSettings()
@@ -22,5 +23,16 @@ namespace VMFramework.Configuration
         {
 
         }
+#if UNITY_EDITOR
+        protected virtual void OnInspectorInit()
+        {
+
+        }
+
+        void IInspectorConfig.OnInspectorInit()
+        {
+            OnInspectorInit();
+        }
+#endif
     }
 }
