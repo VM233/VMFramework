@@ -82,6 +82,10 @@ Parameter source fields, including the optional base/boost limits on
 `BaseBoostFloatParameterConverter`, use `[SerializeReference]` to preserve their concrete source
 configurations when a Prefab is saved and reloaded.
 
+`LocalizedGamePrefab.hasDescription` controls both the generated description and the published
+localized description reference. Disabled descriptions remain absent from the runtime description
+registry even when Unity materializes an empty inline `LocalizedString` during deserialization.
+
 Game tags are stored in an ordered `List<string>`, and Input System action GUIDs are stored as their
 canonical string form. The Game Prefab Inspector selector enforces unique registered tags while
 authoring. Code that edits tags should use list operations and avoid adding duplicates.

@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [7.0.3] - 2026-09-05
+
+### Fixed
+
+- Respect `LocalizedGamePrefab.hasDescription` when publishing the localized description reference,
+  preventing disabled descriptions materialized by native Unity serialization from entering Tooltip
+  localization lookups with an empty table reference.
+
 ## [7.0.2] - 2026-09-05
 
 ### Fixed
