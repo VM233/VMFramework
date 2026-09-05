@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [7.0.1] - 2026-09-05
+
+### Fixed
+
+- Reference VMCore directly from the Editor test assembly so native grid serialization tests compile
+  when enabled through a consumer project's package test configuration.
+
 ## [7.0.0] - 2026-09-05
 
 ### Changed
