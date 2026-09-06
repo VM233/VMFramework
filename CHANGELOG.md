@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [7.0.7] - 2026-09-06
+
+### Changed
+
+- Disable initialization progress logs by default. Both action-start messages and the batch-start
+  summary now require the initializer to opt in through `EnableInitializationDebugLog`.
+  Initialization failures, cancellation, timeout diagnostics, and execution state remain available.
+
 ## [7.0.6] - 2026-09-05
 
 ### Fixed

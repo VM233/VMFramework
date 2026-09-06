@@ -97,7 +97,9 @@ namespace VMFramework.Procedure
 
             try
             {
-                var initializersName = initializers.Select(initializer => initializer.GetType().ToString());
+                var initializersName = initializers
+                    .Where(initializer => initializer.EnableInitializationDebugLog)
+                    .Select(initializer => initializer.GetType().ToString());
                 var initializersNameWithTag = initializersName.Select(name => name.ColorTag("green")).ToList();
 
                 if (initializersNameWithTag.Count > 0)

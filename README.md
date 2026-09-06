@@ -55,6 +55,13 @@ required version to Unity's resolver.
 - `Experimental`: experimental framework code.
 - `GameResources`: package-owned fonts and script templates. Runtime project global setting assets are expected under `Assets/GameResources/Configurations/GlobalSettings`.
 
+## Initialization Diagnostics
+
+`IInitializer.EnableInitializationDebugLog` defaults to `false`. Override it with `true` on an
+initializer when investigating its startup actions. The same opt-in controls its action-start
+messages and inclusion in the batch-start summary. Initialization failures still propagate through
+the procedure or Editor loading owner, and execution state remains available on `InitializerManager`.
+
 ## Manager Containers
 
 `ManagerCreator` owns the root `^Core` object in the active scene. Manager category containers are
