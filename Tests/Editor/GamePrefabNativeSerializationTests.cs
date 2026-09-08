@@ -50,7 +50,7 @@ namespace VMFramework.Editor.Tests
         [SetUp]
         public void SetUp()
         {
-            AssetDatabase.DeleteAsset(TestFolder);
+            DeleteTestAssets();
             AssetDatabase.CreateFolder("Assets",
                 "__VMFrameworkGamePrefabNativeSerializationTests");
         }
@@ -58,7 +58,7 @@ namespace VMFramework.Editor.Tests
         [TearDown]
         public void TearDown()
         {
-            AssetDatabase.DeleteAsset(TestFolder);
+            DeleteTestAssets();
         }
 
         [Test]
@@ -359,6 +359,44 @@ namespace VMFramework.Editor.Tests
             AssetDatabase.SaveAssets();
             AssetDatabase.ForceReserializeAssets(new[] { path });
             return Reload(path);
+        }
+
+        private static void DeleteTestAssets()
+        {
+            // Recover from interrupted test runs before inspecting registrations.
+            GamePrefabGeneralSettingUtility.RefreshAllInitialGamePrefabWrappers();
+
+            if (AssetDatabase.IsValidFolder(TestFolder) == false)
+            {
+                return;
+            }
+
+            string[] folders = { TestFolder };
+            GamePrefabWrapper[] wrappers = AssetDatabase
+                .FindAssets($"t:{nameof(GamePrefabSingleWrapper)}", folders)
+                .Concat(AssetDatabase.FindAssets(
+                    $"t:{nameof(GamePrefabMultipleWrapper)}", folders))
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Select(AssetDatabase.LoadAssetAtPath<GamePrefabWrapper>)
+                .Where(wrapper => wrapper != null)
+                .ToArray();
+
+            foreach (GamePrefabWrapper wrapper in wrappers)
+            {
+                var settings = new HashSet<GamePrefabGeneralSetting>();
+                wrapper.GetGamePrefabGeneralSettings(settings);
+
+                foreach (GamePrefabGeneralSetting setting in settings)
+                {
+                    if (setting.initialGamePrefabProviders.Contains(wrapper))
+                    {
+                        setting.RemoveFromInitialGamePrefabProviders(wrapper);
+                    }
+                }
+            }
+
+            AssetDatabase.DeleteAsset(TestFolder);
+            GamePrefabGeneralSettingUtility.RefreshAllInitialGamePrefabWrappers();
         }
 
         private static GamePrefabWrapper Reload(string path)

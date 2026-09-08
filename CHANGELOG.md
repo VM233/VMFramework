@@ -4,6 +4,15 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [7.0.8] - 2026-09-08
+
+### Fixed
+
+- Unregister temporary native-serialization test wrappers before deleting them so package tests
+  cannot leave missing provider references in a consumer project's production settings.
+- Persist removal of deleted GamePrefab providers during editor refresh, including recovery after an
+  interrupted test run or an external asset deletion.
+
 ## [7.0.7] - 2026-09-06
 
 ### Changed

@@ -116,7 +116,13 @@ namespace VMFramework.GameLogicArchitecture
         public void RefreshInitialGamePrefabProviders()
         {
             // Deleted Unity assets no longer belong to the authoring provider list.
-            initialGamePrefabProviderObjects.RemoveAll(provider => provider == null);
+            if (initialGamePrefabProviderObjects.RemoveAll(provider => provider == null) == 0)
+            {
+                return;
+            }
+
+            UnityEditor.EditorUtility.SetDirty(this);
+            UnityEditor.AssetDatabase.SaveAssetIfDirty(this);
         }
 
         private static UnityEngine.Object GetProviderObject(IGamePrefabsProvider provider)

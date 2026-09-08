@@ -60,6 +60,37 @@ namespace VMFramework.Editor.Tests
         }
 
         [Test]
+        public void DeletedProviderRefresh_RemovesAndPersistsMissingReference()
+        {
+            string wrapperPath = directory + "/DeletedProvider.asset";
+            string settingPath = directory + "/Events.asset";
+            var wrapper = ScriptableObject.CreateInstance<GamePrefabSingleWrapper>();
+            wrapper.InitGamePrefabs(new IGamePrefab[]
+            {
+                new GameEventConfig { id = "deleted_provider_event" }
+            });
+            AssetDatabase.CreateAsset(wrapper, wrapperPath);
+            var setting = ScriptableObject.CreateInstance<GameEventGeneralSetting>();
+            AssetDatabase.CreateAsset(setting, settingPath);
+            setting.AddToInitialGamePrefabProviders(wrapper);
+
+            Assert.That(setting.initialGamePrefabProviders.Single(),
+                Is.EqualTo(wrapper));
+            Assert.That(AssetDatabase.DeleteAsset(wrapperPath), Is.True);
+
+            setting.RefreshInitialGamePrefabProviders();
+            Assert.That(setting.initialGamePrefabProviders, Is.Empty);
+
+            Resources.UnloadAsset(setting);
+            AssetDatabase.ImportAsset(settingPath,
+                ImportAssetOptions.ForceSynchronousImport |
+                ImportAssetOptions.ForceUpdate);
+            setting = AssetDatabase.LoadAssetAtPath<GameEventGeneralSetting>(
+                settingPath);
+            Assert.That(setting.initialGamePrefabProviders, Is.Empty);
+        }
+
+        [Test]
         public void DictionaryConfigs_RoundTripThenInitializeFromAuthoringState()
         {
             var setting = ScriptableObject.CreateInstance<UIPanelProcedureGeneralSetting>();
