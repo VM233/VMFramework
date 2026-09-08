@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [7.0.9] - 2026-09-08
+
+### Fixed
+
+- Clean package-test wrapper registrations by direct provider identity so intentionally unmapped test
+  GamePrefab types do not emit editor errors during teardown.
+
 ## [7.0.8] - 2026-09-08
 
 ### Fixed

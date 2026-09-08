@@ -381,12 +381,10 @@ namespace VMFramework.Editor.Tests
                 .Where(wrapper => wrapper != null)
                 .ToArray();
 
-            foreach (GamePrefabWrapper wrapper in wrappers)
+            foreach (GamePrefabGeneralSetting setting in
+                     GamePrefabGeneralSettingUtility.GetAllGamePrefabGeneralSettings())
             {
-                var settings = new HashSet<GamePrefabGeneralSetting>();
-                wrapper.GetGamePrefabGeneralSettings(settings);
-
-                foreach (GamePrefabGeneralSetting setting in settings)
+                foreach (GamePrefabWrapper wrapper in wrappers)
                 {
                     if (setting.initialGamePrefabProviders.Contains(wrapper))
                     {
