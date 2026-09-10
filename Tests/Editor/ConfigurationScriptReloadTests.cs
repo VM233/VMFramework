@@ -28,7 +28,7 @@ namespace VMFramework.Editor.Tests
         public void TearDown() => AssetDatabase.DeleteAsset(TestFolder);
 
         [UnityTest]
-        public IEnumerator InitializedDictionary_ScriptReloadReturnsToAuthoringState()
+        public IEnumerator InitializedList_ScriptReloadPreservesEditsAndResetsElementInitialization()
         {
             var setting = ScriptableObject.CreateInstance<UIPanelProcedureGeneralSetting>();
             var config = new UIPanelProcedureConfig
@@ -36,12 +36,13 @@ namespace VMFramework.Editor.Tests
                 procedureID = ProcedureID,
                 uniqueUIPanelAutoOpenOnEnter = new List<string> { "saved_panel" }
             };
-            setting.procedureConfigs.TryAddConfigEditor(config);
+            setting.procedureConfigs.Add(config);
             AssetDatabase.CreateAsset(setting, AssetPath);
             AssetDatabase.SaveAssets();
             setting.procedureConfigs.Init();
-            Assert.That(setting.procedureConfigs.InitDone, Is.True);
-            Assert.That(setting.procedureConfigs.GetConfigRuntime(ProcedureID), Is.SameAs(config));
+            Assert.That(config.InitDone, Is.True);
+            Assert.That(setting.TryGetProcedureConfig(ProcedureID, out var initializedConfig), Is.True);
+            Assert.That(initializedConfig, Is.SameAs(config));
 
             // An unsaved authoring edit proves the object survives hot reload rather than a disk reload.
             config.uniqueUIPanelAutoOpenOnEnter[0] = "unsaved_panel";
@@ -52,13 +53,14 @@ namespace VMFramework.Editor.Tests
             yield return new WaitForDomainReload();
 
             var reloaded = AssetDatabase.LoadAssetAtPath<UIPanelProcedureGeneralSetting>(AssetPath);
-            Assert.That(reloaded.procedureConfigs.InitDone, Is.False);
-            Assert.That(reloaded.procedureConfigs.TryGetConfig(ProcedureID, out var authoringConfig), Is.True);
+            Assert.That(reloaded.TryGetProcedureConfig(ProcedureID, out var authoringConfig), Is.True);
+            Assert.That(authoringConfig.InitDone, Is.False);
             Assert.That(authoringConfig.uniqueUIPanelAutoOpenOnEnter, Is.EqualTo(new[] { "unsaved_panel" }));
             reloaded.procedureConfigs.Init();
-            Assert.That(reloaded.procedureConfigs.GetConfigRuntime(ProcedureID), Is.SameAs(authoringConfig));
+            Assert.That(reloaded.TryGetProcedureConfig(ProcedureID, out var runtimeConfig), Is.True);
+            Assert.That(runtimeConfig, Is.SameAs(authoringConfig));
             reloaded.procedureConfigs.Init();
-            Assert.That(reloaded.procedureConfigs.GetRuntimeDictionary().Count, Is.EqualTo(1));
+            Assert.That(reloaded.procedureConfigs.Count, Is.EqualTo(1));
         }
     }
 }

@@ -4,6 +4,27 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [8.0.0] - 2026-09-10
+
+### Changed
+
+- Replace UI language and procedure configuration containers with directly serialized `List<T>`
+  fields. Their settings own lookup and ID validation, and initialize the list elements directly.
+- Remove the dictionary and structure configuration abstractions, their interfaces and helpers,
+  and unused tag/list containers and priority-preset adapter. Configuration queries now read the
+  same authoring list before initialization, after initialization, and after script reload.
+- Existing assets require migration of each container's nested `configs` list into the setting
+  field before saving with this version. Preserve managed references and Unity asset references.
+
+### Fixed
+
+- Remove the previous locale's stylesheet when a UI Toolkit panel changes language.
+
+### Tests
+
+- Cover native list round trips, edits after initialization, duplicate IDs, unsaved edits across
+  script reload, and locale-style replacement without removing shared panel styles.
+
 ## [7.0.9] - 2026-09-08
 
 ### Fixed

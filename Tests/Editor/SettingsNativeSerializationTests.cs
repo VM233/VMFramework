@@ -91,21 +91,45 @@ namespace VMFramework.Editor.Tests
         }
 
         [Test]
-        public void DictionaryConfigs_RoundTripThenInitializeFromAuthoringState()
+        public void ProcedureList_RoundTripThenInitializeFromAuthoringState()
         {
             var setting = ScriptableObject.CreateInstance<UIPanelProcedureGeneralSetting>();
             AssetDatabase.CreateAsset(setting, directory + "/Procedures.asset");
-            setting.procedureConfigs.TryAddConfigEditor(new UIPanelProcedureConfig
+            setting.procedureConfigs.Add(new UIPanelProcedureConfig
             {
                 procedureID = "native_procedure", uniqueUIPanelAutoOpenOnEnter = new List<string> { "panel_a" }
             });
             setting = SaveAndReload(setting);
-            Assert.That(setting.procedureConfigs.InitDone, Is.False);
+            Assert.That(setting.procedureConfigs.Single().InitDone, Is.False);
             setting.procedureConfigs.Init();
-            Assert.That(setting.procedureConfigs.GetConfigRuntime("native_procedure").uniqueUIPanelAutoOpenOnEnter,
+            Assert.That(setting.TryGetProcedureConfig("native_procedure", out var config), Is.True);
+            Assert.That(config.uniqueUIPanelAutoOpenOnEnter,
                 Is.EqualTo(new[] { "panel_a" }));
             setting.procedureConfigs.Init();
-            Assert.That(setting.procedureConfigs.GetRuntimeDictionary().Count, Is.EqualTo(1));
+            Assert.That(setting.procedureConfigs.Count, Is.EqualTo(1));
+            Assert.That(config.InitDone, Is.True);
+
+            config.procedureID = "edited_procedure";
+            setting = SaveAndReload(setting);
+            Assert.That(setting.TryGetProcedureConfig("native_procedure", out _), Is.False);
+            Assert.That(setting.TryGetProcedureConfig("edited_procedure", out _), Is.True);
+        }
+
+        [Test]
+        public void ProcedureList_RejectsDuplicateIDsAtItsOwner()
+        {
+            var setting = ScriptableObject.CreateInstance<UIPanelProcedureGeneralSetting>();
+            try
+            {
+                setting.procedureConfigs.Add(new UIPanelProcedureConfig { procedureID = "duplicate" });
+                setting.procedureConfigs.Add(new UIPanelProcedureConfig { procedureID = "duplicate" });
+                Assert.That(() => setting.CheckSettings(), Throws.InvalidOperationException
+                    .With.Message.Contains("procedureConfigs").And.Message.Contains("duplicate"));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(setting);
+            }
         }
 
         [Test]

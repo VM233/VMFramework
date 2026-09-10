@@ -99,10 +99,22 @@ authoring. Code that edits tags should use list operations and avoid adding dupl
 General Settings store provider membership as native Unity object references and expose a typed
 enumeration. Use `AddToInitialGamePrefabProviders` and `RemoveFromInitialGamePrefabProviders` to edit
 membership. The authoring selector only offers providers, and those operations save the setting.
-Configuration lists preserve their concrete element types. Runtime dictionaries are rebuilt by
-`Init`, independently of authoring validation. Initialization flags are transient, including during
-Unity script reload, so authoring queries never depend on a runtime dictionary lost in that reload.
+Configuration lists preserve their concrete element types with `[SerializeReference] List<T>`.
+Settings initialize the list elements and own lookups against those same lists. Initialization
+flags on the elements are transient, including during Unity script reload. There is no separate
+configuration-container runtime dictionary. `CheckUniqueIDs` validates ID-bearing lists at their
+setting's check and initialization boundaries.
 Native grid settings require VMCore 1.0.2 or later.
+
+Version 8 removes `DictionaryConfigs`, `StructureConfigs`, their interfaces and utilities, and
+the unused tag/list containers and dictionary-based priority adapter. Replace container fields
+with `[SerializeReference] List<T>` and migrate their nested `configs` values into the field itself.
+Preserve list order, concrete element types, shared references and Unity object references.
+`UIPanelGeneralSetting.GetLanguageConfig` and
+`UIPanelProcedureGeneralSetting.TryGetProcedureConfig` provide the corresponding setting lookups.
+Capture existing assets before adopting the new package, transform those captured container
+nodes into their list nodes, then apply and verify them using the serialization snapshot commands.
+Do not save unmigrated assets after changing the field types.
 
 Transient Editor viewers and batch selections use session state. They do not persist arbitrary
 managed objects through a serializer; registry viewers read the current registry directly.

@@ -16,6 +16,8 @@ namespace VMFramework.UI
         [SerializeField]
         private string localeCode;
 
+        public string LocaleCode => localeCode;
+
         [Required]
         public StyleSheet styleSheet;
 

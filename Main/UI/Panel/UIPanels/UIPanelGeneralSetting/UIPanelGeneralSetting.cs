@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using VMFramework.Configuration;
 using Sirenix.OdinInspector;
@@ -7,11 +7,18 @@ using UnityEngine.UIElements;
 using VMFramework.GameLogicArchitecture;
 using VMFramework.OdinExtensions;
 using VMFramework.Procedure;
+#if UNITY_EDITOR
+using VMFramework.Editor;
+using VMFramework.Editor.GameEditor;
+#endif
 
 namespace VMFramework.UI
 {
     [CommonPresetAutoRegister(SORTING_ORDER_PRESET_KEY, typeof(int))]
-    public sealed partial class UIPanelGeneralSetting : GamePrefabGeneralSetting, IInitializer
+    public sealed class UIPanelGeneralSetting : GamePrefabGeneralSetting, IInitializer
+#if UNITY_EDITOR
+        , IGameEditorMenuTreeNode
+#endif
     {
         #region Category
 
@@ -30,14 +37,14 @@ namespace VMFramework.UI
         public const string DEFAULT_SORTING_ORDER_ID = "Default";
 
         public const int DEFAULT_SORTING_ORDER = 0;
-        
+
         public const string DEBUG_SORTING_ORDER_ID = "Debug";
-        
+
         public const int DEBUG_SORTING_ORDER = 1000;
 
         [TabGroup(TAB_GROUP_NAME, PANEL_SETTING_CATEGORY)]
         public string containerName = "$UI";
-        
+
         [TabGroup(TAB_GROUP_NAME, PANEL_SETTING_CATEGORY)]
         [Required]
         public PanelSettings panelSettings;
@@ -52,7 +59,8 @@ namespace VMFramework.UI
 
         [TabGroup(TAB_GROUP_NAME, LOCALIZABLE_SETTING_CATEGORY)]
         [ShowIf(nameof(enableLanguageConfigs))]
-        public DictionaryConfigs<string, UIPanelLanguageConfig> languageConfigs = new();
+        [SerializeReference]
+        public List<UIPanelLanguageConfig> languageConfigs = new();
 
         #region Check & Init
 
@@ -62,14 +70,16 @@ namespace VMFramework.UI
 
             if (enableLanguageConfigs)
             {
+                languageConfigs.CheckUniqueIDs(nameof(languageConfigs));
                 languageConfigs.CheckSettings();
             }
         }
-        
+
         protected override void OnInit()
         {
             base.OnInit();
-            
+
+            languageConfigs.CheckUniqueIDs(nameof(languageConfigs));
             languageConfigs.Init();
 
             panelSettingsBySortingOrder.Clear();
@@ -99,7 +109,7 @@ namespace VMFramework.UI
         }
 
         #endregion
-        
+
         private IEnumerable<PanelSettings> GetAllPanelSettings()
         {
             return panelSettingsBySortingOrder.Values;
@@ -109,5 +119,22 @@ namespace VMFramework.UI
         {
             return panelSettingsBySortingOrder[sortingOrder];
         }
+
+        public UIPanelLanguageConfig GetLanguageConfig(string localeCode)
+        {
+            foreach (var config in languageConfigs)
+            {
+                if (config.LocaleCode == localeCode)
+                {
+                    return config;
+                }
+            }
+
+            return null;
+        }
+#if UNITY_EDITOR
+        string INameOwner.Name => "UI Panel";
+        EditorIcon IEditorIconProvider.Icon => SdfIconType.LayoutWtf;
+#endif
     }
 }

@@ -1,37 +1,67 @@
-﻿using Sirenix.OdinInspector;
+using Sirenix.OdinInspector;
+using System.Collections.Generic;
+using UnityEngine;
 using VMFramework.Configuration;
 using VMFramework.Core.Pools;
 using VMFramework.GameLogicArchitecture;
 using VMFramework.Procedure;
+#if UNITY_EDITOR
+using VMFramework.Editor.GameEditor;
+#endif
 
 namespace VMFramework.UI
 {
-    public sealed partial class UIPanelProcedureGeneralSetting : GeneralSetting
+    public sealed class UIPanelProcedureGeneralSetting : GeneralSetting
+#if UNITY_EDITOR
+        , IGameEditorMenuTreeNode
+#endif
     {
         private const string PROCEDURE_CATEGORY = "Procedures";
-        
+
+#if UNITY_EDITOR
+        string INameOwner.Name => "UI Procedure";
+#endif
+
         [TabGroup(TAB_GROUP_NAME, PROCEDURE_CATEGORY)]
-        public DictionaryConfigs<string, UIPanelProcedureConfig> procedureConfigs = new();
+        [SerializeReference]
+        public List<UIPanelProcedureConfig> procedureConfigs = new();
 
         public override void CheckSettings()
         {
             base.CheckSettings();
-            
+
+            procedureConfigs.CheckUniqueIDs(nameof(procedureConfigs));
             procedureConfigs.CheckSettings();
         }
 
         protected override void OnInit()
         {
             base.OnInit();
-            
+
+            procedureConfigs.CheckUniqueIDs(nameof(procedureConfigs));
             procedureConfigs.Init();
             ProcedureManager.Instance.OnEnterProcedureEvent += OnEnterProcedure;
             ProcedureManager.Instance.OnExitProcedureEvent += OnExitProcedure;
         }
 
+        public bool TryGetProcedureConfig(string procedureID, out UIPanelProcedureConfig config)
+        {
+            foreach (var candidate in procedureConfigs)
+            {
+                if (candidate.procedureID == procedureID)
+                {
+                    config = candidate;
+                    return true;
+                }
+            }
+
+            config = null;
+            return false;
+        }
+
         private void OnEnterProcedure(string procedureID)
         {
-            if (procedureConfigs.TryGetConfig(procedureID, out var config) == false)
+            if (TryGetProcedureConfig(procedureID, out var config) == false)
             {
                 return;
             }
@@ -45,12 +75,12 @@ namespace VMFramework.UI
                         var openedUIPanels = ListPool<IUIPanel>.Default.Get();
                         openedUIPanels.Clear();
                         openedUIPanels.AddRange(uiPanels);
-                        
+
                         foreach (var uiPanelController in openedUIPanels)
                         {
                             uiPanelController.Close();
                         }
-                        
+
                         openedUIPanels.ReturnToDefaultPool();
                     }
                 }
@@ -70,7 +100,7 @@ namespace VMFramework.UI
 
         private void OnExitProcedure(string procedureID)
         {
-            if (procedureConfigs.TryGetConfig(procedureID, out var config) == false)
+            if (TryGetProcedureConfig(procedureID, out var config) == false)
             {
                 return;
             }
@@ -84,12 +114,12 @@ namespace VMFramework.UI
                         var openedUIPanels = ListPool<IUIPanel>.Default.Get();
                         openedUIPanels.Clear();
                         openedUIPanels.AddRange(uiPanels);
-                        
+
                         foreach (var uiPanelController in openedUIPanels)
                         {
                             uiPanelController.Close();
                         }
-                        
+
                         openedUIPanels.ReturnToDefaultPool();
                     }
                 }
