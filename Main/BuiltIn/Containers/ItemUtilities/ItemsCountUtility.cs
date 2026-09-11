@@ -18,7 +18,9 @@ namespace VMFramework.Containers
             {
                 if (countDictionary.TryAdd(item.id, item.Count.GetValue()) == false)
                 {
-                    countDictionary[item.id] += item.Count.GetValue();
+                    // IL2CPP cannot lower compound indexer writes on a variable-size generic receiver.
+                    int existingCount = countDictionary[item.id];
+                    countDictionary[item.id] = existingCount + item.Count.GetValue();
                 }
             }
         }

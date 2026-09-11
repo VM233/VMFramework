@@ -62,6 +62,12 @@ initializer when investigating its startup actions. The same opt-in controls its
 messages and inclusion in the batch-start summary. Initialization failures still propagate through
 the procedure or Editor loading owner, and execution state remains available on `InitializerManager`.
 
+## Item Count Aggregation
+
+Item-count aggregation supports IL2CPP builds, including WebGL. Its generic dictionary
+receiver uses separate indexer reads and writes because compound indexer assignment can
+produce a variable-size receiver conversion that IL2CPP cannot translate.
+
 ## Manager Containers
 
 `ManagerCreator` owns the root `^Core` object in the active scene. Manager category containers are

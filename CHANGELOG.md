@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [8.0.1] - 2026-09-11
+
+### Fixed
+
+- Read and write item-count dictionary entries separately so IL2CPP can compile
+  `BuildCountDictionary` for WebGL with full generic sharing. Keep its generic API and
+  accumulation behavior unchanged.
+
 ## [8.0.0] - 2026-09-10
 
 ### Changed
