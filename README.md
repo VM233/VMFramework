@@ -62,6 +62,12 @@ initializer when investigating its startup actions. The same opt-in controls its
 messages and inclusion in the batch-start summary. Initialization failures still propagate through
 the procedure or Editor loading owner, and execution state remains available on `InitializerManager`.
 
+## Container Admission
+
+Container addability checks include expandable slots when capacity is unbounded,
+including an empty container and requested ranges beyond its allocated slots.
+Fixed-capacity containers continue to admit only their allocated slots.
+
 ## Item Count Aggregation
 
 Item-count aggregation supports IL2CPP builds, including WebGL. Its generic dictionary

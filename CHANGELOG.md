@@ -4,6 +4,19 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [8.0.2] - 2026-09-12
+
+### Fixed
+
+- Let container addability checks evaluate expandable empty slots even when the
+  requested range contains no allocated slots. Empty unbounded containers now
+  admit the same items as `AddItem`, including the first Buff grant.
+
+### Changed
+
+- Consolidate the container's enumeration, JSON/clone methods and Editor actions
+  into its owning type without changing their public or serialized contracts.
+
 ## [8.0.1] - 2026-09-11
 
 ### Fixed

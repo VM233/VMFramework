@@ -1,6 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using VMFramework.Core;
 using Sirenix.OdinInspector;
 using VMFramework.Core.JSON;
@@ -9,10 +12,13 @@ using VMFramework.Core.Pools;
 using VMFramework.GameLogicArchitecture;
 using VMFramework.Properties;
 using VMFramework.Tools;
+#if UNITY_EDITOR
+using VMFramework.OdinExtensions;
+#endif
 
 namespace VMFramework.Containers
 {
-    public partial class Container : ControllerGameItem, IContainer
+    public class Container : ControllerGameItem, IContainer, IJSONSerializationReceiver, IStateCloneable
     {
         [TitleGroup(ComponentNames.CONFIG)]
         public int initialSize = 0;
@@ -432,34 +438,32 @@ namespace VMFramework.Containers
                 var min = range.min.ClampMin(startIndex);
                 var max = range.max.ClampMax(endIndex).ClampMax(items.Count - 1);
 
-                if (min > max)
-                {
-                    continue;
-                }
-                
                 unmatchableIndices.Clear();
 
-                for (var index = min; index <= max; index++)
+                if (min <= max)
                 {
-                    if (checkedIndices.Add(index) == false)
+                    for (var index = min; index <= max; index++)
                     {
-                        continue;
-                    }
+                        if (checkedIndices.Add(index) == false)
+                        {
+                            continue;
+                        }
 
-                    if (IsMatchFilters(index, item, arguments.intention) == false)
-                    {
-                        unmatchableIndices.Add(index);
-                        continue;
-                    }
+                        if (IsMatchFilters(index, item, arguments.intention) == false)
+                        {
+                            unmatchableIndices.Add(index);
+                            continue;
+                        }
 
-                    if (hint.ignoreExistingItems)
-                    {
-                        itemsToInsert.Add(new(index, null));
-                    }
-                    else
-                    {
-                        var itemInContainer = GetItem(index);
-                        itemsToInsert.Add(new(index, itemInContainer));
+                        if (hint.ignoreExistingItems)
+                        {
+                            itemsToInsert.Add(new(index, null));
+                        }
+                        else
+                        {
+                            var itemInContainer = GetItem(index);
+                            itemsToInsert.Add(new(index, itemInContainer));
+                        }
                     }
                 }
 
@@ -475,6 +479,11 @@ namespace VMFramework.Containers
 
                 var emptyRangeInfo = new InsertEmptyRangeInfo(emptyRange, unmatchableIndices,
                     new ContainerFilterMatch(arguments.intention, filterMatchFunc));
+
+                if (itemsToInsert.Count <= 0 && emptyRange == null)
+                {
+                    continue;
+                }
 
                 var currentResult = item.CheckInsertable(itemsToInsert, emptyRangeInfo, preferredCount, filledSlots,
                     out var currentActualInsertCount);
@@ -871,5 +880,77 @@ namespace VMFramework.Containers
 
             itemList.ReturnToDefaultPool();
         }
+
+        public IEnumerator<IContainerItem> GetEnumerator()
+        {
+            return validItemsLookup.Values.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        public virtual void CloneFrom(IStateCloneable stateCloneable, StateCloneContext context)
+        {
+            var other = (Container)stateCloneable;
+            var items = ListPool<IContainerItem>.Default.Get();
+            items.Clear();
+            var itemCloneContext = context.WithTag(StateCloneTags.OwnerStateIncluded);
+            foreach (var otherItem in other.items)
+            {
+                if (otherItem == null)
+                {
+                    items.Add(null);
+                    continue;
+                }
+
+                var item = otherItem.GetClone(itemCloneContext);
+                items.Add(item);
+            }
+
+            LoadFromItemsList(items, autoReturn: true, count: items.Count);
+
+            items.Clear();
+            items.ReturnToDefaultPool();
+        }
+
+        public virtual void SerializeTo(JObject o, JsonSerializer serializer)
+        {
+            if (ValidCount > 0)
+            {
+                o.Add("items", JArray.FromObject(items, serializer));
+            }
+        }
+
+        public virtual void DeserializeFrom(JObject o, JsonSerializer serializer)
+        {
+            if (o.TryGetValue("items", out JToken itemsToken))
+            {
+                var savedItems = itemsToken.ToObject<List<IContainerItem>>(serializer);
+                LoadFromItemsList(savedItems, autoReturn: true, count: savedItems.Count);
+            }
+        }
+
+#if UNITY_EDITOR
+        [Button]
+        private void AddItem([HideLabel] [GamePrefabID(typeof(IContainerItemConfig))] string id, int amount = 1)
+        {
+            var item = ContainerItemFactory.Create(id, amount);
+            AddItem(item, new(), out _);
+        }
+
+        [Button]
+        private void _Compress()
+        {
+            Compress();
+        }
+
+        [Button]
+        private void _Shuffle()
+        {
+            Shuffle();
+        }
+#endif
     }
 }
