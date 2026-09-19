@@ -6,7 +6,7 @@ using VMFramework.OdinExtensions;
 namespace VMFramework.GameEvents
 {
     [System.Serializable]
-    public class GameEventDependencyNode : BaseConfig
+    public class GameEventDependencyNode : ICheckableConfig
     {
         [GamePrefabID(typeof(IGameEventConfig))]
         public string gameEventID;
@@ -14,20 +14,11 @@ namespace VMFramework.GameEvents
         [UnityEngine.SerializeReference]
         public List<GameEventDependencyNode> children = new();
 
-        public override void CheckSettings()
+        public void CheckSettings()
         {
-            base.CheckSettings();
-
             gameEventID.AssertIsNotNullOrWhiteSpace(nameof(gameEventID));
 
             children?.CheckSettings();
-        }
-
-        protected override void OnInit()
-        {
-            base.OnInit();
-
-            children?.Init();
         }
     }
 }

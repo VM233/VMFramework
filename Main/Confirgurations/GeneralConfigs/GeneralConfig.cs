@@ -2,7 +2,10 @@
 
 namespace VMFramework.Configuration
 {
-    public abstract class GeneralConfig : ScriptableObject, IConfig
+    public abstract class GeneralConfig : ScriptableObject, ICheckableConfig, IInitializableConfig
+#if UNITY_EDITOR
+        , IInspectorConfig
+#endif
     {
         [field: System.NonSerialized]
         public bool InitDone { get; private set; } = false;

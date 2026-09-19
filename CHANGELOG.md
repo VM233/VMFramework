@@ -4,6 +4,28 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.0.0] - 2026-09-19
+
+### Changed
+
+- Replace the `BaseConfig` and `IConfig` inheritance contract with the narrow
+  checking, initialization and Inspector contracts each configuration actually uses.
+- Let configuration owners initialize their runtime indexes directly instead of
+  initializing passive list elements.
+- Keep weighted-item Inspector value creation without its former explicit JSON
+  member annotations.
+
+### Removed
+
+- Remove the unused priority configuration types and their directory.
+
+### Migration
+
+- Plain serialized configuration data no longer inherits initialization state.
+  Owners must call explicit runtime-index builders for data that produces a cache.
+- Code that used `IConfig` should depend on `ICheckableConfig`,
+  `IInitializableConfig` or `IInspectorConfig` only when it consumes that behavior.
+
 ## [8.0.2] - 2026-09-12
 
 ### Fixed

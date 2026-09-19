@@ -5,8 +5,12 @@ using VMFramework.Core;
 namespace VMFramework.Configuration
 {
     [Serializable]
-    public class SimpleWeightedSelectItemConfig<T> : BaseConfig, IWeightedSelectItem<T>
+    public class SimpleWeightedSelectItemConfig<T> : IWeightedSelectItem<T>, ICheckableConfig,
+        IInitializableConfig
     {
+        [field: NonSerialized]
+        public bool InitDone { get; private set; }
+
         [HideLabel]
         public T value;
 
@@ -17,24 +21,22 @@ namespace VMFramework.Configuration
 
         float IWeightedSelectItem.Weight => ratio;
 
-        public override void CheckSettings()
+        public void CheckSettings()
         {
-            base.CheckSettings();
-
             if (value is ICheckableConfig checkable)
             {
                 checkable.CheckSettings();
             }
         }
 
-        protected override void OnInit()
+        public void Init()
         {
-            base.OnInit();
-
             if (value is IInitializableConfig initializable)
             {
                 initializable.Init();
             }
+
+            InitDone = true;
         }
     }
 }

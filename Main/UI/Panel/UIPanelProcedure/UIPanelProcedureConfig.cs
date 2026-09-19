@@ -1,13 +1,12 @@
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
-using VMFramework.Configuration;
 using VMFramework.Core;
 using VMFramework.OdinExtensions;
 
 namespace VMFramework.UI
 {
     [System.Serializable]
-    public sealed class UIPanelProcedureConfig : BaseConfig, IIDOwner<string>
+    public sealed class UIPanelProcedureConfig : IIDOwner<string>
     {
         [ProcedureID]
         [IsNotNullOrEmpty]
@@ -36,12 +35,5 @@ namespace VMFramework.UI
         public List<string> uiPanelAutoCloseOnExit = new();
 
         string IIDOwner<string>.id => procedureID;
-#if UNITY_EDITOR
-        protected override void OnInspectorInit()
-        {
-            base.OnInspectorInit();
-
-        }
-#endif
     }
 }

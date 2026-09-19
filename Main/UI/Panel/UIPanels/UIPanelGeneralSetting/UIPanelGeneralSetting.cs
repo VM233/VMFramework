@@ -80,7 +80,6 @@ namespace VMFramework.UI
             base.OnInit();
 
             languageConfigs.CheckUniqueIDs(nameof(languageConfigs));
-            languageConfigs.Init();
 
             panelSettingsBySortingOrder.Clear();
 

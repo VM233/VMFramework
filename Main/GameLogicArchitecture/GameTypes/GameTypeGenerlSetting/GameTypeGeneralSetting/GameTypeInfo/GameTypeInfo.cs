@@ -1,7 +1,5 @@
 ﻿// using System.Collections.Generic;
-// using Newtonsoft.Json;
 // using Sirenix.OdinInspector;
-// using VMFramework.Configuration;
 // using VMFramework.Core;
 // using VMFramework.Localization;
 // using VMFramework.OdinExtensions;
@@ -10,16 +8,14 @@
 // {
 //     public partial class GameTypeGeneralSetting
 //     {
-//         private class GameTypeInfo : BaseConfig, IChildrenProvider<GameTypeInfo>, IIDOwner<string>, INameOwner,
+//         private class GameTypeInfo : IChildrenProvider<GameTypeInfo>, IIDOwner<string>, INameOwner,
 //             ILocalizedNameOwner
 //         {
 //             [LabelText("ID")]
 //             [IsNotNullOrEmpty, IsGameTypeID]
-//             [JsonProperty]
 //             public string id;
 //
 //             [LabelText("Sub Game Types")]
-//             [JsonProperty]
 //             public List<GameTypeInfo> subtypes = new();
 //
 //             [HideInEditorMode]

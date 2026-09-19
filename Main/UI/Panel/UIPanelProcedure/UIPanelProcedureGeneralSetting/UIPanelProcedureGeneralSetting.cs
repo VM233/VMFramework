@@ -31,7 +31,6 @@ namespace VMFramework.UI
             base.CheckSettings();
 
             procedureConfigs.CheckUniqueIDs(nameof(procedureConfigs));
-            procedureConfigs.CheckSettings();
         }
 
         protected override void OnInit()
@@ -39,7 +38,6 @@ namespace VMFramework.UI
             base.OnInit();
 
             procedureConfigs.CheckUniqueIDs(nameof(procedureConfigs));
-            procedureConfigs.Init();
             ProcedureManager.Instance.OnEnterProcedureEvent += OnEnterProcedure;
             ProcedureManager.Instance.OnExitProcedureEvent += OnExitProcedure;
         }

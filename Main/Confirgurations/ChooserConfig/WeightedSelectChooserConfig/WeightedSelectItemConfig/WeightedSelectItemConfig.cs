@@ -1,5 +1,4 @@
 ﻿using System;
-using Newtonsoft.Json;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using VMFramework.Core;
@@ -7,14 +6,20 @@ using VMFramework.Core;
 namespace VMFramework.Configuration
 {
     [Serializable]
-    public partial class WeightedSelectItemConfig<T> : BaseConfig, IWeightedSelectItem<T>, ICloneable
+#if UNITY_EDITOR
+    [HideDuplicateReferenceBox]
+    [HideReferenceObjectPicker]
+    [OnInspectorInit("@((IInspectorConfig)$value)?.OnInspectorInit()")]
+#endif
+    public class WeightedSelectItemConfig<T> : IWeightedSelectItem<T>, ICloneable
+#if UNITY_EDITOR
+        , IInspectorConfig
+#endif
     {
-        [JsonProperty]
         [SerializeReference]
         public T value;
 
         [LabelWidth(30), HorizontalGroup]
-        [JsonProperty]
         [MinValue(0)]
         public int ratio;
 
@@ -41,5 +46,12 @@ namespace VMFramework.Configuration
         T IWeightedSelectItem<T>.Value => value;
 
         float IWeightedSelectItem.Weight => ratio;
+
+#if UNITY_EDITOR
+        void IInspectorConfig.OnInspectorInit()
+        {
+            ReflectionUtility.TryCreateInstance(ref value);
+        }
+#endif
     }
 }

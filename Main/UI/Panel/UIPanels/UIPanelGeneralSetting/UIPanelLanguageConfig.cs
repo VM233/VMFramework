@@ -9,7 +9,7 @@ using VMFramework.OdinExtensions;
 namespace VMFramework.UI
 {
     [System.Serializable]
-    public class UIPanelLanguageConfig : BaseConfig, IIDOwner<string>, INameOwner
+    public class UIPanelLanguageConfig : ICheckableConfig, IIDOwner<string>, INameOwner
     {
         [LocaleName]
         [IsNotNullOrEmpty]
@@ -23,10 +23,8 @@ namespace VMFramework.UI
 
         #region Init & Check
 
-        public override void CheckSettings()
+        public void CheckSettings()
         {
-            base.CheckSettings();
-
             styleSheet.WarnIfNull(nameof(styleSheet));
         }
 

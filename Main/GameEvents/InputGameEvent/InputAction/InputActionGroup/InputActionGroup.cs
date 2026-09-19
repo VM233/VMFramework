@@ -1,18 +1,15 @@
 ﻿// using System.Collections.Generic;
-// using Newtonsoft.Json;
 // using Sirenix.OdinInspector;
 // using UnityEngine;
-// using VMFramework.Configuration;
 //
 // namespace VMFramework.GameEvents
 // {
-//     public partial class InputActionGroup : BaseConfig
+//     public partial class InputActionGroup
 //     {
 // #if UNITY_EDITOR
 //         [ListDrawerSettings(ShowFoldout = false, DefaultExpandedState = true,
 //             CustomAddFunction = nameof(AddInputActionToListGUI))]
 // #endif
-//         [JsonProperty]
 //         public List<InputAction> actions = new();
 //
 //         public InputActionGroup()

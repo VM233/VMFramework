@@ -51,8 +51,6 @@ namespace VMFramework.GameEvents
         {
             base.OnInit();
 
-            dependencyNodes.Init();
-
             directDependencies = new();
 
             foreach (var node in dependencyNodes.LevelOrderTraverse(true, node => node.children))

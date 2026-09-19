@@ -5,7 +5,6 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
-using VMFramework.Configuration;
 using VMFramework.UI;
 
 namespace VMFramework.Editor.Tests
@@ -28,7 +27,7 @@ namespace VMFramework.Editor.Tests
         public void TearDown() => AssetDatabase.DeleteAsset(TestFolder);
 
         [UnityTest]
-        public IEnumerator InitializedList_ScriptReloadPreservesEditsAndResetsElementInitialization()
+        public IEnumerator AuthoringList_ScriptReloadPreservesUnsavedEditsAndImmediateQueries()
         {
             var setting = ScriptableObject.CreateInstance<UIPanelProcedureGeneralSetting>();
             var config = new UIPanelProcedureConfig
@@ -39,8 +38,6 @@ namespace VMFramework.Editor.Tests
             setting.procedureConfigs.Add(config);
             AssetDatabase.CreateAsset(setting, AssetPath);
             AssetDatabase.SaveAssets();
-            setting.procedureConfigs.Init();
-            Assert.That(config.InitDone, Is.True);
             Assert.That(setting.TryGetProcedureConfig(ProcedureID, out var initializedConfig), Is.True);
             Assert.That(initializedConfig, Is.SameAs(config));
 
@@ -54,12 +51,7 @@ namespace VMFramework.Editor.Tests
 
             var reloaded = AssetDatabase.LoadAssetAtPath<UIPanelProcedureGeneralSetting>(AssetPath);
             Assert.That(reloaded.TryGetProcedureConfig(ProcedureID, out var authoringConfig), Is.True);
-            Assert.That(authoringConfig.InitDone, Is.False);
             Assert.That(authoringConfig.uniqueUIPanelAutoOpenOnEnter, Is.EqualTo(new[] { "unsaved_panel" }));
-            reloaded.procedureConfigs.Init();
-            Assert.That(reloaded.TryGetProcedureConfig(ProcedureID, out var runtimeConfig), Is.True);
-            Assert.That(runtimeConfig, Is.SameAs(authoringConfig));
-            reloaded.procedureConfigs.Init();
             Assert.That(reloaded.procedureConfigs.Count, Is.EqualTo(1));
         }
     }

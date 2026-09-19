@@ -91,7 +91,7 @@ namespace VMFramework.Editor.Tests
         }
 
         [Test]
-        public void ProcedureList_RoundTripThenInitializeFromAuthoringState()
+        public void ProcedureList_RoundTripAndQueryUsesAuthoringState()
         {
             var setting = ScriptableObject.CreateInstance<UIPanelProcedureGeneralSetting>();
             AssetDatabase.CreateAsset(setting, directory + "/Procedures.asset");
@@ -100,14 +100,10 @@ namespace VMFramework.Editor.Tests
                 procedureID = "native_procedure", uniqueUIPanelAutoOpenOnEnter = new List<string> { "panel_a" }
             });
             setting = SaveAndReload(setting);
-            Assert.That(setting.procedureConfigs.Single().InitDone, Is.False);
-            setting.procedureConfigs.Init();
             Assert.That(setting.TryGetProcedureConfig("native_procedure", out var config), Is.True);
             Assert.That(config.uniqueUIPanelAutoOpenOnEnter,
                 Is.EqualTo(new[] { "panel_a" }));
-            setting.procedureConfigs.Init();
             Assert.That(setting.procedureConfigs.Count, Is.EqualTo(1));
-            Assert.That(config.InitDone, Is.True);
 
             config.procedureID = "edited_procedure";
             setting = SaveAndReload(setting);
@@ -130,6 +126,32 @@ namespace VMFramework.Editor.Tests
             {
                 UnityEngine.Object.DestroyImmediate(setting);
             }
+        }
+
+        [Test]
+        public void WeightedSelectItem_InspectorInitializationCreatesReferenceValue()
+        {
+            var config = new WeightedSelectItemConfig<List<int>>();
+
+            ((IInspectorConfig)config).OnInspectorInit();
+
+            Assert.That(config.value, Is.Not.Null);
+            Assert.That(config.value, Is.Empty);
+        }
+
+        [Test]
+        public void SimpleWeightedSelectItem_ForwardsNarrowConfigurationContracts()
+        {
+            var value = new TrackingConfig();
+            var config = new SimpleWeightedSelectItemConfig<TrackingConfig> { value = value };
+
+            config.CheckSettings();
+            config.Init();
+
+            Assert.That(value.CheckSettingsCalled, Is.True);
+            Assert.That(value.InitCalled, Is.True);
+            Assert.That(value.InitDone, Is.True);
+            Assert.That(config.InitDone, Is.True);
         }
 
         [Test]
@@ -177,6 +199,26 @@ namespace VMFramework.Editor.Tests
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
             Assert.That(File.ReadAllText(path), Does.Not.Contain("serializationData:"));
             return AssetDatabase.LoadAssetAtPath<T>(path);
+        }
+
+        private sealed class TrackingConfig : ICheckableConfig, IInitializableConfig
+        {
+            public bool CheckSettingsCalled { get; private set; }
+
+            public bool InitCalled { get; private set; }
+
+            public bool InitDone { get; private set; }
+
+            public void CheckSettings()
+            {
+                CheckSettingsCalled = true;
+            }
+
+            public void Init()
+            {
+                InitCalled = true;
+                InitDone = true;
+            }
         }
     }
 }
