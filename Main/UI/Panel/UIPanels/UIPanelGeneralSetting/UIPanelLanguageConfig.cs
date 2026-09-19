@@ -1,3 +1,4 @@
+using System;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -8,7 +9,7 @@ using VMFramework.OdinExtensions;
 
 namespace VMFramework.UI
 {
-    [System.Serializable]
+    [Serializable]
     public class UIPanelLanguageConfig : ICheckableConfig, IIDOwner<string>, INameOwner
     {
         [LocaleName]

@@ -1,7 +1,9 @@
+using System;
 using NUnit.Framework;
 using UnityEngine;
 using VMFramework.Editor.GameEditor;
 using VMFramework.GameLogicArchitecture;
+using Object = UnityEngine.Object;
 
 namespace VMFramework.Tests
 {
@@ -85,7 +87,7 @@ namespace VMFramework.Tests
             }
         }
 
-        [System.Serializable]
+        [Serializable]
         private sealed class Config : GamePrefab
         {
             public Config(params string[] tags)

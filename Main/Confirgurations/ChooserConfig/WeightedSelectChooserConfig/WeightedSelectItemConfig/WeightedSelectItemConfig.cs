@@ -1,7 +1,6 @@
 ﻿using System;
 using Sirenix.OdinInspector;
 using UnityEngine;
-using VMFramework.Core;
 
 namespace VMFramework.Configuration
 {
@@ -9,12 +8,8 @@ namespace VMFramework.Configuration
 #if UNITY_EDITOR
     [HideDuplicateReferenceBox]
     [HideReferenceObjectPicker]
-    [OnInspectorInit("@((IInspectorConfig)$value)?.OnInspectorInit()")]
 #endif
     public class WeightedSelectItemConfig<T> : IWeightedSelectItem<T>, ICloneable
-#if UNITY_EDITOR
-        , IInspectorConfig
-#endif
     {
         [SerializeReference]
         public T value;
@@ -47,11 +42,5 @@ namespace VMFramework.Configuration
 
         float IWeightedSelectItem.Weight => ratio;
 
-#if UNITY_EDITOR
-        void IInspectorConfig.OnInspectorInit()
-        {
-            ReflectionUtility.TryCreateInstance(ref value);
-        }
-#endif
     }
 }

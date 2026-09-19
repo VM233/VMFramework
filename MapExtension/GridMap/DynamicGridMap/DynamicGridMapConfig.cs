@@ -1,9 +1,10 @@
+using System;
 using UnityEngine;
 using VMFramework.Core;
 
 namespace VMFramework.Maps
 {
-    [System.Serializable]
+    [Serializable]
     public struct DynamicGridMapConfig
     {
         public Vector3Int chunkSize;

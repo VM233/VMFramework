@@ -1,15 +1,17 @@
+using System;
 using System.Linq;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Assert;
 using UnityEngine;
 using VMFramework.Core;
 using VMFramework.GameLogicArchitecture;
+using Object = UnityEngine.Object;
 
 namespace VMFramework.Tests
 {
     public sealed class GamePrefabReferenceValidatorTests
     {
-        [System.Serializable]
+        [Serializable]
         private sealed class TestGamePrefab : GamePrefab, IPrefabProvider
         {
             private readonly GameObject prefab;

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using VMFramework.Configuration;
 using VMFramework.Core;
@@ -5,7 +6,7 @@ using VMFramework.OdinExtensions;
 
 namespace VMFramework.GameEvents
 {
-    [System.Serializable]
+    [Serializable]
     public class GameEventDependencyNode : ICheckableConfig
     {
         [GamePrefabID(typeof(IGameEventConfig))]

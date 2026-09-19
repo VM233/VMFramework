@@ -129,17 +129,6 @@ namespace VMFramework.Editor.Tests
         }
 
         [Test]
-        public void WeightedSelectItem_InspectorInitializationCreatesReferenceValue()
-        {
-            var config = new WeightedSelectItemConfig<List<int>>();
-
-            ((IInspectorConfig)config).OnInspectorInit();
-
-            Assert.That(config.value, Is.Not.Null);
-            Assert.That(config.value, Is.Empty);
-        }
-
-        [Test]
         public void SimpleWeightedSelectItem_ForwardsNarrowConfigurationContracts()
         {
             var value = new TrackingConfig();

@@ -7,8 +7,6 @@ namespace VMFramework.ResourcesManagement
     {
         protected override void OnInspectorInit()
         {
-            base.OnInspectorInit();
-
             BackupAll();
 
             this.EnforceSave();

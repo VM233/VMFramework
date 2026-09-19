@@ -7,13 +7,6 @@ namespace VMFramework.Configuration
 {
     public partial class GeneralConfigGeneralSetting
     {
-        protected override void OnInspectorInit()
-        {
-            base.OnInspectorInit();
-
-            
-        }
-
         [TabGroup(TAB_GROUP_NAME, GENERAL_CONFIGS_CATEGORY)]
         [Button]
         public void CollectGeneralConfigs()

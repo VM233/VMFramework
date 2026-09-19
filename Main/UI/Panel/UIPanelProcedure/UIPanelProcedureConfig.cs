@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using VMFramework.Core;
@@ -5,7 +6,7 @@ using VMFramework.OdinExtensions;
 
 namespace VMFramework.UI
 {
-    [System.Serializable]
+    [Serializable]
     public sealed class UIPanelProcedureConfig : IIDOwner<string>
     {
         [ProcedureID]

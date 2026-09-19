@@ -112,10 +112,12 @@ General Settings store provider membership as native Unity object references and
 enumeration. Use `AddToInitialGamePrefabProviders` and `RemoveFromInitialGamePrefabProviders` to edit
 membership. The authoring selector only offers providers, and those operations save the setting.
 Configuration lists preserve their concrete element types with `[SerializeReference] List<T>`.
-Settings initialize the list elements and own lookups against those same lists. Initialization
-flags on the elements are transient, including during Unity script reload. There is no separate
-configuration-container runtime dictionary. `CheckUniqueIDs` validates ID-bearing lists at their
-setting's check and initialization boundaries.
+Settings own lookups against those same authoring lists and invoke only the narrow checking or
+initialization contracts their elements actually implement. Plain data elements have no synthetic
+lifecycle. `WeightedSelectItemConfig<T>` also leaves its managed-reference value explicit instead
+of creating a hidden default from Inspector initialization. There is no separate configuration-
+container runtime dictionary. `CheckUniqueIDs` validates ID-bearing lists at their setting's check
+and initialization boundaries.
 Native grid settings require VMCore 1.0.2 or later.
 
 Version 8 removes `DictionaryConfigs`, `StructureConfigs`, their interfaces and utilities, and

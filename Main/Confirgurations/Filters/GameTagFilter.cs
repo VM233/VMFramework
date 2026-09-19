@@ -1,3 +1,4 @@
+using System;
 using Sirenix.OdinInspector;
 using VMFramework.Core;
 using VMFramework.GameLogicArchitecture;
@@ -5,7 +6,7 @@ using VMFramework.OdinExtensions;
 
 namespace VMFramework.Configuration
 {
-    [System.Serializable]
+    [Serializable]
     public struct GameTagFilter : IFilter
     {
         public bool isMultiple;

@@ -4,6 +4,17 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.0.1] - 2026-09-19
+
+### Changed
+
+- Stop creating missing weighted-item managed-reference values from hidden
+  Inspector initialization; authors now assign those values explicitly.
+- Remove redundant list-creation and empty Inspector initialization overrides
+  when the serialized fields already initialize themselves at declaration.
+- Use the imported `[Serializable]` attribute consistently instead of its
+  fully qualified spelling.
+
 ## [9.0.0] - 2026-09-19
 
 ### Changed
