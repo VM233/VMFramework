@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.0.2] - 2026-09-19
+
+### Fixed
+
+- Restore the `VMFramework.Core` namespace import required by the weighted-item
+  interfaces after removing the Inspector initialization callback.
+
 ## [9.0.1] - 2026-09-19
 
 ### Changed
