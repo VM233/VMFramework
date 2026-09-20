@@ -1,273 +1,64 @@
 # VMFramework
 
-VMFramework is a reusable Unity 6.4 framework package for VM233 projects. It contains shared gameplay architecture, configuration tooling, UI panel infrastructure, localization helpers, resource management utilities, map/tile helpers, editor tooling, and optional FishNet integration.
+VMFramework is the shared Unity package used by VM233 projects. It provides gameplay and
+configuration infrastructure, UI and localization helpers, resource utilities, editor tooling,
+map support, and optional FishNet integration.
 
-## Installation
+This repository is a Unity Package Manager package root, not a standalone Unity project.
 
-Add the package through Unity Package Manager using the Git URL:
+## Install
 
-```text
-https://github.com/VM233/VMFramework.git
+Pin an immutable full commit SHA in the consuming project's `Packages/manifest.json`:
+
+```json
+{
+  "dependencies": {
+    "com.vm233.vmframework": "https://github.com/VM233/VMFramework.git#<full-commit-sha>"
+  }
+}
 ```
 
-For a fixed revision, use:
+- Package ID: `com.vm233.vmframework`
+- Main assembly: `VMFramework`
+- Minimum Unity version: `6000.4`
 
-```text
-https://github.com/VM233/VMFramework.git#<commit>
-```
+## Dependencies
 
-## Package Name
+`package.json` is the authority for UPM dependencies. The consuming project must also provide
+assemblies referenced by `VMFramework.asmdef`, including VM Odin Extensions and Odin Inspector.
+Install FishNet when compiling `FishnetExtension`.
 
-```text
-com.vm233.vmframework
-```
-
-The package keeps the existing assembly name:
-
-```text
-VMFramework
-```
-
-## Requirements
-
-The package declares Unity registry dependencies in `package.json` for Addressables, Localization, Input System, TextMeshPro/UGUI, Tilemap Extras, Visual Effect Graph, and Newtonsoft JSON.
-
-These external packages or plugins must also be available in the consuming Unity project because the current `VMFramework.asmdef` references their assemblies:
-
-- VM Common Preset (`com.vm233.common-preset` 1.1.0 or newer)
-- VMCore (`com.vm233.vmcore`)
-- VM Odin Extensions (`https://github.com/VM233/VMOdinExtensions.git`)
-- UniTask (`com.cysharp.unitask`)
-- Odin Inspector
-- FishNet, when using `FishnetExtension`
-
-Pin package dependencies to registry versions or remote Git URLs with full immutable commit SHAs.
-
-Because VM Common Preset is distributed as a Git package, consuming projects must pin its Git URL
-directly in `Packages/manifest.json`; the semantic dependency in this package only expresses the
-required version to Unity's resolver.
+Use registry versions or remote Git URLs pinned to full immutable commit SHAs. Local filesystem
+dependencies are not supported.
 
 ## Layout
 
-- `Main`: core runtime, editor tools, JSON helpers, UI panel infrastructure, configuration, game logic architecture, localization, resources, timers, and procedures.
-- `MapExtension`: tilemap, grid map, map utilities, and tile config support.
-- `FishnetExtension`: optional FishNet networking integration.
+- `Main`: runtime and Editor framework code.
+- `MapExtension`: tilemap and grid-map support.
+- `FishnetExtension`: FishNet integration.
 - `Experimental`: experimental framework code.
-- `GameResources`: package-owned fonts and script templates. Runtime project global setting assets are expected under `Assets/GameResources/Configurations/GlobalSettings`.
+- `GameResources`: font-authoring character lists and script templates.
+- `Tests`: package Editor tests.
 
-## Initialization Diagnostics
+## Project Setup
 
-`IInitializer.EnableInitializationDebugLog` defaults to `false`. Override it with `true` on an
-initializer when investigating its startup actions. The same opt-in controls its action-start
-messages and inclusion in the batch-start summary. Initialization failures still propagate through
-the procedure or Editor loading owner, and execution state remains available on `InitializerManager`.
+Use `Edit > Project Settings > VMFramework` to configure the project-relative folders for
+`GeneralSetting` assets and Game Prefab wrappers. The settings are stored in
+`ProjectSettings/VMFrameworkEditorSettings.asset`.
 
-## Container Admission
+Runtime project global-setting assets are expected under
+`Assets/GameResources/Configurations/GlobalSettings`.
 
-Container addability checks include expandable slots when capacity is unbounded,
-including an empty container and requested ranges beyond its allocated slots.
-Fixed-capacity containers continue to admit only their allocated slots.
+Framework maintenance commands are available under the `VMFramework` Unity menu.
 
-## Item Count Aggregation
+## Validation
 
-Item-count aggregation supports IL2CPP builds, including WebGL. Its generic dictionary
-receiver uses separate indexer reads and writes because compound indexer assignment can
-produce a variable-size receiver conversion that IL2CPP cannot translate.
+The package Editor test assembly is `VMFramework.Editor.Tests`. When running package tests from a
+consumer project, expose the package through that project's `testables` manifest entry.
 
-## Manager Containers
+Keep package `.meta` files intact so Unity asset GUID references remain stable.
 
-`ManagerCreator` owns the root `^Core` object in the active scene. Manager category containers are
-resolved only among the direct children of that root. Business and configuration hierarchies may
-therefore reuse category names such as `Audio` without being moved or treated as manager owners.
+## Changes and License
 
-## Game Prefab Startup Validation
-
-After all Game Prefabs are registered, VMFramework validates every registered
-`IPrefabProvider` before gameplay managers and procedures consume the registry. Missing or
-destroyed Prefab references stop initialization with one `MissingGamePrefabReferencesException`
-that lists every invalid Game Prefab ID and concrete config type, so projects can repair the
-complete invalid set instead of discovering failures one instantiation at a time.
-
-## Native Unity Serialization
-
-Framework settings, global setting files, filters, and Game Prefab wrappers are ordinary
-`ScriptableObject` assets; framework components inherit `MonoBehaviour`. Persisted polymorphic
-graphs use Unity's `[SerializeReference]`. Odin Inspector is used for authoring UI only.
-Every concrete Game Prefab type and managed configuration class must be marked
-`[Serializable]`, and its persisted fields must follow Unity's serialization rules. Unity object
-references remain regular serialized references.
-
-Parameter source fields, including the optional base/boost limits on
-`BaseBoostFloatParameterConverter`, use `[SerializeReference]` to preserve their concrete source
-configurations when a Prefab is saved and reloaded.
-
-`LocalizedGamePrefab.hasDescription` controls both the generated description and the published
-localized description reference. Disabled descriptions remain absent from the runtime description
-registry even when Unity materializes an empty inline `LocalizedString` during deserialization.
-
-Game tags are stored in an ordered `List<string>`, and Input System action GUIDs are stored as their
-canonical string form. The Game Prefab Inspector selector enforces unique registered tags while
-authoring. Code that edits tags should use list operations and avoid adding duplicates.
-General Settings store provider membership as native Unity object references and expose a typed
-enumeration. Use `AddToInitialGamePrefabProviders` and `RemoveFromInitialGamePrefabProviders` to edit
-membership. The authoring selector only offers providers, and those operations save the setting.
-Configuration lists preserve their concrete element types with `[SerializeReference] List<T>`.
-Settings own lookups against those same authoring lists and invoke only the narrow checking or
-initialization contracts their elements actually implement. Plain data elements have no synthetic
-lifecycle. `WeightedSelectItemConfig<T>` also leaves its managed-reference value explicit instead
-of creating a hidden default from Inspector initialization. There is no separate configuration-
-container runtime dictionary. `CheckUniqueIDs` validates ID-bearing lists at their setting's check
-and initialization boundaries.
-Native grid settings require VMCore 1.0.2 or later.
-
-Version 8 removes `DictionaryConfigs`, `StructureConfigs`, their interfaces and utilities, and
-the unused tag/list containers and dictionary-based priority adapter. Replace container fields
-with `[SerializeReference] List<T>` and migrate their nested `configs` values into the field itself.
-Preserve list order, concrete element types, shared references and Unity object references.
-`UIPanelGeneralSetting.GetLanguageConfig` and
-`UIPanelProcedureGeneralSetting.TryGetProcedureConfig` provide the corresponding setting lookups.
-Capture existing assets before adopting the new package, transform those captured container
-nodes into their list nodes, then apply and verify them using the serialization snapshot commands.
-Do not save unmigrated assets after changing the field types.
-
-Transient Editor viewers and batch selections use session state. They do not persist arbitrary
-managed objects through a serializer; registry viewers read the current registry directly.
-
-Version 7 changes the serialization schema. Capture existing authoring graphs before upgrading,
-then restore, save, unload, and verify them through Unity after adopting the new packages. The
-staged migration commands belong to VMFramework-Pipeline; runtime code contains no legacy reader.
-
-The Editor test suite verifies the wrapper field contract, all loaded GamePrefab config types,
-single and multiple wrapper round trips, the production wrapper creator, nested managed references,
-Unity object references, second-save mutations, and every GamePrefab wrapper discoverable in a
-consumer project. Consumer projects can expose the package tests through Unity's `testables`
-manifest entry to run the asset-wide checks against their own content.
-
-Unity does not serialize `System.Type` fields directly. Use `SerializableType` when a persisted
-configuration needs a type reference; it stores the assembly-qualified name through Unity's native
-serializer while exposing the resolved `Type` through `Value` and implicit conversion:
-
-```csharp
-[SerializeField]
-private SerializableType implementationType = new(typeof(DefaultImplementation));
-
-public Type ImplementationType => implementationType;
-```
-
-`SerializableType` can also be used as an array or `List<T>` element. A persisted non-empty type
-identifier that no longer resolves throws `TypeLoadException` at the first read instead of silently
-becoming null.
-
-## Editor Project Settings
-
-Open `Edit > Project Settings > VMFramework` to configure the project-relative folders used for
-`GeneralSetting` assets and Game Prefab wrapper assets. The values are stored in
-`ProjectSettings/VMFrameworkEditorSettings.asset` and are available directly to editor tooling;
-they do not depend on VMFramework manager creation, global-setting loading, Addressables, or scene
-initialization.
-
-## Game Editor Tag Filtering
-
-Use **Tags: All** above the menu tree's text search to select registered Game Tag IDs, then confirm
-the selection. **All** requires every selected tag on the same Game Prefab; **Any** requires at least
-one. The selector uses the current Game Tag registry, not a separate list of item categories.
-
-Filtering reads the real configs in single/multiple Game Prefab wrappers. It preserves the ancestors
-of matching entries but does not include unrelated siblings. **Clear** restores all entries; the
-existing text search continues to apply. Filter selections belong to each Game Editor window and
-do not modify Game Prefab assets or runtime tags.
-
-Every Game Tag field, including entries in tag collections, also has a **funnel** button on its
-right. Click it to open/focus Game Editor, replace the selected tags with that exact tag, clear
-the old text search, and expand the matching branches. The adjacent magnifier still opens the
-Game Tag settings. The funnel is disabled for empty or mixed-value fields. Editor integrations
-can apply the same query with `GameEditor.FilterByGameTag(tagId)` on their target window.
-
-## Editor Maintenance
-
-Framework maintenance commands are available from the Unity menu:
-
-- `VMFramework > Global Settings`: check, locate, create, move, and address settings.
-- `VMFramework > Game Prefabs Tools`: collect providers, remove empty wrappers, and move wrappers to
-  the configured folder.
-
-Projects upgrading from the legacy `EditorSettingFile` should copy any non-default folder paths into
-Project Settings, then remove the old `EditorSettingFile.asset`, its Addressables entry, and the
-`EditorSetting` scene component. Those legacy objects are no longer configuration authorities.
-
-## Common Presets
-
-Common Preset runtime types, Odin drawers, registration, and Project Settings ownership now live in
-the independent `com.vm233.common-preset` package. VMFramework retains only its
-`PriorityDefinesPreset` declaration and consumes the package API.
-
-Projects upgrading from VMFramework 2.x should install VM Common Preset and VMFramework 3.x in the
-same Package Manager resolve. Configure existing preset asset references directly in
-`ProjectSettings/VMCommonPresetSettings.asset` through `Edit > Project Settings > VM Common Preset`;
-the legacy VMFramework `CommonPresetGeneralSetting` asset is no longer an authority.
-
-Game Editor displays a virtual `Common Presets` branch under `Core Runtime`. Its children mirror the
-ordered Project Settings list and open the concrete preset assets; neither the branch nor its items
-are serialized into `CoreSettingFile`.
-
-## Logic Tick Simulation Phases
-
-`LogicTickManager` publishes one ordered deterministic step:
-
-1. `OnPreTick`
-2. `OnTick`
-3. the current `OnNextTick` snapshot
-4. `OnPreSimulationTick`
-5. `OnSimulationTick`
-6. `OnPostSimulationTick`
-7. `OnPostTick`
-
-Simulation command producers should use `OnPreSimulationTick`, the single simulation owner should
-use `OnSimulationTick`, and achieved-state or collision observers should use
-`OnPostSimulationTick`. Actions registered from simulation callbacks remain queued until the next
-logic tick.
-
-Use `TickDeltaTime` for per-step simulation math. It remains the immutable admitted duration
-throughout the current tick even if a callback changes `TickGap`; outside a tick it reports the
-active gap for the next admission. Use `TickInterpolationAlpha` for presentation interpolation.
-`AdvanceTime` is available to deterministic clock owners and tests; it uses the active `TickGap`
-configured through `SetTickGap`.
-
-## SlotVisualElement
-
-`SlotVisualElement` is a native boolean field. Use its `value`, `SetValueWithoutNotify`, and
-`ChangeEvent<bool>` contract to own selection state. USS can style the slot directly with
-`.slot:checked` and `.slot:active`; consumer projects decide what the boolean state means.
-
-## State Clone Contexts
-
-`StateCloneContext` is an immutable, allocation-free tag set passed through `IStateCloner` and
-`IStateCloneable`. Each module owns its clone semantics by registering tags once in static fields:
-
-```csharp
-public static readonly StateCloneTag CustomBehavior = StateCloneTag.Create();
-```
-
-Root callers can build a context from stack memory:
-
-```csharp
-Span<StateCloneTag> tags = stackalloc[] { CustomBehavior };
-var context = new StateCloneContext(tags);
-var clone = source.GetClone(context);
-```
-
-Nested producers use `context.WithTag(tag)`; consumers use `context.HasTag(tag)`. VMFramework
-defines only `StateCloneTags.OwnerStateIncluded`, which its Container clone path adds when cloning
-items together with their owner state. Projects may define their own tags without changing
-VMFramework. Tags are process-local, must not be serialized, and are limited to 64 registrations.
-Use `StateCloneContext.Empty` when a root clone has no tags.
-
-Projects migrating from 1.x must replace `StateCloneHint` parameters with `StateCloneContext`,
-replace `isNested = false` roots with `StateCloneContext.Empty`, and replace nested boolean
-mutation with explicit `WithTag` production and `HasTag` consumption.
-
-## Notes
-
-- This repository is now a Unity Package Manager package root, not a full Unity project.
-- `.meta` files are kept so Unity asset GUID references survive the move from `Assets/VMFramework` to a Git package.
-- `JSONConverters` was removed from VMFramework; framework code no longer depends on `JSONConverterExt`.
+See [CHANGELOG.md](CHANGELOG.md) for version-specific behavior, migrations, and breaking changes.
+The package is licensed under [GPL-3.0-or-later](LICENSE).

@@ -4,6 +4,16 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.0.3] - 2026-09-20
+
+### Documentation
+
+- Rewrite the README around the stable package installation, dependency,
+  layout, project setup, and validation contracts.
+- Remove version-specific behavior, implementation details, API examples,
+  and migration instructions from the README; those remain in the changelog
+  and authoritative code.
+
 ## [9.0.2] - 2026-09-19
 
 ### Fixed
