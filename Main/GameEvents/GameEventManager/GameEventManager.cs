@@ -13,6 +13,8 @@ namespace VMFramework.GameEvents
     [ManagerCreationProvider(ManagerType.EventCore)]
     public partial class GameEventManager : ManagerBehaviour<GameEventManager>
     {
+        internal static bool IsRecyclingRegisteredEvents { get; private set; }
+
         public event Action<IGameEvent> OnGameEventRegistered;
         public event Action<IGameEvent> OnGameEventUnregistered;
 
@@ -35,9 +37,18 @@ namespace VMFramework.GameEvents
         {
             if (recycle)
             {
-                foreach (var gameEvent in allGameEvents.Values)
+                IsRecyclingRegisteredEvents = true;
+                try
                 {
-                    GameItemManager.Instance.Return(gameEvent);
+                    foreach (var gameEvent in allGameEvents.Values)
+                    {
+                        gameEvent.IsEnabled.OnDirty -= OnEnableChanged;
+                        GameItemManager.Instance.Return(gameEvent);
+                    }
+                }
+                finally
+                {
+                    IsRecyclingRegisteredEvents = false;
                 }
             }
 

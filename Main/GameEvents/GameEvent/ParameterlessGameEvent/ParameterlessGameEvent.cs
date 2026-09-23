@@ -28,7 +28,12 @@ namespace VMFramework.GameEvents
             base.OnCreate();
 
             isEnabledProperty.SetOwner(this);
-            
+        }
+
+        protected override void OnGet()
+        {
+            base.OnGet();
+
             if (IsDebugging)
             {
                 AddCallback(DebugLog, PriorityDefines.SUPER);
@@ -55,10 +60,12 @@ namespace VMFramework.GameEvents
                 }
             }
 
-            if (hasExtraCallbacks)
+            if (hasExtraCallbacks && GameEventManager.IsRecyclingRegisteredEvents == false)
             {
                 UnityEngine.Debug.LogWarning($"{this} has extra callbacks. Callbacks Count : {callbacks.Count}");
             }
+
+            Reset();
         }
 
         #endregion
@@ -85,6 +92,7 @@ namespace VMFramework.GameEvents
         {
             callbacks.Clear();
             isEnabledProperty.Clear();
+            OnCheckValid = null;
         }
 
         #region Callbacks
