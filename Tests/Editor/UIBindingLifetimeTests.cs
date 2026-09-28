@@ -21,7 +21,7 @@ namespace VMFramework.Editor.Tests
         {
             host = new GameObject("UI Binding Lifetime Test");
             previousPanelManager = UIPanelManager.Instance;
-            host.AddComponent<UIPanelManager>();
+            UIPanelManager.Instance = host.AddComponent<UIPanelManager>();
             bindings = host.AddComponent<BindVisualElementsManager>();
         }
 
@@ -135,7 +135,7 @@ namespace VMFramework.Editor.Tests
 
         [TestCase(false)]
         [TestCase(true)]
-        public void NativePanelDestruction_RetiresExternalSubscriptionsExactlyOnce(bool clearFirst)
+        public void PanelRetirementEntries_RetireExternalSubscriptionsExactlyOnce(bool clearFirst)
         {
             var source = new LifetimeEventSource();
             for (var generation = 0; generation < 2; generation++)
@@ -150,6 +150,8 @@ namespace VMFramework.Editor.Tests
                 source.Publish();
                 Assert.That(modifier.Received, Is.EqualTo(1));
                 if (clearFirst) ((IPoolItem)panel).OnClear();
+                typeof(UIPanel).GetMethod("OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(panel, null);
                 Object.DestroyImmediate(panelHost);
                 source.Publish();
                 Assert.That(modifier.Received, Is.EqualTo(1));

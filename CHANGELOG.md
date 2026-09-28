@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.0.10] - 2026-09-29
+
+### Fixed
+
+- Test pool-clear and native-destruction retirement entries directly in Edit Mode,
+  where runtime Awake/OnDestroy messages are not dispatched, and supply the fixture's
+  panel manager explicitly. Real Play Mode shutdown remains an integration check.
+
 ## [9.0.9] - 2026-09-29
 
 ### Fixed
