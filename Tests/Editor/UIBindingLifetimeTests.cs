@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -140,12 +141,12 @@ namespace VMFramework.Editor.Tests
             for (var generation = 0; generation < 2; generation++)
             {
                 var panelHost = new GameObject("Panel Native Lifetime Test");
-                var panel = panelHost.AddComponent<NativeLifetimePanel>();
+                var panel = panelHost.AddComponent<UIPanel>();
                 typeof(ControllerGameItem).GetProperty("GamePrefab", BindingFlags.Instance | BindingFlags.NonPublic)
                     .SetValue(panel, new UIPanelConfig { id = "native_lifetime_ui", isUnique = false });
-                var modifier = panelHost.AddComponent<ExternalEventModifier>();
-                modifier.Source = source;
-                panel.InitializeModifier(modifier);
+                var modifier = new ExternalEventModifier(panelHost, source);
+                ((ICollection<IPanelModifier>)panel.Modifiers).Add(modifier);
+                modifier.Initialize(panel, null);
                 source.Publish();
                 Assert.That(modifier.Received, Is.EqualTo(1));
                 if (clearFirst) ((IPoolItem)panel).OnClear();

@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.0.9] - 2026-09-29
+
+### Fixed
+
+- Exercise native destruction with the production UIPanel and an interface-level
+  subscription fixture; Editor-only test components cannot be attached as runtime scripts.
+
 ## [9.0.8] - 2026-09-29
 
 ### Fixed
