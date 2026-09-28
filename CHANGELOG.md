@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.0.6] - 2026-09-29
+
+### Fixed
+
+- Reference Unity Resource Manager from the Editor test assembly so locale lifecycle
+  regression tests can complete Localization initialization before changing languages.
+
 ## [9.0.5] - 2026-09-29
 
 ### Fixed
