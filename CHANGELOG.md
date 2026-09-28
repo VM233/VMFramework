@@ -4,6 +4,17 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.0.7] - 2026-09-29
+
+### Fixed
+
+- Retire both directions of visual-element bindings on removal and replacement,
+  and release binding maps when their panel modifiers deinitialize.
+- Deinitialize panel modifiers on native GameObject destruction as well as pool
+  clear, releasing external subscriptions when Play Mode exits without domain reload.
+- Cover reciprocal lookups, replacement collisions, repeated entry generation,
+  independent bind names and two native panel lifetimes in focused Editor tests.
+
 ## [9.0.6] - 2026-09-29
 
 ### Fixed

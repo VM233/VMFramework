@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using UnityEngine.UIElements;
@@ -38,21 +39,17 @@ namespace VMFramework.UI
 
             if (bindElements.ContainsKey(bindObject))
             {
-                UnityEngine.Debug.LogWarning($"The bind object {bindObject} is already bound to a visual element. Overwriting.",
-                    this);
+                Remove(bindName, bindObject);
             }
-
-            bindElements[bindObject] = visualElement;
 
             var bindObjects = bindObjectsLookup.GetOrCreate(bindName);
 
-            if (bindObjects.ContainsKey(visualElement))
+            if (bindObjects.TryGetValue(visualElement, out var previousObject))
             {
-                UnityEngine.Debug.LogWarning(
-                    $"The {visualElement.GetType().Name} {visualElement.name} " +
-                    $"is already bound to a bind object. Overwriting.", this);
+                Remove(bindName, previousObject);
             }
 
+            bindElements[bindObject] = visualElement;
             bindObjects[visualElement] = bindObject;
 
             OnBindVisualElementChanged?.Invoke(bindName, bindObject, visualElement, added: true);
@@ -85,14 +82,21 @@ namespace VMFramework.UI
                 return false;
             }
 
-            if (bindElementsLookup.TryGetValue(bindName, out var bindObjects))
+            if (bindObjectsLookup[bindName].Remove(visualElement) == false)
             {
-                bindObjects.Remove(visualElement);
+                throw new InvalidOperationException($"Binding '{bindName}' has no reciprocal visual-element registration.");
             }
 
             OnBindVisualElementChanged?.Invoke(bindName, bindObject, visualElement, added: false);
             
             return true;
+        }
+
+        protected override void OnDeinitialize()
+        {
+            bindElementsLookup.Clear();
+            bindObjectsLookup.Clear();
+            base.OnDeinitialize();
         }
 
         public virtual bool TryGetVisualElement(string bindName, object bindObject, out VisualElement visualElement)

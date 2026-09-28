@@ -7,7 +7,7 @@ using VMFramework.Timers;
 
 namespace VMFramework.UI
 {
-    public partial class UIPanel : ControllerGameItem, IUIPanel
+    public class UIPanel : ControllerGameItem, IUIPanel
     {
         [TitleGroup(ComponentNames.RUNTIME)]
         [ShowInInspector]
@@ -88,19 +88,25 @@ namespace VMFramework.UI
                 closableCheckAdded = false;
             }
 
-            if (modifiers.Count > 0)
-            {
-                foreach (var modifier in modifiers)
-                {
-                    modifier.Deinitialize();
-                }
-                
-                modifiers.Clear();
-            }
+            DeinitializeModifiers();
             
             UIPanelManager.Instance.Unregister(this);
             
             OnDestruct?.Invoke(this);
+        }
+
+        protected virtual void OnDestroy()
+        {
+            DeinitializeModifiers();
+        }
+
+        private void DeinitializeModifiers()
+        {
+            foreach (var modifier in modifiers)
+            {
+                modifier.Deinitialize();
+            }
+            modifiers.Clear();
         }
 
         #endregion
@@ -244,5 +250,19 @@ namespace VMFramework.UI
 
             OnSetEnabled();
         }
+
+#if UNITY_EDITOR
+        [TitleGroup(ComponentNames.RUNTIME)]
+        [Button]
+        private void _Toggle() => this.Toggle();
+
+        [TitleGroup(ComponentNames.RUNTIME)]
+        [Button]
+        private void _Open() => this.Open(null);
+
+        [TitleGroup(ComponentNames.RUNTIME)]
+        [Button]
+        private void _Close() => this.Close();
+#endif
     }
 }
