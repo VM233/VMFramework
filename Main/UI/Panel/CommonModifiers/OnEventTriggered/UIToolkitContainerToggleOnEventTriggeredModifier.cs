@@ -27,12 +27,22 @@ namespace VMFramework.UI
         [ShowInInspector]
         protected readonly List<VisualElement> containers = new();
 
+        private readonly List<IReadOnlyParameterlessGameEvent> subscribedEvents = new();
+
         protected override void OnInitialize()
         {
             base.OnInitialize();
 
             Panel.OnOpen += OnOpen;
             Panel.OnPostClose += OnClose;
+        }
+
+        protected override void OnDeinitialize()
+        {
+            Panel.OnOpen -= OnOpen;
+            Panel.OnPostClose -= OnClose;
+            RetireOpenLifetime();
+            base.OnDeinitialize();
         }
 
         protected virtual void OnOpen(IUIPanel panel)
@@ -46,16 +56,25 @@ namespace VMFramework.UI
 
             foreach (var gameEventID in containerToggleGameEventIDs)
             {
-                GameEventManager.Instance.AddCallback(gameEventID, OnContainerToggle, PriorityDefines.TINY);
+                var gameEvent = GameEventManager.Instance.GetGameEventStrictly<IReadOnlyParameterlessGameEvent>(gameEventID);
+                gameEvent.AddCallback(OnContainerToggle, PriorityDefines.TINY);
+                subscribedEvents.Add(gameEvent);
             }
         }
 
         protected virtual void OnClose(IUIPanel panel)
         {
-            foreach (var gameEventID in containerToggleGameEventIDs)
+            RetireOpenLifetime();
+        }
+
+        private void RetireOpenLifetime()
+        {
+            foreach (var gameEvent in subscribedEvents)
             {
-                GameEventManager.Instance.RemoveCallback(gameEventID, OnContainerToggle);
+                gameEvent.RemoveCallback(OnContainerToggle);
             }
+            subscribedEvents.Clear();
+            containers.Clear();
         }
         
         protected virtual void OnContainerToggle()

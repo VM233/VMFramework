@@ -22,13 +22,17 @@ namespace VMFramework.UI
         [DisallowDuplicateElements]
         public List<string> activeProceduresID = new();
 
+        private readonly List<IReadOnlyParameterlessGameEvent> subscribedEvents = new();
+
         protected override void OnInitialize()
         {
             base.OnInitialize();
 
             foreach (var gameEventID in uiToggleGameEventIDs)
             {
-                GameEventManager.Instance.AddCallback(gameEventID, ToggleConditional, PriorityDefines.TINY);
+                var gameEvent = GameEventManager.Instance.GetGameEventStrictly<IReadOnlyParameterlessGameEvent>(gameEventID);
+                gameEvent.AddCallback(ToggleConditional, PriorityDefines.TINY);
+                subscribedEvents.Add(gameEvent);
             }
         }
 
@@ -36,10 +40,11 @@ namespace VMFramework.UI
         {
             base.OnDeinitialize();
             
-            foreach (var gameEventID in uiToggleGameEventIDs)
+            foreach (var gameEvent in subscribedEvents)
             {
-                GameEventManager.Instance.RemoveCallback(gameEventID, ToggleConditional);
+                gameEvent.RemoveCallback(ToggleConditional);
             }
+            subscribedEvents.Clear();
         }
 
         private void ToggleConditional()

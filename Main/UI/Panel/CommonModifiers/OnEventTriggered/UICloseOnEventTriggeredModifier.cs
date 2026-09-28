@@ -14,13 +14,17 @@ namespace VMFramework.UI
         [DisallowDuplicateElements]
         public List<string> uiCloseGameEventIDs = new();
 
+        private readonly List<IReadOnlyParameterlessGameEvent> subscribedEvents = new();
+
         protected override void OnInitialize()
         {
             base.OnInitialize();
             
             foreach (var gameEventID in uiCloseGameEventIDs)
             {
-                GameEventManager.Instance.AddCallback(gameEventID, Panel.Close, PriorityDefines.TINY);
+                var gameEvent = GameEventManager.Instance.GetGameEventStrictly<IReadOnlyParameterlessGameEvent>(gameEventID);
+                gameEvent.AddCallback(Panel.Close, PriorityDefines.TINY);
+                subscribedEvents.Add(gameEvent);
             }
         }
 
@@ -28,10 +32,11 @@ namespace VMFramework.UI
         {
             base.OnDeinitialize();
             
-            foreach (var gameEventID in uiCloseGameEventIDs)
+            foreach (var gameEvent in subscribedEvents)
             {
-                GameEventManager.Instance.RemoveCallback(gameEventID, Panel.Close);
+                gameEvent.RemoveCallback(Panel.Close);
             }
+            subscribedEvents.Clear();
         }
     }
 }

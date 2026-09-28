@@ -28,6 +28,8 @@ namespace VMFramework.UI
 
         protected readonly Dictionary<VisualElement, IToken> tokens = new();
 
+        private readonly List<IReadOnlyGameEvent> disabledEvents = new();
+
         protected override void OnInitialize()
         {
             base.OnInitialize();
@@ -39,6 +41,14 @@ namespace VMFramework.UI
             Panel.OnPostClose += OnPostClose;
         }
 
+        protected override void OnDeinitialize()
+        {
+            Panel.OnOpen -= OnOpen;
+            Panel.OnPostClose -= OnPostClose;
+            RetireOpenLifetime();
+            base.OnDeinitialize();
+        }
+
         protected virtual void OnOpen(IUIPanel panel)
         {
             if (gameEventsToDisable.IsNullOrEmpty())
@@ -48,6 +58,11 @@ namespace VMFramework.UI
 
             containers.Clear();
             containers.AddRange(containerPaths.MandatoryQuery(this.RootVisualElement(), nameof(containerPaths)));
+
+            foreach (var gameEventID in gameEventsToDisable)
+            {
+                disabledEvents.Add(GameEventManager.Instance.GetGameEventStrictly(gameEventID));
+            }
 
             tokens.Clear();
             foreach (var container in containers)
@@ -65,6 +80,11 @@ namespace VMFramework.UI
 
         protected virtual void OnPostClose(IUIPanel panel)
         {
+            RetireOpenLifetime();
+        }
+
+        private void RetireOpenLifetime()
+        {
             foreach (var container in containers)
             {
                 container.UnregisterCallback(onFocusInFunc);
@@ -75,8 +95,13 @@ namespace VMFramework.UI
 
             foreach (var token in tokens.Values)
             {
-                GameEventManager.Instance.Enable(gameEventsToDisable, token);
+                foreach (var gameEvent in disabledEvents)
+                {
+                    gameEvent.IsEnabled.RemoveToken(token);
+                }
             }
+            tokens.Clear();
+            disabledEvents.Clear();
         }
 
         protected virtual void OnFocusInElement(FocusInEvent evt)
@@ -93,7 +118,10 @@ namespace VMFramework.UI
                 return;
             }
 
-            GameEventManager.Instance.Disable(gameEventsToDisable, token);
+            foreach (var gameEvent in disabledEvents)
+            {
+                gameEvent.IsEnabled.AddToken(token);
+            }
         }
 
         protected virtual void OnFocusOutElement(FocusOutEvent evt)
@@ -110,7 +138,10 @@ namespace VMFramework.UI
                 return;
             }
 
-            GameEventManager.Instance.Enable(gameEventsToDisable, token);
+            foreach (var gameEvent in disabledEvents)
+            {
+                gameEvent.IsEnabled.RemoveToken(token);
+            }
         }
     }
 }

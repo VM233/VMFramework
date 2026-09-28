@@ -4,6 +4,17 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.0.11] - 2026-09-29
+
+### Fixed
+
+- Retire UI callbacks and disable tokens through the exact event instances acquired
+  for that panel lifetime, including shutdown after the game-event registry is cleared.
+- Release container, focus and pointer event bindings on panel retirement, including
+  open panels that do not receive a normal close event.
+- Replace the incomplete native-entry fixture with event recycling, registry removal
+  and same-ID replacement cases. Native message delivery remains a production Play Mode check.
+
 ## [9.0.10] - 2026-09-29
 
 ### Fixed

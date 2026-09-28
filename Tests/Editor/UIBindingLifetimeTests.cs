@@ -4,6 +4,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.UIElements;
 using VMFramework.Core.Pools;
+using VMFramework.GameEvents;
 using VMFramework.GameLogicArchitecture;
 using VMFramework.UI;
 using Object = UnityEngine.Object;
@@ -15,6 +16,8 @@ namespace VMFramework.Editor.Tests
         private GameObject host;
         private BindVisualElementsManager bindings;
         private UIPanelManager previousPanelManager;
+        private GameEventManager previousEventManager;
+        private GameEventManager events;
 
         [SetUp]
         public void SetUp()
@@ -22,6 +25,9 @@ namespace VMFramework.Editor.Tests
             host = new GameObject("UI Binding Lifetime Test");
             previousPanelManager = UIPanelManager.Instance;
             UIPanelManager.Instance = host.AddComponent<UIPanelManager>();
+            previousEventManager = GameEventManager.Instance;
+            events = host.AddComponent<GameEventManager>();
+            GameEventManager.Instance = events;
             bindings = host.AddComponent<BindVisualElementsManager>();
         }
 
@@ -30,6 +36,7 @@ namespace VMFramework.Editor.Tests
         {
             Object.DestroyImmediate(host);
             UIPanelManager.Instance = previousPanelManager;
+            GameEventManager.Instance = previousEventManager;
         }
 
         [Test]
@@ -135,7 +142,7 @@ namespace VMFramework.Editor.Tests
 
         [TestCase(false)]
         [TestCase(true)]
-        public void PanelRetirementEntries_RetireExternalSubscriptionsExactlyOnce(bool clearFirst)
+        public void PanelRetirement_AfterEventRecycling_ReleasesExternalSubscriptionsExactlyOnce(bool clearFirst)
         {
             var source = new LifetimeEventSource();
             for (var generation = 0; generation < 2; generation++)
@@ -146,9 +153,17 @@ namespace VMFramework.Editor.Tests
                     .SetValue(panel, new UIPanelConfig { id = "native_lifetime_ui", isUnique = false });
                 var modifier = new ExternalEventModifier(panelHost, source);
                 ((ICollection<IPanelModifier>)panel.Modifiers).Add(modifier);
+                var gameEvent = CreateEvent("native_retirement_event");
+                events.Register(gameEvent);
+                var close = panelHost.AddComponent<UICloseOnEventTriggeredModifier>();
+                close.uiCloseGameEventIDs.Add(gameEvent.id);
+                ((ICollection<IPanelModifier>)panel.Modifiers).Add(close);
+                close.Initialize(panel, null);
                 modifier.Initialize(panel, null);
                 source.Publish();
                 Assert.That(modifier.Received, Is.EqualTo(1));
+                events.Unregister(gameEvent);
+                gameEvent.Reset();
                 if (clearFirst) ((IPoolItem)panel).OnClear();
                 typeof(UIPanel).GetMethod("OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic)
                     .Invoke(panel, null);
@@ -158,6 +173,49 @@ namespace VMFramework.Editor.Tests
                 Assert.That(modifier.Deinitializations, Is.EqualTo(1));
                 Assert.That(modifier.IsInitialized, Is.False);
             }
+        }
+
+        [TestCase(typeof(UICloseOnEventTriggeredModifier), "uiCloseGameEventIDs", false)]
+        [TestCase(typeof(UICloseOnEventTriggeredModifier), "uiCloseGameEventIDs", true)]
+        [TestCase(typeof(UIToggleOnEventTriggeredModifier), "uiToggleGameEventIDs", false)]
+        [TestCase(typeof(UIToggleOnEventTriggeredModifier), "uiToggleGameEventIDs", true)]
+        public void EventRetirement_RetiresTheOriginalEventAfterRegistryRemovalOrReplacement(
+            System.Type modifierType, string configurationField, bool replace)
+        {
+            var panel = host.AddComponent<UIPanel>();
+            var original = CreateEvent("retirement_identity_event");
+            events.Register(original);
+            var modifier = (PanelModifier)host.AddComponent(modifierType);
+            ((List<string>)modifierType.GetField(configurationField).GetValue(modifier)).Add(original.id);
+            modifier.Initialize(panel, null);
+            Assert.That(CallbackCount(original), Is.EqualTo(1));
+            events.Unregister(original);
+            var replacement = CreateEvent(original.id);
+            System.Action independentCallback = () => { };
+            replacement.AddCallback(independentCallback, 0);
+            if (replace) events.Register(replacement);
+            modifier.Deinitialize();
+            Assert.That(CallbackCount(original), Is.Zero,
+                "Retirement must release the acquired event even after its ID leaves the registry.");
+            Assert.That(CallbackCount(replacement), Is.EqualTo(1),
+                "The current registry entry belongs to a different subscription lifetime.");
+            if (replace) events.Unregister(replacement);
+        }
+
+        private static ParameterlessGameEvent CreateEvent(string id)
+        {
+            var gameEvent = new ParameterlessGameEvent();
+            typeof(GameItem).GetProperty("GamePrefab", BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(gameEvent, new GameEventConfig { id = id });
+            typeof(ParameterlessGameEvent).GetMethod("OnCreate", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(gameEvent, null);
+            return gameEvent;
+        }
+
+        private static int CallbackCount(ParameterlessGameEvent gameEvent)
+        {
+            return ((PriorityEvents<System.Action>)typeof(ParameterlessGameEvent)
+                .GetField("callbacks", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(gameEvent)).Count;
         }
     }
 
