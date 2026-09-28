@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.0.12] - 2026-09-29
+
+### Fixed
+
+- Mark 36 existing folder meta records as directory assets, preserving all GUIDs.
+  This closes the resolved-package folder ownership findings without changing
+  runtime code or asset references.
+
 ## [9.0.11] - 2026-09-29
 
 ### Fixed
