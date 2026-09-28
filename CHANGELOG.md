@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.0.8] - 2026-09-29
+
+### Fixed
+
+- Keep UI lifetime regression support components in individual scripts so the
+  focused fixture satisfies the package's one-top-level-type source policy.
+
 ## [9.0.7] - 2026-09-29
 
 ### Fixed
