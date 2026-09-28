@@ -42,6 +42,13 @@ namespace VMFramework.UI
 
         protected virtual void OnUIPanelOpen(IUIPanel uiPanelController)
         {
+            if (uiPanelController is ILocalizedPanelModifier localizedPanelController)
+            {
+                localizedPanelController.OnCurrentLanguageChanged(LocalizationSettings.SelectedLocale);
+                LocalizationSettings.SelectedLocaleChanged += localizedPanelController.OnCurrentLanguageChanged;
+                localizedModifiers.Add(localizedPanelController);
+            }
+
             foreach (var modifier in uiPanelController.Modifiers)
             {
                 if (modifier is ILocalizedPanelModifier localizedPanelModifier)
@@ -57,6 +64,12 @@ namespace VMFramework.UI
 
         protected virtual void OnUIPanelClose(IUIPanel uiPanelController)
         {
+            if (uiPanelController is ILocalizedPanelModifier localizedPanelController)
+            {
+                LocalizationSettings.SelectedLocaleChanged -= localizedPanelController.OnCurrentLanguageChanged;
+                localizedModifiers.Remove(localizedPanelController);
+            }
+
             foreach (var modifier in uiPanelController.Modifiers)
             {
                 if (modifier is ILocalizedPanelModifier localizedPanelModifier)
@@ -70,6 +83,12 @@ namespace VMFramework.UI
 
         protected virtual void OnUIPanelDestruct(IUIPanel uiPanelController)
         {
+            if (uiPanelController is ILocalizedPanelModifier localizedPanelController)
+            {
+                LocalizationSettings.SelectedLocaleChanged -= localizedPanelController.OnCurrentLanguageChanged;
+                localizedModifiers.Remove(localizedPanelController);
+            }
+
             foreach (var modifier in uiPanelController.Modifiers)
             {
                 if (modifier is ILocalizedPanelModifier localizedPanelModifier)

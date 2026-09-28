@@ -2,6 +2,7 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
 using UnityEngine.UIElements;
 using VMFramework.GameLogicArchitecture;
 using VMFramework.UI;
@@ -66,6 +67,95 @@ namespace VMFramework.Editor.Tests
                 Object.DestroyImmediate(secondLocale);
                 Object.DestroyImmediate(unconfiguredLocale);
             }
+        }
+
+        [TestCase("OnUIPanelClose")]
+        [TestCase("OnUIPanelDestruct")]
+        [TestCase("OnDestroy")]
+        public void LanguageManager_RefreshesPanelControllerForItsOpenLifetime(string endMethod)
+        {
+            var globalProperty = typeof(GlobalSetting<UISetting, UISettingFile>)
+                .GetProperty(nameof(UISetting.GlobalSettingFile));
+            var previousGlobal = UISetting.GlobalSettingFile;
+            var previousLocalization = LocalizationSettings.Instance;
+            var localization = ScriptableObject.CreateInstance<LocalizationSettings>();
+            var global = ScriptableObject.CreateInstance<UISettingFile>();
+            var setting = ScriptableObject.CreateInstance<UIPanelGeneralSetting>();
+            var firstStyle = ScriptableObject.CreateInstance<StyleSheet>();
+            var secondStyle = ScriptableObject.CreateInstance<StyleSheet>();
+            var firstLocale = Locale.CreateLocale("en-US");
+            var secondLocale = Locale.CreateLocale("ja-JP");
+            var host = new GameObject("Localized Controller Test");
+            host.SetActive(false);
+            LocalizedUIPanelManager manager = null;
+            try
+            {
+                global.uiPanelGeneralSetting = setting;
+                globalProperty.SetValue(null, global);
+                setting.enableLanguageConfigs = true;
+                setting.languageConfigs.Add(Language("en-US", firstStyle));
+                setting.languageConfigs.Add(Language("ja-JP", secondStyle));
+                LocalizationSettings.Instance = localization;
+                var locales = new LocalesProvider();
+                locales.AddLocale(firstLocale);
+                locales.AddLocale(secondLocale);
+                LocalizationSettings.AvailableLocales = locales;
+                LocalizationSettings.SelectedLocale = firstLocale;
+                LocalizationSettings.InitializationOperation.WaitForCompletion();
+
+                var panel = host.AddComponent<UIToolkitPanel>();
+                var root = new VisualElement();
+                typeof(UIToolkitPanel).GetProperty(nameof(UIToolkitPanel.RootVisualElement))
+                    .SetValue(panel, root);
+                manager = host.AddComponent<LocalizedUIPanelManager>();
+
+                InvokeLanguageManager(manager, "OnUIPanelOpen", panel);
+                Assert.That(root.styleSheets.Contains(firstStyle), Is.True,
+                    "Panel controllers must receive the opening locale without being panel modifiers.");
+                LocalizationSettings.SelectedLocale = secondLocale;
+                Assert.That(root.styleSheets.Contains(firstStyle), Is.False);
+                Assert.That(root.styleSheets.Contains(secondStyle), Is.True);
+
+                if (endMethod == "OnDestroy")
+                    InvokeLanguageManager(manager, endMethod);
+                else
+                    InvokeLanguageManager(manager, endMethod, panel);
+                LocalizationSettings.SelectedLocale = firstLocale;
+                Assert.That(root.styleSheets.Contains(secondStyle), Is.True,
+                    "Retired panel controllers must stop receiving locale changes.");
+
+                if (endMethod == "OnUIPanelClose")
+                {
+                    InvokeLanguageManager(manager, "OnUIPanelOpen", panel);
+                    Assert.That(root.styleSheets.Contains(firstStyle), Is.True);
+                    Assert.That(root.styleSheets.count, Is.EqualTo(1));
+                    LocalizationSettings.SelectedLocale = secondLocale;
+                    Assert.That(root.styleSheets.Contains(secondStyle), Is.True);
+                    Assert.That(root.styleSheets.count, Is.EqualTo(1));
+                }
+            }
+            finally
+            {
+                if (manager != null)
+                    InvokeLanguageManager(manager, "OnDestroy");
+                LocalizationSettings.Instance = previousLocalization;
+                globalProperty.SetValue(null, previousGlobal);
+                Object.DestroyImmediate(host);
+                Object.DestroyImmediate(localization);
+                Object.DestroyImmediate(global);
+                Object.DestroyImmediate(setting);
+                Object.DestroyImmediate(firstStyle);
+                Object.DestroyImmediate(secondStyle);
+                Object.DestroyImmediate(firstLocale);
+                Object.DestroyImmediate(secondLocale);
+            }
+        }
+
+        private static void InvokeLanguageManager(LocalizedUIPanelManager manager, string method,
+            params object[] arguments)
+        {
+            typeof(LocalizedUIPanelManager).GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(manager, arguments);
         }
 
         private static UIPanelLanguageConfig Language(string localeCode, StyleSheet style)

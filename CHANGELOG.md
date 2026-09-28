@@ -4,6 +4,15 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.0.5] - 2026-09-29
+
+### Fixed
+
+- Notify localized panel controllers as well as their child modifiers when a panel
+  opens or its locale changes, so configured language styles apply to UI Toolkit panels.
+- Unsubscribe panel controllers when panels close, are destroyed, or the localization
+  manager shuts down; cover these lifetimes and reopening in Editor regression tests.
+
 ## [9.0.4] - 2026-09-23
 
 ### Fixed
