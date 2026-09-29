@@ -34,6 +34,10 @@ namespace VMFramework.GameLogicArchitecture
         protected readonly Dictionary<string, CreatablePoolItemsPool<IGameItem, string>> pools = new();
         protected Func<string, IGameItem> createGameItemHandler;
 
+        private readonly GameItemMaterialization materialization = new();
+
+        public GameItemInitializationKind CurrentInitializationKind => materialization.CurrentKind;
+
         protected override void Awake()
         {
             base.Awake();
@@ -62,29 +66,28 @@ namespace VMFramework.GameLogicArchitecture
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public IGameItem Get(string id)
+        private IGameItem Rent(string id, GameItemInitializationKind kind)
         {
             if (pools.TryGetValue(id, out var pool) == false)
             {
                 pool = CreatePool(id);
             }
             
-            var gameItem = pool.Get(out _);
-            
+            return materialization.Rent(pool, kind);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public IGameItem Get(string id)
+        {
+            var gameItem = Rent(id, GameItemInitializationKind.AuthoredDefaults);
             OnGameItemCreated?.Invoke(gameItem);
-            
             return gameItem;
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public TGameItem Get<TGameItem>(string id) where TGameItem : IGameItem
         {
-            if (pools.TryGetValue(id, out var pool) == false)
-            {
-                pool = CreatePool(id);
-            }
-            
-            var gameItem = pool.Get(out _);
+            var gameItem = Rent(id, GameItemInitializationKind.AuthoredDefaults);
             
             OnGameItemCreated?.Invoke(gameItem);
 
@@ -94,6 +97,36 @@ namespace VMFramework.GameLogicArchitecture
             }
 
             throw new InvalidCastException($"GameItem {gameItem} is not of type {typeof(TGameItem)}");
+        }
+
+        public TGameItem Clone<TGameItem>(TGameItem source, StateCloneContext context)
+            where TGameItem : IGameItem
+        {
+            if (source == null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+
+            var rental = Rent(source.id, GameItemInitializationKind.ClonedState);
+            TGameItem clone;
+            try
+            {
+                clone = (TGameItem)rental;
+                if (clone.StateCloner == null)
+                {
+                    throw new InvalidOperationException($"GameItem {clone.id} has no state cloner.");
+                }
+
+                clone.StateCloner.CloneFrom(source.StateCloner, context);
+            }
+            catch
+            {
+                pools[rental.id].Return(rental);
+                throw;
+            }
+
+            OnGameItemCreated?.Invoke(clone);
+            return clone;
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -143,7 +176,7 @@ namespace VMFramework.GameLogicArchitecture
 
             for (int i = 0; i < count; i++)
             {
-                var gameItem = pool.Get(out _);
+                var gameItem = materialization.Rent(pool, GameItemInitializationKind.AuthoredDefaults);
                 
                 OnGameItemCreated?.Invoke(gameItem);
                 

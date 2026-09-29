@@ -4,6 +4,18 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.0] - 2026-09-30
+
+### Changed
+
+- Make GameItemManager the completed-clone producer and publish creation only
+  after source-state copying; return unpublished clones when copying fails.
+- Declare AuthoredDefaults or ClonedState during native rental initialization,
+  allowing owned-child providers to avoid constructing discarded defaults.
+- Restore nested initialization contexts on normal and exceptional exits.
+
+See `Documentation~/StateCloning.md` for the initialization contract.
+
 ## [9.0.12] - 2026-09-29
 
 ### Fixed

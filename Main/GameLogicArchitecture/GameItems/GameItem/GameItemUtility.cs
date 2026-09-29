@@ -1,5 +1,4 @@
-﻿using System;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 
 namespace VMFramework.GameLogicArchitecture
 {
@@ -22,23 +21,7 @@ namespace VMFramework.GameLogicArchitecture
         public static TGameItem GetClone<TGameItem>(this TGameItem gameItem, StateCloneContext context)
             where TGameItem : IGameItem
         {
-            if (gameItem == null)
-            {
-                throw new ArgumentNullException(nameof(gameItem));
-            }
-
-            var clone = GameItemManager.Instance.Get<TGameItem>(gameItem.id);
-
-            var stateCloner = clone.StateCloner;
-
-            if (stateCloner == null)
-            {
-                throw new ArgumentNullException($"{clone} does not have a {nameof(StateCloner)}.");
-            }
-
-            clone.StateCloner.CloneFrom(gameItem.StateCloner, context);
-
-            return clone;
+            return GameItemManager.Instance.Clone(gameItem, context);
         }
     }
 }
