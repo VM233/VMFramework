@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.1] - 2026-09-30
+
+### Fixed
+
+- Normalize the new materialization sources and meta records to the source
+  policy's single final newline and whitespace contract.
+
 ## [9.1.0] - 2026-09-30
 
 ### Changed
