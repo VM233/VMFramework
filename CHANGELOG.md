@@ -4,6 +4,16 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.5] - 2026-10-02
+
+### Added
+
+- Record the seven logic-tick callback phases in the native CPU Profiler, retaining
+  phase order and exception behavior without per-tick managed allocations.
+  This exposes cold-start and gameplay work previously combined in one tick sample.
+
+See `Documentation~/LogicTickProfiling.md` for timing ownership and cost bounds.
+
 ## [9.1.4] - 2026-10-01
 
 ### Fixed

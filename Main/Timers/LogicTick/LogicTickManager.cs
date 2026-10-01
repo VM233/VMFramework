@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
+using Unity.Profiling;
 using UnityEngine;
 using VMFramework.Procedure;
 
@@ -12,6 +13,14 @@ namespace VMFramework.Timers
     {
         public const int DEFAULT_TICKS_PER_SECOND = 30;
         public const double DEFAULT_TICK_GAP = 1.0 / DEFAULT_TICKS_PER_SECOND;
+
+        private static readonly ProfilerMarker PreTickMarker = new("LogicTick.PreTick");
+        private static readonly ProfilerMarker TickMarker = new("LogicTick.Tick");
+        private static readonly ProfilerMarker NextTickActionsMarker = new("LogicTick.NextTickActions");
+        private static readonly ProfilerMarker PreSimulationMarker = new("LogicTick.PreSimulation");
+        private static readonly ProfilerMarker SimulationMarker = new("LogicTick.Simulation");
+        private static readonly ProfilerMarker PostSimulationMarker = new("LogicTick.PostSimulation");
+        private static readonly ProfilerMarker PostTickMarker = new("LogicTick.PostTick");
 
         public static float CurrentTickDeltaTime =>
             Instance?.TickDeltaTime ?? (float)DEFAULT_TICK_GAP;
@@ -113,29 +122,32 @@ namespace VMFramework.Timers
             {
                 Tick++;
 
-                OnPreTick?.Invoke();
+                using (PreTickMarker.Auto()) OnPreTick?.Invoke();
 
-                OnTick?.Invoke();
+                using (TickMarker.Auto()) OnTick?.Invoke();
 
-                if (nextTickActions.Count > 0)
+                using (NextTickActionsMarker.Auto())
                 {
-                    nextTickActionsTemp.Clear();
-                    nextTickActionsTemp.AddRange(nextTickActions);
-                    nextTickActions.Clear();
-
-                    foreach (var action in nextTickActionsTemp)
+                    if (nextTickActions.Count > 0)
                     {
-                        action.Invoke();
+                        nextTickActionsTemp.Clear();
+                        nextTickActionsTemp.AddRange(nextTickActions);
+                        nextTickActions.Clear();
+
+                        foreach (var action in nextTickActionsTemp)
+                        {
+                            action.Invoke();
+                        }
                     }
                 }
 
-                OnPreSimulationTick?.Invoke();
+                using (PreSimulationMarker.Auto()) OnPreSimulationTick?.Invoke();
 
-                OnSimulationTick?.Invoke();
+                using (SimulationMarker.Auto()) OnSimulationTick?.Invoke();
 
-                OnPostSimulationTick?.Invoke();
+                using (PostSimulationMarker.Auto()) OnPostSimulationTick?.Invoke();
 
-                OnPostTick?.Invoke();
+                using (PostTickMarker.Auto()) OnPostTick?.Invoke();
             }
             finally
             {

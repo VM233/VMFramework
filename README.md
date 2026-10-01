@@ -63,4 +63,5 @@ Keep package `.meta` files intact so Unity asset GUID references remain stable.
 See [CHANGELOG.md](CHANGELOG.md) for version-specific behavior, migrations, and breaking changes.
 See [State cloning](Documentation~/StateCloning.md) for native initialization and clone publication.
 See [Priority events](Documentation~/PriorityEvents.md) for callback registration and publication.
+See [Logic tick profiling](Documentation~/LogicTickProfiling.md) for native phase timing.
 The package is licensed under [GPL-3.0-or-later](LICENSE).
