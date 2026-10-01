@@ -4,6 +4,18 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.2] - 2026-10-01
+
+### Fixed
+
+- Avoid quadratic eager multicast-prefix allocation while registering priority
+  callbacks. Publish and cache balanced combined delegates after membership changes.
+- Remove the exact delegate registration when multicast invocation lists overlap,
+  preserving the remaining callbacks' priority and insertion order.
+- Reject invalid null registrations at their admission boundary.
+
+See `Documentation~/PriorityEvents.md` for ownership, view and snapshot semantics.
+
 ## [9.1.1] - 2026-09-30
 
 ### Fixed
