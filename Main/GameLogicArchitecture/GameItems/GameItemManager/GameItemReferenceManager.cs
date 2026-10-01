@@ -36,14 +36,26 @@ namespace VMFramework.GameLogicArchitecture
             }
 
             var gameItem = GameItemManager.Instance.Get(id);
-            if (gameItem.TryAsGameObject(out var gameItemObject))
+            try
             {
-                gameItemObject.transform.SetParent(transform);
-            }
+                if (gameItem.TryAsGameObject(out var gameItemObject))
+                {
+                    gameItemObject.transform.SetParent(transform);
+                }
 
-            OnInitialize?.Invoke(gameItem);
-            references.Add(id, gameItem);
-            return gameItem;
+                OnInitialize?.Invoke(gameItem);
+                if (gameItemObject != null)
+                {
+                    gameItemObject.SetActive(false);
+                }
+                references.Add(id, gameItem);
+                return gameItem;
+            }
+            catch
+            {
+                GameItemManager.Instance.Return(gameItem);
+                throw;
+            }
         }
     }
 }

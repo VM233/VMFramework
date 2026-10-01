@@ -19,3 +19,12 @@ the initialization kind outside native initialization or use it as a gameplay mo
 
 Cloning retains the original StateCloneContext tags and native owner adoption.
 It does not prewarm, postpone copying, reuse the source object or create a second pool.
+
+GameItemReferenceManager owns one initialized reference per ID for its lifetime.
+Initialization callbacks run before cache publication. Controller references are
+then made inactive as complete roots, which removes all their native physics and
+gameplay updates while preserving live data and identity. Managed references
+retain their normal data lifetime. Callback failure returns the unpublished
+rental and propagates the original error without publishing a cache entry.
+Ordinary Get and Clone rentals remain separate objects with their own activation;
+reference inactivity is not copied into their pool activation state.

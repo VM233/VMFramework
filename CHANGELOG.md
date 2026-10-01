@@ -4,6 +4,17 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.3] - 2026-10-01
+
+### Fixed
+
+- Publish inactive controller references after initialization so cached reference
+  objects cannot enter native physics or gameplay updates.
+- Return unpublished reference rentals when initialization fails, preserving the
+  original exception and leaving the cache empty.
+
+See `Documentation~/StateCloning.md` for reference and clone ownership.
+
 ## [9.1.2] - 2026-10-01
 
 ### Fixed
