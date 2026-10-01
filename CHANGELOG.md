@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.4] - 2026-10-01
+
+### Fixed
+
+- Exercise reference ownership with the real manager types in focused tests.
+  Remove fixture manager subclasses whose inherited creation metadata made them
+  eligible to replace production managers while the test assembly was loaded.
+
 ## [9.1.3] - 2026-10-01
 
 ### Fixed

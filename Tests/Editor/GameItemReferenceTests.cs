@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using VMFramework.GameLogicArchitecture;
@@ -17,26 +18,12 @@ namespace VMFramework.Tests
         private sealed class ManagedItem : GameItem { }
         private sealed class ControllerItem : ControllerGameItem { }
 
-        private sealed class RentalManager : GameItemManager
-        {
-            public void Initialize(Func<string, IGameItem> factory)
-            {
-                base.Awake();
-                createGameItemHandler = factory;
-            }
-        }
-
-        private sealed class ReferenceManager : GameItemReferenceManager
-        {
-            public void Initialize() { base.Awake(); }
-            public int PublishedCount => references.Count;
-        }
-
+        private const BindingFlags PRIVATE_INSTANCE = BindingFlags.Instance | BindingFlags.NonPublic;
         private readonly List<GameObject> objects = new();
         private IGameItemManager previousRentalManager;
         private GameItemReferenceManager previousReferenceManager;
-        private RentalManager rentals;
-        private ReferenceManager references;
+        private GameItemManager rentals;
+        private GameItemReferenceManager references;
         private string identity;
         private readonly Vector2 queryPosition = new(20000, 20000);
 
@@ -49,9 +36,9 @@ namespace VMFramework.Tests
             GameItemReferenceManager.Instance = null;
             identity = "reference_fixture_" + Guid.NewGuid().ToString("N");
             Assert.That(GamePrefabManager.RegisterGamePrefab(new ReferencePrefab(identity)), Is.True);
-            rentals = CreateObject("Reference Rental Manager").AddComponent<RentalManager>();
-            references = CreateObject("Reference Cache Manager").AddComponent<ReferenceManager>();
-            references.Initialize();
+            rentals = CreateObject("Reference Rental Manager").AddComponent<GameItemManager>();
+            references = CreateObject("Reference Cache Manager").AddComponent<GameItemReferenceManager>();
+            typeof(GameItemReferenceManager).GetMethod("Awake", PRIVATE_INSTANCE).Invoke(references, null);
         }
 
         [TearDown]
@@ -68,7 +55,7 @@ namespace VMFramework.Tests
         [Test]
         public void ControllerReferenceIsLiveCachedAndAbsentFromNativePhysics()
         {
-            rentals.Initialize(_ => CreateController());
+            InitializeRentals(_ => CreateController());
             int initialized = 0;
             references.OnInitialize += item =>
             {
@@ -87,7 +74,7 @@ namespace VMFramework.Tests
             Assert.That(Physics2D.OverlapBox(queryPosition, Vector2.one * 2, 0), Is.Null);
             Assert.That(references.Get(identity), Is.SameAs(reference));
             Assert.That(initialized, Is.EqualTo(1));
-            Assert.That(references.PublishedCount, Is.EqualTo(1));
+            Assert.That(PublishedCount, Is.EqualTo(1));
 
             var independentRental = rentals.Get<ControllerItem>(identity);
             Physics2D.SyncTransforms();
@@ -101,7 +88,7 @@ namespace VMFramework.Tests
         [Test]
         public void ManagedReferenceRetainsDataLifetimeAndCacheIdentity()
         {
-            rentals.Initialize(_ => new ManagedItem());
+            InitializeRentals(_ => new ManagedItem());
             int initialized = 0;
             references.OnInitialize += _ => initialized++;
             var reference = references.Get(identity);
@@ -109,7 +96,7 @@ namespace VMFramework.Tests
             Assert.That(reference.id, Is.EqualTo(identity));
             Assert.That(references.Get(identity), Is.SameAs(reference));
             Assert.That(initialized, Is.EqualTo(1));
-            Assert.That(references.PublishedCount, Is.EqualTo(1));
+            Assert.That(PublishedCount, Is.EqualTo(1));
         }
 
         [TestCase(true)]
@@ -117,13 +104,13 @@ namespace VMFramework.Tests
         public void InitializationFailureReturnsUnpublishedRental(bool controller)
         {
             IGameItem rental = null;
-            rentals.Initialize(_ => rental = controller ? CreateController() : new ManagedItem());
+            InitializeRentals(_ => rental = controller ? CreateController() : new ManagedItem());
             var failure = new InvalidOperationException("Reference initialization failed.");
             GameItemReferenceManager.InitializeHandler initialize = _ => throw failure;
             references.OnInitialize += initialize;
             Assert.That(Assert.Throws<InvalidOperationException>(() => references.Get(identity)),
                 Is.SameAs(failure));
-            Assert.That(references.PublishedCount, Is.Zero);
+            Assert.That(PublishedCount, Is.Zero);
             Assert.That(rental.IsDestroyed, Is.True);
             if (controller) Assert.That(((ControllerItem)rental).gameObject.activeSelf, Is.False);
 
@@ -131,8 +118,17 @@ namespace VMFramework.Tests
             var completed = references.Get(identity);
             Assert.That(completed, Is.SameAs(rental));
             Assert.That(completed.IsDestroyed, Is.False);
-            Assert.That(references.PublishedCount, Is.EqualTo(1));
+            Assert.That(PublishedCount, Is.EqualTo(1));
             if (controller) Assert.That(((ControllerItem)completed).gameObject.activeSelf, Is.False);
+        }
+
+        private int PublishedCount => ((Dictionary<string, IGameItem>)typeof(GameItemReferenceManager)
+            .GetField("references", PRIVATE_INSTANCE).GetValue(references)).Count;
+
+        private void InitializeRentals(Func<string, IGameItem> factory)
+        {
+            typeof(GameItemManager).GetMethod("Awake", PRIVATE_INSTANCE).Invoke(rentals, null);
+            typeof(GameItemManager).GetField("createGameItemHandler", PRIVATE_INSTANCE).SetValue(rentals, factory);
         }
 
         private ControllerItem CreateController()
