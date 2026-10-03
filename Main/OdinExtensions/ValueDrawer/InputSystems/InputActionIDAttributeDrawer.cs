@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR && ODIN_INSPECTOR && ENABLE_INPUT_SYSTEM
+#if UNITY_EDITOR && ODIN_INSPECTOR
 using System;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;

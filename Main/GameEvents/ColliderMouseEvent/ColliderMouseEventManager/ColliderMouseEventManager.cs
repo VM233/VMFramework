@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using Sirenix.OdinInspector;
 using EnumsNET;
@@ -12,7 +14,7 @@ using UnityEngine.InputSystem;
 namespace VMFramework.GameEvents
 {
     [ManagerCreationProvider(ManagerType.EventCore)]
-    public partial class ColliderMouseEventManager : ManagerBehaviour<ColliderMouseEventManager>
+    public class ColliderMouseEventManager : ManagerBehaviour<ColliderMouseEventManager>
     {
         private const string DEBUGGING_CATEGORY = "Only For Debugging";
 
@@ -62,11 +64,11 @@ namespace VMFramework.GameEvents
 
         [FoldoutGroup(DEBUGGING_CATEGORY), ReadOnly, ShowInInspector]
         private ColliderMouseEventTrigger dragTrigger;
-        
+
         private readonly HashSet<ColliderMouseEventTrigger> lastStayTriggers = new();
-        
+
         private readonly List<ColliderMouseEventTrigger> currentStayTriggers = new();
-        
+
         private readonly HashSet<ColliderMouseEventTrigger> triggersToLeave = new();
 
         #endregion
@@ -76,21 +78,21 @@ namespace VMFramework.GameEvents
         protected override void Awake()
         {
             base.Awake();
-            
+
             physicsScene2Ds.Clear();
             physicsScene3Ds.Clear();
-            
+
             CurrentHoverTrigger = null;
             lastHoverTrigger = null;
             leftMouseUpDownTrigger = null;
             rightMouseUpDownTrigger = null;
             middleMouseUpDownTrigger = null;
             dragTrigger = null;
-            
+
             lastStayTriggers.Clear();
             currentStayTriggers.Clear();
             triggersToLeave.Clear();
-            
+
             mouseEvents.Clear();
         }
 
@@ -134,7 +136,29 @@ namespace VMFramework.GameEvents
             {
                 return;
             }
-            
+
+#if ENABLE_INPUT_SYSTEM
+            bool leftDown = Mouse.current.leftButton.wasPressedThisFrame;
+            bool leftUp = Mouse.current.leftButton.wasReleasedThisFrame;
+            bool leftHeld = Mouse.current.leftButton.isPressed;
+            bool rightDown = Mouse.current.rightButton.wasPressedThisFrame;
+            bool rightUp = Mouse.current.rightButton.wasReleasedThisFrame;
+            bool rightHeld = Mouse.current.rightButton.isPressed;
+            bool middleDown = Mouse.current.middleButton.wasPressedThisFrame;
+            bool middleUp = Mouse.current.middleButton.wasReleasedThisFrame;
+            bool middleHeld = Mouse.current.middleButton.isPressed;
+#else
+            bool leftDown = Input.GetMouseButtonDown(0);
+            bool leftUp = Input.GetMouseButtonUp(0);
+            bool leftHeld = Input.GetMouseButton(0);
+            bool rightDown = Input.GetMouseButtonDown(1);
+            bool rightUp = Input.GetMouseButtonUp(1);
+            bool rightHeld = Input.GetMouseButton(1);
+            bool middleDown = Input.GetMouseButtonDown(2);
+            bool middleUp = Input.GetMouseButtonUp(2);
+            bool middleHeld = Input.GetMouseButton(2);
+#endif
+
             currentStayTriggers.Clear();
 
             CurrentHoverTrigger = DetectTrigger(currentStayTriggers);
@@ -145,7 +169,7 @@ namespace VMFramework.GameEvents
             #region Multiple Pointer Enter & Leave & Stay
 
             triggersToLeave.Clear();
-            
+
             triggersToLeave.UnionWith(lastStayTriggers);
             triggersToLeave.ExceptWith(currentStayTriggers);
 
@@ -165,7 +189,7 @@ namespace VMFramework.GameEvents
                     Invoke(MouseEventType.PointerStayMultiple, trigger);
                 }
             }
-            
+
             lastStayTriggers.Clear();
             lastStayTriggers.UnionWith(currentStayTriggers);
 
@@ -207,7 +231,7 @@ namespace VMFramework.GameEvents
                 if (currentHoverTriggerIsNull == false)
                 {
                     //Down
-                    if (Mouse.current.leftButton.wasPressedThisFrame)
+                    if (leftDown)
                     {
                         leftMouseUpDownTrigger = CurrentHoverTrigger;
 
@@ -221,7 +245,7 @@ namespace VMFramework.GameEvents
                 if (CurrentHoverTrigger == leftMouseUpDownTrigger)
                 {
                     //Up & Click
-                    if (Mouse.current.leftButton.wasReleasedThisFrame)
+                    if (leftUp)
                     {
                         Invoke(MouseEventType.LeftMouseButtonUp, leftMouseUpDownTrigger);
                         Invoke(MouseEventType.LeftMouseButtonClick, leftMouseUpDownTrigger);
@@ -229,7 +253,7 @@ namespace VMFramework.GameEvents
                         leftMouseUpDownTrigger = null;
                     }
                     //Stay
-                    else if (Mouse.current.leftButton.isPressed)
+                    else if (leftHeld)
                     {
                         Invoke(MouseEventType.LeftMouseButtonStay, leftMouseUpDownTrigger);
                     }
@@ -237,7 +261,7 @@ namespace VMFramework.GameEvents
                 else
                 {
                     //Up
-                    if (Mouse.current.leftButton.wasReleasedThisFrame)
+                    if (leftUp)
                     {
                         Invoke(MouseEventType.LeftMouseButtonUp, leftMouseUpDownTrigger);
 
@@ -255,7 +279,7 @@ namespace VMFramework.GameEvents
                 if (currentHoverTriggerIsNull == false)
                 {
                     //Down
-                    if (Mouse.current.rightButton.wasPressedThisFrame)
+                    if (rightDown)
                     {
                         rightMouseUpDownTrigger = CurrentHoverTrigger;
 
@@ -269,7 +293,7 @@ namespace VMFramework.GameEvents
                 if (CurrentHoverTrigger == rightMouseUpDownTrigger)
                 {
                     //Up & Click
-                    if (Mouse.current.rightButton.wasReleasedThisFrame)
+                    if (rightUp)
                     {
                         Invoke(MouseEventType.RightMouseButtonUp, rightMouseUpDownTrigger);
                         Invoke(MouseEventType.RightMouseButtonClick, rightMouseUpDownTrigger);
@@ -277,7 +301,7 @@ namespace VMFramework.GameEvents
                         rightMouseUpDownTrigger = null;
                     }
                     //Stay
-                    else if (Mouse.current.rightButton.isPressed)
+                    else if (rightHeld)
                     {
                         Invoke(MouseEventType.RightMouseButtonStay, rightMouseUpDownTrigger);
                     }
@@ -285,7 +309,7 @@ namespace VMFramework.GameEvents
                 else
                 {
                     //Up
-                    if (Mouse.current.rightButton.wasReleasedThisFrame)
+                    if (rightUp)
                     {
                         Invoke(MouseEventType.RightMouseButtonUp, rightMouseUpDownTrigger);
 
@@ -303,7 +327,7 @@ namespace VMFramework.GameEvents
                 if (currentHoverTriggerIsNull == false)
                 {
                     //Down
-                    if (Mouse.current.middleButton.wasPressedThisFrame)
+                    if (middleDown)
                     {
                         middleMouseUpDownTrigger = CurrentHoverTrigger;
 
@@ -317,7 +341,7 @@ namespace VMFramework.GameEvents
                 if (CurrentHoverTrigger == middleMouseUpDownTrigger)
                 {
                     //Up & Click
-                    if (Mouse.current.middleButton.wasReleasedThisFrame)
+                    if (middleUp)
                     {
                         Invoke(MouseEventType.MiddleMouseButtonUp, middleMouseUpDownTrigger);
                         Invoke(MouseEventType.MiddleMouseButtonClick, middleMouseUpDownTrigger);
@@ -325,7 +349,7 @@ namespace VMFramework.GameEvents
                         middleMouseUpDownTrigger = null;
                     }
                     //Stay
-                    else if (Mouse.current.middleButton.isPressed)
+                    else if (middleHeld)
                     {
                         Invoke(MouseEventType.MiddleMouseButtonStay, middleMouseUpDownTrigger);
                     }
@@ -333,7 +357,7 @@ namespace VMFramework.GameEvents
                 else
                 {
                     //Up
-                    if (Mouse.current.middleButton.wasReleasedThisFrame)
+                    if (middleUp)
                     {
                         Invoke(MouseEventType.MiddleMouseButtonUp, middleMouseUpDownTrigger);
 
@@ -349,22 +373,19 @@ namespace VMFramework.GameEvents
             if (currentHoverTriggerIsNull == false)
             {
                 //Down
-                if (Mouse.current.leftButton.wasPressedThisFrame || Mouse.current.rightButton.wasPressedThisFrame ||
-                    Mouse.current.middleButton.wasPressedThisFrame)
+                if (leftDown || rightDown || middleDown)
                 {
                     Invoke(MouseEventType.AnyMouseButtonDown, CurrentHoverTrigger);
                 }
 
                 //Up
-                if (Mouse.current.leftButton.wasReleasedThisFrame || Mouse.current.rightButton.wasReleasedThisFrame ||
-                    Mouse.current.middleButton.wasReleasedThisFrame)
+                if (leftUp || rightUp || middleUp)
                 {
                     Invoke(MouseEventType.AnyMouseButtonUp, CurrentHoverTrigger);
                 }
 
                 //Stay
-                if (Mouse.current.leftButton.isPressed || Mouse.current.rightButton.isPressed ||
-                    Mouse.current.middleButton.isPressed)
+                if (leftHeld || rightHeld || middleHeld)
                 {
                     Invoke(MouseEventType.AnyMouseButtonStay, CurrentHoverTrigger);
                 }
@@ -383,19 +404,19 @@ namespace VMFramework.GameEvents
 
                     foreach (var mouseType in CurrentHoverTrigger.dragButton.GetFlags())
                     {
-                        if (mouseType == MouseButtonType.LeftButton && Mouse.current.leftButton.isPressed)
+                        if (mouseType == MouseButtonType.LeftButton && leftHeld)
                         {
                             triggerDrag = true;
                             break;
                         }
 
-                        if (mouseType == MouseButtonType.RightButton && Mouse.current.rightButton.isPressed)
+                        if (mouseType == MouseButtonType.RightButton && rightHeld)
                         {
                             triggerDrag = true;
                             break;
                         }
 
-                        if (mouseType == MouseButtonType.MiddleButton && Mouse.current.middleButton.isPressed)
+                        if (mouseType == MouseButtonType.MiddleButton && middleHeld)
                         {
                             triggerDrag = true;
                             break;
@@ -416,19 +437,19 @@ namespace VMFramework.GameEvents
 
                 foreach (var mouseType in dragTrigger.dragButton.GetFlags())
                 {
-                    if (mouseType == MouseButtonType.LeftButton && Mouse.current.leftButton.isPressed)
+                    if (mouseType == MouseButtonType.LeftButton && leftHeld)
                     {
                         keepDragging = true;
                         break;
                     }
 
-                    if (mouseType == MouseButtonType.RightButton && Mouse.current.rightButton.isPressed)
+                    if (mouseType == MouseButtonType.RightButton && rightHeld)
                     {
                         keepDragging = true;
                         break;
                     }
 
-                    if (mouseType == MouseButtonType.MiddleButton && Mouse.current.middleButton.isPressed)
+                    if (mouseType == MouseButtonType.MiddleButton && middleHeld)
                     {
                         keepDragging = true;
                         break;
@@ -476,7 +497,11 @@ namespace VMFramework.GameEvents
 
         private ColliderMouseEventTrigger Detect3DTrigger()
         {
-            var mousePos = Mouse.current.position.ReadValue();
+#if ENABLE_INPUT_SYSTEM
+            Vector3 mousePos = Mouse.current.position.ReadValue();
+#else
+            Vector3 mousePos = Input.mousePosition;
+#endif
 
             if (mousePos.IsInfinity() || mousePos.IsNaN())
             {
@@ -500,10 +525,10 @@ namespace VMFramework.GameEvents
 
             return null;
         }
-        
+
         private readonly List<Collider2D> overlapResults = new();
         private readonly SortedList<int, ColliderMouseEventTrigger> triggerSorted = new();
-        
+
         private ColliderMouseEventTrigger Detect2DTrigger(List<ColliderMouseEventTrigger> triggers)
         {
 #if ENABLE_INPUT_SYSTEM
@@ -527,7 +552,7 @@ namespace VMFramework.GameEvents
             };
 
             var point = BindCamera.ScreenToWorldPoint(mousePos);
-            
+
             foreach (var physicsScene in physicsScene2Ds)
             {
                 int count = physicsScene.OverlapPoint(point.XY(), contactFilter, overlapResults);
@@ -545,7 +570,7 @@ namespace VMFramework.GameEvents
                     {
                         continue;
                     }
-                    
+
                     triggerSorted.TryAdd(-trigger.priority, trigger);
                     triggers.Add(trigger);
                 }
@@ -555,8 +580,49 @@ namespace VMFramework.GameEvents
             {
                 return triggerSorted.Values[0];
             }
-            
+
             return null;
+        }
+
+        [ShowInInspector]
+        private static readonly Dictionary<MouseEventType, ColliderMouseEvent> mouseEvents = new();
+
+        [Button]
+        private static void Invoke(MouseEventType eventType, ColliderMouseEventTrigger trigger)
+        {
+            trigger.TriggerEvent(eventType);
+
+            if (mouseEvents.TryGetValue(eventType, out var mouseEvent) == false)
+            {
+                return;
+            }
+
+            mouseEvent.Propagate(trigger);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void AddCallback(MouseEventType eventType, Action<ColliderMouseEventTrigger> callback,
+            int priority = PriorityDefines.TINY)
+        {
+            if (mouseEvents.TryGetValue(eventType, out var gameEvent) == false)
+            {
+                gameEvent = GameItemManager.Instance.Get<ColliderMouseEvent>(ColliderMouseEventConfig.ID);
+                mouseEvents.Add(eventType, gameEvent);
+            }
+
+            gameEvent.AddCallback(callback, priority);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void RemoveCallback(MouseEventType eventType, Action<ColliderMouseEventTrigger> callback)
+        {
+            if (mouseEvents.TryGetValue(eventType, out var gameEvent) == false)
+            {
+                UnityEngine.Debug.LogWarning($"{nameof(ColliderMouseEvent)} for {eventType} not found.");
+                return;
+            }
+
+            gameEvent.RemoveCallback(callback);
         }
     }
 }

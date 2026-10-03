@@ -64,4 +64,5 @@ See [CHANGELOG.md](CHANGELOG.md) for version-specific behavior, migrations, and 
 See [State cloning](Documentation~/StateCloning.md) for native initialization and clone publication.
 See [Priority events](Documentation~/PriorityEvents.md) for callback registration and publication.
 See [Logic tick profiling](Documentation~/LogicTickProfiling.md) for native phase timing.
+See [EventSystem input](Documentation~/InputBackend.md) for input backend setup.
 The package is licensed under [GPL-3.0-or-later](LICENSE).

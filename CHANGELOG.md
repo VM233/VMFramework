@@ -4,6 +4,21 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.6] - 2026-10-04
+
+### Fixed
+
+- Create the framework EventSystem with InputSystemUIInputModule when Unity enables
+  the Input System backend. Legacy input projects retain StandaloneInputModule.
+  This removes disabled legacy Input reads during normal scene startup.
+- Keep Input Action ID authoring metadata available independently of the selected
+  runtime input backend, so legacy-only configurations compile with the declared
+  Input System package dependency.
+- Select the same backend for collider pointer buttons and 3D position reads,
+  closing the remaining legacy-only compilation errors in that owner.
+
+See `Documentation~/InputBackend.md` for selection and validation.
+
 ## [9.1.5] - 2026-10-02
 
 ### Added

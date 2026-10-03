@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem.UI;
+#endif
 using VMFramework.Core;
 
 namespace VMFramework.Procedure
@@ -22,7 +25,7 @@ namespace VMFramework.Procedure
         public static IReadOnlyCollection<Type> InterfaceManagerTypes => interfaceManagerTypes;
 
         public static IReadOnlyCollection<Type> ManagerTypes => managerTypes;
-        
+
         public static IReadOnlyList<IManagerBehaviour> Managers => managers;
 
         public static void CreateManagers()
@@ -35,7 +38,11 @@ namespace VMFramework.Procedure
             eventCoreContainer.GetOrAddComponent<EventSystem>();
             if (eventCoreContainer.TryGetComponent(out BaseInputModule _) == false)
             {
+#if ENABLE_INPUT_SYSTEM
+                eventCoreContainer.AddComponent<InputSystemUIInputModule>();
+#else
                 eventCoreContainer.AddComponent<StandaloneInputModule>();
+#endif
             }
 
             abstractManagerTypes.Clear();
@@ -115,16 +122,16 @@ namespace VMFramework.Procedure
                 var managerTypeName = providerAttribute.ManagerTypeName;
 
                 var container = ManagerCreatorContainers.GetOrCreateManagerTypeContainer(managerTypeName);
-                
+
                 var component = container.GetOrAddComponent(managerClassType);
 
                 if (component is not IManagerBehaviour managerBehaviour)
                 {
                     throw new Exception($"{managerClassType} does not implement {nameof(IManagerBehaviour)}");
                 }
-                
+
                 managers.Add(managerBehaviour);
-                
+
                 foreach (var otherContainer in ManagerCreatorContainers.GetOtherManagerTypeContainers(managerTypeName))
                 {
                     otherContainer.RemoveAllComponentsImmediate(managerClassType);

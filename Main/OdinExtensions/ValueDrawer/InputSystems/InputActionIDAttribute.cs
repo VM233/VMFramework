@@ -1,4 +1,3 @@
-﻿#if ENABLE_INPUT_SYSTEM
 using System;
 using System.Diagnostics;
 
@@ -8,7 +7,6 @@ namespace VMFramework.OdinExtensions
     [Conditional("UNITY_EDITOR")]
     public sealed class InputActionIDAttribute : GeneralValueDropdownAttribute
     {
-        
+
     }
 }
-#endif
