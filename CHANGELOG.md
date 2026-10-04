@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.8] - 2026-10-05
+
+### Fixed
+
+- Supply the required target for the focused UI-root mouse-event fixture and
+  attach retired elements to the live panel during its negative control, so the
+  test proves callback retirement independently of element detachment.
+
 ## [9.1.7] - 2026-10-05
 
 ### Fixed

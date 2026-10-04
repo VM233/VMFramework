@@ -239,8 +239,10 @@ namespace VMFramework.Editor.Tests
                     Assert.That(oldRoot.panel, Is.Null);
                     Assert.That(panel.UIDocument.rootVisualElement, Is.Not.SameAs(oldRoot));
                     InvokeToolkitLifecycle(panel, "OnEnable");
+                    panel.RootVisualElement.Add(oldTarget);
                     SendMouseEnter(oldTarget);
                     Assert.That(enters, Is.EqualTo(generation + 1));
+                    oldTarget.RemoveFromHierarchy();
                     SendMouseEnter(target);
                     Assert.That(enters, Is.EqualTo(generation + 2));
                     Assert.That(panel.IsOpened, Is.True);
@@ -379,6 +381,7 @@ namespace VMFramework.Editor.Tests
         private static void SendMouseEnter(VisualElement target)
         {
             using var evt = MouseEnterEvent.GetPooled();
+            evt.target = target;
             target.SendEvent(evt);
         }
 
