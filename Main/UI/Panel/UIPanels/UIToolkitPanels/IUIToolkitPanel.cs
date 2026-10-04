@@ -8,6 +8,10 @@ namespace VMFramework.UI
         public UIDocument UIDocument { get; }
         
         public VisualElement RootVisualElement { get; }
+
+        public event Action<IUIToolkitPanel, VisualElement> OnRootVisualElementReady;
+
+        public event Action<IUIToolkitPanel, VisualElement> OnRootVisualElementReleased;
         
         public event Action<IUIToolkitPanel> OnLayoutChangeEvent;
     }

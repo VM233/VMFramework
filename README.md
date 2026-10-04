@@ -65,4 +65,5 @@ See [State cloning](Documentation~/StateCloning.md) for native initialization an
 See [Priority events](Documentation~/PriorityEvents.md) for callback registration and publication.
 See [Logic tick profiling](Documentation~/LogicTickProfiling.md) for native phase timing.
 See [EventSystem input](Documentation~/InputBackend.md) for input backend setup.
+See [UI Toolkit roots](Documentation~/UIToolkitRootLifetime.md) for live-view binding.
 The package is licensed under [GPL-3.0-or-later](LICENSE).

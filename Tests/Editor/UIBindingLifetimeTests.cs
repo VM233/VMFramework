@@ -1,8 +1,10 @@
 using System.Reflection;
+using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.UIElements;
+using UnityEngine.TestTools;
 using VMFramework.Core.Pools;
 using VMFramework.GameEvents;
 using VMFramework.GameLogicArchitecture;
@@ -200,6 +202,184 @@ namespace VMFramework.Editor.Tests
             Assert.That(CallbackCount(replacement), Is.EqualTo(1),
                 "The current registry entry belongs to a different subscription lifetime.");
             if (replace) events.Unregister(replacement);
+        }
+
+        [Test]
+        public void ToolkitRoot_ReconstructionRebindsTheLiveRootAndRetiresOldPointerCallbacks()
+        {
+            var panel = CreateToolkitPanel(UIToolkitPanelCloseMode.DisableDocument, out var settings, out var tree);
+            int ready = 0, released = 0, opens = 0, enters = 0;
+            VisualElement target = null;
+            panel.OnRootVisualElementReady += (owner, root) =>
+            {
+                Assert.That(root, Is.SameAs(owner.UIDocument.rootVisualElement));
+                Assert.That(owner.RootVisualElement, Is.SameAs(root));
+                target = new VisualElement();
+                root.Add(target);
+                ready++;
+            };
+            panel.OnRootVisualElementReleased += (owner, root) =>
+            {
+                Assert.That(owner.RootVisualElement, Is.Null);
+                released++;
+            };
+            panel.OnOpen += _ => opens++;
+            ((IUIPanelPointerEventProvider)panel).AddPointerEvent(_ => enters++, _ => { });
+            try
+            {
+                ((IUIPanel)panel).OnOpenInternal(null);
+                SendMouseEnter(target);
+                Assert.That(enters, Is.EqualTo(1));
+                for (int generation = 0; generation < 3; generation++)
+                {
+                    var oldRoot = panel.RootVisualElement;
+                    var oldTarget = target;
+                    InvokeToolkitLifecycle(panel, "OnDisable");
+                    panel.UIDocument.visualTreeAsset = tree;
+                    Assert.That(oldRoot.panel, Is.Null);
+                    Assert.That(panel.UIDocument.rootVisualElement, Is.Not.SameAs(oldRoot));
+                    InvokeToolkitLifecycle(panel, "OnEnable");
+                    SendMouseEnter(oldTarget);
+                    Assert.That(enters, Is.EqualTo(generation + 1));
+                    SendMouseEnter(target);
+                    Assert.That(enters, Is.EqualTo(generation + 2));
+                    Assert.That(panel.IsOpened, Is.True);
+                }
+                Assert.That(ready, Is.EqualTo(4));
+                Assert.That(released, Is.EqualTo(3));
+                Assert.That(opens, Is.EqualTo(1));
+                CloseToolkitPanel(panel);
+                Assert.That(released, Is.EqualTo(4));
+            }
+            finally
+            {
+                InvokeToolkitLifecycle(panel, "OnDisable");
+                Object.DestroyImmediate(settings);
+                Object.DestroyImmediate(tree);
+            }
+        }
+
+        [Test]
+        public void ToolkitRoot_DetachedAuthoringPreviewDoesNotReplaceOrRepublishTheRuntimeRoot()
+        {
+            var panel = CreateToolkitPanel(UIToolkitPanelCloseMode.DisableDocument, out var settings, out var tree);
+            int ready = 0, released = 0;
+            panel.OnRootVisualElementReady += (_, _) => ready++;
+            panel.OnRootVisualElementReleased += (_, _) => released++;
+            try
+            {
+                ((IUIPanel)panel).OnOpenInternal(null);
+                var root = panel.RootVisualElement;
+                var preview = panel.GenerateVisualElement();
+                Assert.That(preview.panel, Is.Null);
+                Assert.That(preview, Is.Not.SameAs(root));
+                Assert.That(panel.RootVisualElement, Is.SameAs(root));
+                Assert.That(ready, Is.EqualTo(1));
+                Assert.That(released, Is.Zero);
+                CloseToolkitPanel(panel);
+                ((IUIPanel)panel).OnOpenInternal(null);
+                Assert.That(ready, Is.EqualTo(2));
+                Assert.That(released, Is.EqualTo(1));
+                CloseToolkitPanel(panel);
+            }
+            finally
+            {
+                InvokeToolkitLifecycle(panel, "OnDisable");
+                Object.DestroyImmediate(settings);
+                Object.DestroyImmediate(tree);
+            }
+        }
+
+        [TestCase(UIToolkitPanelCloseMode.DisableDocument)]
+        [TestCase(UIToolkitPanelCloseMode.VisualElementDisplayNone)]
+        public void ToolkitRoot_ClosedDocumentKeepsItsConfiguredVisibilityAfterReconstruction(UIToolkitPanelCloseMode mode)
+        {
+            var panel = CreateToolkitPanel(mode, out var settings, out var tree);
+            int ready = 0, released = 0;
+            panel.OnRootVisualElementReady += (_, _) => ready++;
+            panel.OnRootVisualElementReleased += (_, _) => released++;
+            try
+            {
+                ((IUIPanel)panel).OnOpenInternal(null);
+                CloseToolkitPanel(panel);
+                InvokeToolkitLifecycle(panel, "OnDisable");
+                panel.UIDocument.visualTreeAsset = tree;
+                InvokeToolkitLifecycle(panel, "OnEnable");
+                Assert.That(panel.RootVisualElement, Is.Null);
+                Assert.That(panel.IsOpened, Is.False);
+                Assert.That(ready, Is.EqualTo(1));
+                Assert.That(released, Is.EqualTo(1));
+                if (mode == UIToolkitPanelCloseMode.DisableDocument)
+                    Assert.That(panel.UIDocument.enabled, Is.False);
+                else
+                    Assert.That(panel.UIDocument.rootVisualElement.style.display.value, Is.EqualTo(DisplayStyle.None));
+            }
+            finally
+            {
+                InvokeToolkitLifecycle(panel, "OnDisable");
+                Object.DestroyImmediate(settings);
+                Object.DestroyImmediate(tree);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator ToolkitRoot_CloseCancelsThePendingLayoutPublication()
+        {
+            var panel = CreateToolkitPanel(UIToolkitPanelCloseMode.DisableDocument, out var settings, out var tree);
+            int layouts = 0;
+            panel.OnLayoutChangeEvent += _ => layouts++;
+            try
+            {
+                ((IUIPanel)panel).OnOpenInternal(null);
+                CloseToolkitPanel(panel);
+                yield return null;
+                yield return null;
+                Assert.That(layouts, Is.Zero);
+                Assert.That(panel.RootVisualElement, Is.Null);
+            }
+            finally
+            {
+                InvokeToolkitLifecycle(panel, "OnDisable");
+                Object.DestroyImmediate(settings);
+                Object.DestroyImmediate(tree);
+            }
+        }
+
+        private UIToolkitPanel CreateToolkitPanel(UIToolkitPanelCloseMode mode,
+            out PanelSettings settings, out VisualTreeAsset tree)
+        {
+            var panelHost = new GameObject("Toolkit Root Lifetime Test");
+            panelHost.transform.SetParent(host.transform);
+            var panel = panelHost.AddComponent<UIToolkitPanel>();
+            var document = panel.GetComponent<UIDocument>();
+            document.enabled = false;
+            settings = ScriptableObject.CreateInstance<PanelSettings>();
+            tree = ScriptableObject.CreateInstance<VisualTreeAsset>();
+            document.panelSettings = settings;
+            document.visualTreeAsset = tree;
+            typeof(ControllerGameItem).GetProperty("GamePrefab", BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(panel, new UIToolkitPanelConfig
+                {
+                    id = "root_lifetime_ui", isUnique = false, closeMode = mode,
+                    useDefaultPanelSettings = false, customPanelSettings = settings
+                });
+            typeof(UIToolkitPanel).GetProperty(nameof(UIToolkitPanel.UIDocument)).SetValue(panel, document);
+            return panel;
+        }
+
+        private static void CloseToolkitPanel(UIToolkitPanel panel)
+        {
+            ((IUIPanel)panel).OnPreCloseInternal();
+            ((IUIPanel)panel).OnPostCloseInternal();
+        }
+
+        private static void InvokeToolkitLifecycle(UIToolkitPanel panel, string method) =>
+            typeof(UIToolkitPanel).GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic).Invoke(panel, null);
+
+        private static void SendMouseEnter(VisualElement target)
+        {
+            using var evt = MouseEnterEvent.GetPooled();
+            target.SendEvent(evt);
         }
 
         private static ParameterlessGameEvent CreateEvent(string id)

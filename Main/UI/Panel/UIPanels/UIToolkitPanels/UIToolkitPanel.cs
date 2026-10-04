@@ -24,6 +24,10 @@ namespace VMFramework.UI
 
         public event Action<IUIToolkitPanel> OnLayoutChangeEvent;
 
+        public event Action<IUIToolkitPanel, VisualElement> OnRootVisualElementReady;
+
+        public event Action<IUIToolkitPanel, VisualElement> OnRootVisualElementReleased;
+
         public event IUIToolkitPanel.GenerateVisualElementHandler OnGenerateVisualElement;
 
         protected CancellationTokenSource OpenCTS { get; private set; }
@@ -52,11 +56,34 @@ namespace VMFramework.UI
             UIDocument = uiDocument;
         }
 
+        protected virtual void OnEnable()
+        {
+            // Unity enables this companion before the pooled item is initialized,
+            // and again after Live Reload has replaced the document's root.
+            if (UIDocument == null) return;
+            if (IsOpened) PublishRuntimeRoot();
+            else ApplyClosedDocumentState();
+        }
+
+        protected virtual void OnDisable() => ReleaseRuntimeRoot();
+
+        protected override void OnClear()
+        {
+            ReleaseRuntimeRoot();
+            base.OnClear();
+        }
+
+        protected override void OnDestroy()
+        {
+            ReleaseRuntimeRoot();
+            base.OnDestroy();
+        }
+
         #endregion
 
         #region Open
 
-        protected override async void OnOpenInternal(IUIPanel source)
+        protected override void OnOpenInternal(IUIPanel source)
         {
             base.OnOpenInternal(source);
 
@@ -65,19 +92,38 @@ namespace VMFramework.UI
                 UIDocument.enabled = true;
             }
 
+            PublishRuntimeRoot();
+        }
+
+        private void PublishRuntimeRoot()
+        {
+            if (RootVisualElement != null)
+                throw new InvalidOperationException($"UIToolkitPanel {name} already owns a published runtime root.");
+
             RootVisualElement = UIDocument.rootVisualElement;
 
             RootVisualElement.DisplayFlex();
 
             RootVisualElement.style.visibility = Visibility.Hidden;
 
-            OnGenerateVisualElement?.Invoke(this, RootVisualElement);
-
             OpenCTS = new();
 
+            OnGenerateVisualElement?.Invoke(this, RootVisualElement);
+
+            OnRootVisualElementReady?.Invoke(this, RootVisualElement);
+
+            if (lastLocale != null) OnCurrentLanguageChanged(lastLocale);
+            if (OnPointerEnterEvent != null || OnPointerLeaveEvent != null)
+                RegisterPointerEvents(RootVisualElement);
+
+            CompleteLayoutAsync(OpenCTS.Token);
+        }
+
+        private async void CompleteLayoutAsync(CancellationToken token)
+        {
             try
             {
-                await UniTask.Yield(OpenCTS.Token);
+                await UniTask.Yield(token);
             }
             catch (OperationCanceledException)
             {
@@ -86,9 +132,28 @@ namespace VMFramework.UI
 
             OnLayoutChange();
 
-            OnLayoutChangeEvent?.Invoke(this);
-
             OnPostLayoutChange();
+
+            OnLayoutChangeEvent?.Invoke(this);
+        }
+
+        private void CancelLayout()
+        {
+            if (OpenCTS == null) return;
+            OpenCTS.Cancel();
+            OpenCTS.Dispose();
+            OpenCTS = null;
+        }
+
+        private void ReleaseRuntimeRoot()
+        {
+            CancelLayout();
+            if (RootVisualElement == null) return;
+
+            var released = RootVisualElement;
+            UnregisterPointerEvents(released);
+            RootVisualElement = null;
+            OnRootVisualElementReleased?.Invoke(this, released);
         }
 
         #endregion
@@ -99,20 +164,26 @@ namespace VMFramework.UI
         {
             base.OnPreCloseInternal();
 
-            OpenCTS?.Cancel();
+            CancelLayout();
         }
 
         protected override void OnPostCloseInternal()
         {
             base.OnPostCloseInternal();
 
+            ReleaseRuntimeRoot();
+            ApplyClosedDocumentState();
+        }
+
+        private void ApplyClosedDocumentState()
+        {
             if (UIToolkitPanelConfig.CloseMode == UIToolkitPanelCloseMode.DisableDocument)
             {
                 UIDocument.enabled = false;
             }
-            else
+            else if (UIDocument.enabled)
             {
-                RootVisualElement.DisplayNone();
+                UIDocument.rootVisualElement.DisplayNone();
             }
         }
 
@@ -154,7 +225,12 @@ namespace VMFramework.UI
             OnPointerEnterEvent = onPointerEnter;
             OnPointerLeaveEvent = onPointerLeave;
 
-            foreach (var visualElement in RootVisualElement.Children())
+            if (RootVisualElement != null) RegisterPointerEvents(RootVisualElement);
+        }
+
+        private void RegisterPointerEvents(VisualElement root)
+        {
+            foreach (var visualElement in root.Children())
             {
                 visualElement.RegisterCallback<MouseEnterEvent>(OnPointerEnter);
                 visualElement.RegisterCallback<MouseLeaveEvent>(OnPointerLeave);
@@ -163,10 +239,14 @@ namespace VMFramework.UI
 
         void IUIPanelPointerEventProvider.RemovePointerEvent()
         {
+            if (RootVisualElement != null) UnregisterPointerEvents(RootVisualElement);
             OnPointerEnterEvent = null;
             OnPointerLeaveEvent = null;
+        }
 
-            foreach (var visualElement in RootVisualElement.Children())
+        private void UnregisterPointerEvents(VisualElement root)
+        {
+            foreach (var visualElement in root.Children())
             {
                 visualElement.UnregisterCallback<MouseEnterEvent>(OnPointerEnter);
                 visualElement.UnregisterCallback<MouseLeaveEvent>(OnPointerLeave);

@@ -4,6 +4,21 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.7] - 2026-10-05
+
+### Fixed
+
+- Publish paired live-root availability and retirement events when a UI Toolkit
+  document opens, is reconstructed by Unity Live Reload, closes or is destroyed.
+  Child panel modifiers can rebind to the displayed tree without treating a
+  detached Inspector preview as a live view.
+- Transfer pointer registrations and language styling to the replacement root,
+  cancel retired layout continuations, and preserve closed-document visibility.
+- Publish layout change notifications after the root's final visibility and
+  picking setup, so view consumers can restore their own overlay visibility.
+
+See `Documentation~/UIToolkitRootLifetime.md` for ownership and validation.
+
 ## [9.1.6] - 2026-10-04
 
 ### Fixed
