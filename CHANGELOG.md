@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.11] - 2026-10-08
+
+### Fixed
+
+- Keep the collider trigger's runtime callbacks and Editor reset hook in one
+  owned declaration. Move its unchanged public callback delegate to its own
+  source file and remove unreachable null checks on the readonly callback table.
+
 ## [9.1.10] - 2026-10-08
 
 ### Fixed

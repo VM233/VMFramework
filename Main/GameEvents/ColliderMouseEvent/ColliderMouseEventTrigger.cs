@@ -9,10 +9,8 @@ using VMFramework.OdinExtensions;
 
 namespace VMFramework.GameEvents
 {
-    public delegate void MouseEventHandler(ColliderMouseEventTrigger sender, MouseEventType eventType);
-
     [DisallowMultipleComponent]
-    public partial class ColliderMouseEventTrigger : MonoBehaviour
+    public class ColliderMouseEventTrigger : MonoBehaviour
     {
         [CommonPreset(ColliderMouseEventGeneralSetting.TRIGGER_PRIORITY_PRESET_KEY)]
         public int priority = 0;
@@ -25,6 +23,16 @@ namespace VMFramework.GameEvents
         [field: Required]
         [field: SerializeField]
         public Transform Owner { get; set; }
+
+#if UNITY_EDITOR
+        private void Reset()
+        {
+            if (Owner == null)
+            {
+                Owner = transform;
+            }
+        }
+#endif
 
         [ShowInInspector]
         protected readonly Dictionary<MouseEventType, HashSet<MouseEventHandler>> callbacks = new();
@@ -54,11 +62,6 @@ namespace VMFramework.GameEvents
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void RemoveCallback(MouseEventType eventType, [NotNull] MouseEventHandler callback)
         {
-            if (callbacks == null)
-            {
-                return;
-            }
-
             if (callbacks.TryGetValue(eventType, out var eventCallbacks) == false)
             {
                 return;
@@ -70,11 +73,6 @@ namespace VMFramework.GameEvents
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void TriggerEvent(MouseEventType eventType)
         {
-            if (callbacks == null)
-            {
-                return;
-            }
-
             if (callbacks.TryGetValue(eventType, out var eventCallbacks) == false)
             {
                 return;

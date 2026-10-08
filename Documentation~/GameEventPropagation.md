@@ -22,6 +22,12 @@ snapshot follows the same lifetime even though its old instance list was never
 returned to a pool. Neither class nor any audited derived consumer needs that
 old protected scratch field.
 
+The collider component's Editor Reset hook remains under UNITY_EDITOR in the
+same owned declaration. MouseEventHandler retains its existing public name and
+signature in its own source file. The readonly membership table is created by
+the component and cannot be absent; event-type lookup still owns empty-type
+admission and idempotent removal.
+
 Exceptions propagate unchanged and stop later callbacks. A failed game-event
 invocation does not call OnPropagationStopped; each normally completed call
 calls it once, after releasing its snapshot. Admission and event-enable
