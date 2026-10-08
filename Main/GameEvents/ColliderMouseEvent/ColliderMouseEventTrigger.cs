@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using UnityEngine;
 using Sirenix.OdinInspector;
 using VMFramework.Core;
+using VMFramework.Core.Pools;
 using VMFramework.OdinExtensions;
 
 namespace VMFramework.GameEvents
@@ -28,8 +29,6 @@ namespace VMFramework.GameEvents
         [ShowInInspector]
         protected readonly Dictionary<MouseEventType, HashSet<MouseEventHandler>> callbacks = new();
         
-        protected readonly List<MouseEventHandler> tempCallbacks = new();
-
         public virtual void SetOwner(Transform owner)
         {
             if (Owner != null && owner != null)
@@ -81,12 +80,20 @@ namespace VMFramework.GameEvents
                 return;
             }
             
-            tempCallbacks.Clear();
-            tempCallbacks.AddRange(eventCallbacks);
-
-            foreach (var callback in tempCallbacks)
+            var snapshot = ListPool<MouseEventHandler>.Default.Get();
+            try
             {
-                callback(this, eventType);
+                snapshot.Clear();
+                snapshot.AddRange(eventCallbacks);
+                foreach (var callback in snapshot)
+                {
+                    callback(this, eventType);
+                }
+            }
+            finally
+            {
+                snapshot.Clear();
+                snapshot.ReturnToDefaultPool();
             }
         }
     }

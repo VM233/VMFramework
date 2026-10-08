@@ -223,8 +223,6 @@ namespace VMFramework.GameEvents
             return true;
         }
 
-        private readonly List<(Action<TArgument> argumentCallback, Action callback)> tempCallbacks = new();
-
         public void Propagate(TArgument argument)
         {
             Propagate(argument, true);
@@ -237,39 +235,43 @@ namespace VMFramework.GameEvents
                 return;
             }
 
-            tempCallbacks.Clear();
-
-            foreach (var (_, set) in callbacks)
+            var snapshot = ListPool<(Action<TArgument> argumentCallback, Action callback)>.Default.Get();
+            try
             {
-                foreach (var argumentCallback in set.argumentCallbacks)
+                snapshot.Clear();
+                foreach (var (_, set) in callbacks)
                 {
-                    tempCallbacks.Add((argumentCallback, null));
+                    foreach (var argumentCallback in set.argumentCallbacks)
+                    {
+                        snapshot.Add((argumentCallback, null));
+                    }
+
+                    if (propagateAction)
+                    {
+                        foreach (var callback in set.callbacks)
+                        {
+                            snapshot.Add((null, callback));
+                        }
+                    }
                 }
 
-                if (propagateAction)
+                foreach (var (argumentCallback, callback) in snapshot)
                 {
-                    foreach (var callback in set.callbacks)
+                    if (argumentCallback != null)
                     {
-                        tempCallbacks.Add((null, callback));
+                        argumentCallback(argument);
+                    }
+                    else
+                    {
+                        callback();
                     }
                 }
             }
-
-            foreach (var (argumentCallback, callback) in tempCallbacks)
+            finally
             {
-                if (argumentCallback != null)
-                {
-                    argumentCallback(argument);
-                    continue;
-                }
-
-                if (propagateAction)
-                {
-                    callback();
-                }
+                snapshot.Clear();
+                snapshot.ReturnToDefaultPool();
             }
-
-            tempCallbacks.ReturnToDefaultPool();
 
             OnPropagationStopped();
         }

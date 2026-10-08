@@ -63,6 +63,7 @@ Keep package `.meta` files intact so Unity asset GUID references remain stable.
 See [CHANGELOG.md](CHANGELOG.md) for version-specific behavior, migrations, and breaking changes.
 See [State cloning](Documentation~/StateCloning.md) for native initialization and clone publication.
 See [Priority events](Documentation~/PriorityEvents.md) for callback registration and publication.
+See [Game event propagation](Documentation~/GameEventPropagation.md) for callback snapshot lifetimes.
 See [Logic tick profiling](Documentation~/LogicTickProfiling.md) for native phase timing.
 See [EventSystem input](Documentation~/InputBackend.md) for input backend setup.
 See [UI Toolkit roots](Documentation~/UIToolkitRootLifetime.md) for live-view binding.

@@ -4,6 +4,20 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.10] - 2026-10-08
+
+### Fixed
+
+- Give each game-event propagation its own callback snapshot lease. Repeated
+  dispatch no longer returns an instance-owned list to the pool multiple times;
+  nested propagation preserves outer membership, arguments and priority order.
+- Release callback references and return the snapshot on callback exceptions,
+  while preserving the original exception and successful completion hooks.
+- Apply the same invocation lifetime to collider mouse callback snapshots so
+  nested event types do not invalidate an outer trigger's enumeration.
+
+See `Documentation~/GameEventPropagation.md` for ownership and focused validation.
+
 ## [9.1.9] - 2026-10-08
 
 ### Fixed

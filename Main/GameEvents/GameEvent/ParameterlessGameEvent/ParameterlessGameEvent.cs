@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using VMFramework.Core;
 using VMFramework.Core.Pools;
@@ -122,8 +121,6 @@ namespace VMFramework.GameEvents
             return true;
         }
 
-        private readonly List<Action> tempCallbacks = new();
-
         public void Propagate()
         {
             if (CanPropagate() == false)
@@ -131,19 +128,25 @@ namespace VMFramework.GameEvents
                 return;
             }
 
-            tempCallbacks.Clear();
-
-            foreach (var callback in callbacks.GetCombinedCallbacks())
+            var snapshot = ListPool<Action>.Default.Get();
+            try
             {
-                tempCallbacks.Add(callback);
-            }
+                snapshot.Clear();
+                foreach (var callback in callbacks.GetCombinedCallbacks())
+                {
+                    snapshot.Add(callback);
+                }
 
-            foreach (var callback in tempCallbacks)
+                foreach (var callback in snapshot)
+                {
+                    callback();
+                }
+            }
+            finally
             {
-                callback();
+                snapshot.Clear();
+                snapshot.ReturnToDefaultPool();
             }
-
-            tempCallbacks.ReturnToDefaultPool();
 
             OnPropagationStopped();
         }
