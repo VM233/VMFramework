@@ -17,7 +17,7 @@ namespace VMFramework.GameLogicArchitecture
         void IInitializer.GetInitializationActions(ICollection<InitializationAction> actions)
         {
             actions.Add(new(InitializationOrder.InitStart, OnInitStart, this));
-            actions.Add(new(InitializationOrder.Init, OnInit, this));
+            actions.Add(new(InitializationOrder.InitComplete, OnInitComplete, this));
         }
 
         private static async UniTask OnInitStart(CancellationToken cancellationToken)
@@ -36,7 +36,7 @@ namespace VMFramework.GameLogicArchitecture
             await UniTask.WhenAll(tasks).AttachExternalCancellation(cancellationToken);
         }
 
-        private static UniTask OnInit(CancellationToken cancellationToken)
+        private static UniTask OnInitComplete(CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             globalSettings.CheckSettings();

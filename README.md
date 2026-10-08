@@ -66,4 +66,5 @@ See [Priority events](Documentation~/PriorityEvents.md) for callback registratio
 See [Logic tick profiling](Documentation~/LogicTickProfiling.md) for native phase timing.
 See [EventSystem input](Documentation~/InputBackend.md) for input backend setup.
 See [UI Toolkit roots](Documentation~/UIToolkitRootLifetime.md) for live-view binding.
+See [Configuration initialization](Documentation~/ConfigurationInitialization.md) for runtime loading and validation.
 The package is licensed under [GPL-3.0-or-later](LICENSE).

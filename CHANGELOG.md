@@ -4,6 +4,17 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.9] - 2026-10-08
+
+### Fixed
+
+- Validate loaded global settings after runtime GamePrefab registration. Strict
+  references in general-setting checks now resolve in a cold Player as well as in
+  the Editor, without depending on the Editor's existing authoring registry.
+
+See `Documentation~/ConfigurationInitialization.md` for lifecycle ownership and
+cold Player validation.
+
 ## [9.1.8] - 2026-10-05
 
 ### Fixed
