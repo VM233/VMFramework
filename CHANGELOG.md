@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.14] - 2026-10-09
+
+### Fixed
+
+- Give contour snapshots a local-path value input and an explicit Sprite capture
+  producer. Native comparison tests now consume local contours directly instead
+  of relying on a rejected runtime Sprite physics override.
+
 ## [9.1.13] - 2026-10-09
 
 ### Fixed

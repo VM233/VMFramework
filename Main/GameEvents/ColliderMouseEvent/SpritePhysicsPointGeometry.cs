@@ -13,25 +13,36 @@ namespace VMFramework.GameEvents
         public int PathCount { get; }
         public Bounds LocalBounds { get; }
 
-        public SpritePhysicsPointGeometry(Sprite sprite)
+        public static SpritePhysicsPointGeometry Capture(Sprite sprite)
         {
-            PathCount = sprite.GetPhysicsShapeCount();
-            if (PathCount == 0)
+            int pathCount = sprite.GetPhysicsShapeCount();
+            if (pathCount == 0)
                 throw new InvalidOperationException(
                     $"Sprite '{sprite.name}' has no physics shape for point selection.");
+            var paths = new Vector2[pathCount][];
+            var points = new List<Vector2>();
+            for (int pathIndex = 0; pathIndex < pathCount; pathIndex++)
+            {
+                points.Clear();
+                sprite.GetPhysicsShape(pathIndex, points);
+                paths[pathIndex] = points.ToArray();
+            }
+            return new SpritePhysicsPointGeometry(paths);
+        }
 
+        public SpritePhysicsPointGeometry(IReadOnlyList<Vector2[]> paths)
+        {
+            PathCount = paths.Count;
             var starts = new List<Vector2>();
             var ends = new List<Vector2>();
-            var points = new List<Vector2>();
             Bounds bounds = default;
             bool firstPoint = true;
             for (int pathIndex = 0; pathIndex < PathCount; pathIndex++)
             {
-                points.Clear();
-                sprite.GetPhysicsShape(pathIndex, points);
-                if (points.Count < 3)
+                Vector2[] points = paths[pathIndex];
+                if (points.Length < 3)
                     throw new InvalidOperationException(
-                        $"Sprite '{sprite.name}' path {pathIndex} has fewer than three vertices.");
+                        $"Point-selection contour {pathIndex} has fewer than three vertices.");
                 Vector2 previous = points[^1];
                 foreach (Vector2 current in points)
                 {
