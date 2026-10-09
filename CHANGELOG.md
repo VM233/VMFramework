@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.13] - 2026-10-09
+
+### Fixed
+
+- Construct the contour regression's runtime Sprite with Full Rect geometry and
+  physics data. Convert its local control outlines to Sprite.rect coordinates
+  before applying the native physics-shape override.
+
 ## [9.1.12] - 2026-10-09
 
 ### Added

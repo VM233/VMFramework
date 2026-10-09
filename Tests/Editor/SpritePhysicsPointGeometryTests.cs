@@ -23,11 +23,11 @@ namespace VMFramework.Tests
                 Circle(52, new Vector2(0.35f, 0), 0.18f, true)
             };
             var texture = new Texture2D(256, 256);
-            var sprite = Sprite.Create(texture, new Rect(0, 0, 256, 256), Vector2.one * 0.5f, 100);
+            var sprite = CreateSprite(texture);
             var owner = new GameObject("Contour Native Control");
             try
             {
-                sprite.OverridePhysicsShape(paths);
+                OverrideLocalContours(sprite, paths);
                 var geometry = new SpritePhysicsPointGeometry(sprite);
                 var native = owner.AddComponent<PolygonCollider2D>();
                 native.isTrigger = true;
@@ -63,12 +63,12 @@ namespace VMFramework.Tests
         public void BindingOwnsSnapshotUntilExplicitReplacement()
         {
             var texture = new Texture2D(32, 32);
-            var sprite = Sprite.Create(texture, new Rect(0, 0, 32, 32), Vector2.one * 0.5f, 100);
+            var sprite = CreateSprite(texture);
             try
             {
-                sprite.OverridePhysicsShape(new List<Vector2[]> { Circle(8, Vector2.zero, 0.1f, false) });
+                OverrideLocalContours(sprite, new List<Vector2[]> { Circle(8, Vector2.zero, 0.1f, false) });
                 var first = new SpritePhysicsPointGeometry(sprite);
-                sprite.OverridePhysicsShape(new List<Vector2[]> { Circle(8, new Vector2(0.2f, 0), 0.1f, false) });
+                OverrideLocalContours(sprite, new List<Vector2[]> { Circle(8, new Vector2(0.2f, 0), 0.1f, false) });
                 var second = new SpritePhysicsPointGeometry(sprite);
                 Assert.That(first.ContainsLocalPoint(Vector2.zero), Is.True);
                 Assert.That(first.ContainsLocalPoint(new Vector2(0.2f, 0)), Is.False);
@@ -80,6 +80,23 @@ namespace VMFramework.Tests
                 Object.DestroyImmediate(sprite);
                 Object.DestroyImmediate(texture);
             }
+        }
+
+        private static Sprite CreateSprite(Texture2D texture) => Sprite.Create(texture,
+            new Rect(0, 0, texture.width, texture.height), Vector2.one * 0.5f, 100, 0,
+            SpriteMeshType.FullRect, Vector4.zero, true);
+
+        private static void OverrideLocalContours(Sprite sprite, List<Vector2[]> localPaths)
+        {
+            var rectPaths = new List<Vector2[]>(localPaths.Count);
+            foreach (Vector2[] localPath in localPaths)
+            {
+                var rectPath = new Vector2[localPath.Length];
+                for (int i = 0; i < localPath.Length; i++)
+                    rectPath[i] = localPath[i] * sprite.pixelsPerUnit + sprite.pivot;
+                rectPaths.Add(rectPath);
+            }
+            sprite.OverridePhysicsShape(rectPaths);
         }
 
         private static Vector2[] Circle(int count, Vector2 center, float radius, bool reverse)
