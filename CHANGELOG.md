@@ -4,6 +4,16 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.12] - 2026-10-09
+
+### Added
+
+- Refine native 2D mouse candidates with an owned point filter before priority
+  and stay-event publication. Sprite contours can use one coarse box without
+  decomposing moving UI selection geometry into many physics shapes.
+- Capture immutable Sprite physics contours for allocation-free local point
+  queries. See `Documentation~/ColliderMousePointFilters.md` for the lifecycle.
+
 ## [9.1.11] - 2026-10-08
 
 ### Fixed

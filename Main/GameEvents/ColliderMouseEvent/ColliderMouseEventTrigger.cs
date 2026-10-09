@@ -20,6 +20,11 @@ namespace VMFramework.GameEvents
         [ShowIf(nameof(draggable))]
         public MouseButtonType dragButton = MouseButtonType.LeftButton;
 
+        [SerializeField] private ColliderMousePointFilter2D pointFilter2D;
+
+        public bool MatchesPoint2D(Vector2 worldPoint) =>
+            pointFilter2D == null || pointFilter2D.ContainsPoint2D(worldPoint);
+
         [field: Required]
         [field: SerializeField]
         public Transform Owner { get; set; }

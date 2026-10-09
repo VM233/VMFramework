@@ -571,6 +571,11 @@ namespace VMFramework.GameEvents
                         continue;
                     }
 
+                    if (trigger.MatchesPoint2D(point.XY()) == false)
+                    {
+                        continue;
+                    }
+
                     triggerSorted.TryAdd(-trigger.priority, trigger);
                     triggers.Add(trigger);
                 }
