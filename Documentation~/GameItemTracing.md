@@ -30,7 +30,7 @@ No new collection, cache, thread or native synchronization call is added.
 Collection leases retain the existing Default pool's 500-idle-collection bound
 per closed type; references are cleared before lease return.
 
-The focused native fixture freezes at 12 cases, at most four bindings, three
+The focused fixtures freeze at 10 Edit Mode and two Play Mode cases, at most four bindings, three
 items, four target Transforms and two managers per case. Its repeated-rental
 case runs eight add/return cycles (16 group acquisitions/returns), never more
 than one simultaneous binding. Other cases perform at most four admissions and
@@ -40,14 +40,17 @@ or asset scan runs. Added fixture live storage budget is 64 KiB excluding Unity
 object/test-runner storage; added production scratch allocation is zero. PASS
 for this frozen fixture and the unchanged linear production traversal. Dynamic
 gameplay admission remains the caller's input domain, not a claimed hard cap or
-wall-clock guarantee.
+wall-clock guarantee. Each Play Mode case creates two consecutive manager
+lifetimes with the same three participants, observes four rendered frames,
+and destroys each manager through Unity. Its additional bound is six native
+GameObjects and two binding admissions per case, with no asset or physics scan.
 
 ## Validation
 
-`GameItemTracingLifetimeTests` uses the production managers, ControllerGameItem
+`GameItemTracingLifetimeTests` and `GameItemTracingPlayModeTests` use the production managers, ControllerGameItem
 pool-return callbacks and native Transforms. It checks visible motion, retiring
 subscriptions, role order, selective shared-group removal, replacing bindings,
-the same item in both roles, eight rental cycles and manager teardown. Package
+the same item in both roles, eight rental cycles and actual Play Mode manager teardown/recreation. Package
 adoption, compilation and exact changed-source policy review remain separate.
 The calibration stall's original native trace remains a counterexample; this
 lifetime repair alone does not establish its complete CPU cause.

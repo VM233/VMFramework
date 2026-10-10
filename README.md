@@ -53,7 +53,7 @@ Framework maintenance commands are available under the `VMFramework` Unity menu.
 
 ## Validation
 
-The package Editor test assembly is `VMFramework.Editor.Tests`. When running package tests from a
+The package test assemblies are `VMFramework.Editor.Tests` and `VMFramework.PlayMode.Tests`. When running package tests from a
 consumer project, expose the package through that project's `testables` manifest entry.
 
 Keep package `.meta` files intact so Unity asset GUID references remain stable.

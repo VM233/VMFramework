@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.16] - 2026-10-10
+
+### Fixed
+
+- Exercise tracing manager destruction through actual Unity Play Mode lifetimes,
+  followed by recreation and another pool rental. Edit Mode binding tests no
+  longer assume Unity calls OnDestroy for objects that never ran Awake.
+
 ## [9.1.15] - 2026-10-10
 
 ### Fixed

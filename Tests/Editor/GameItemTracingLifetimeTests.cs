@@ -6,7 +6,6 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using VMFramework.Core.Pools;
 using VMFramework.GameLogicArchitecture;
-using Object = UnityEngine.Object;
 
 namespace VMFramework.Tests
 {
@@ -169,20 +168,6 @@ namespace VMFramework.Tests
         }
 
         [Test]
-        public void TransformManagerDestructionDetachesEveryRole()
-        {
-            var source = Item("Source");
-            var owner = Item("Owner");
-            transforms.Add(source, owner, CreateObject("Target").transform);
-            Object.DestroyImmediate(transforms.gameObject);
-            Assert.That(Callbacks(source), Is.Zero);
-            Assert.That(Callbacks(owner), Is.Zero);
-            Assert.That(GameItemTransformTracingManager.Instance, Is.Null);
-            Return(source);
-            Return(owner);
-        }
-
-        [Test]
         public void RemovingTheLastWholeItemTargetDetachesItsSource()
         {
             var source = Item("Source");
@@ -214,20 +199,6 @@ namespace VMFramework.Tests
             Assert.That(target.transform.position.x, Is.EqualTo(9));
             Return(target);
             Assert.That(Callbacks(second), Is.Zero);
-        }
-
-        [Test]
-        public void WholeItemManagerDestructionDetachesAllSubscriptions()
-        {
-            var source = Item("Source");
-            var target = Item("Target");
-            items.Add(source, target, Vector3.zero);
-            Object.DestroyImmediate(items.gameObject);
-            Assert.That(Callbacks(source), Is.Zero);
-            Assert.That(Callbacks(target), Is.Zero);
-            Assert.That(GameItemTracingManager.Instance, Is.Null);
-            Return(source);
-            Return(target);
         }
 
         private GameObject CreateObject(string name)

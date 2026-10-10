@@ -1,0 +1,14 @@
+{
+  "name": "VMFramework.PlayMode.Tests",
+  "rootNamespace": "VMFramework.Tests",
+  "references": ["VMFramework", "VMCore"],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": ["TestAssemblies"]
+}
