@@ -347,6 +347,57 @@ namespace VMFramework.Editor.Tests
             }
         }
 
+        [UnityTest]
+        public IEnumerator ToolkitRoot_DisplayNoneRetainsItsDocumentFromCreationThroughReopening()
+        {
+            var panel = CreateToolkitPanel(UIToolkitPanelCloseMode.VisualElementDisplayNone,
+                out var settings, out var tree);
+            var documentRoot = panel.UIDocument.rootVisualElement;
+            var nativePanel = documentRoot.panel;
+            var target = new VisualElement();
+            documentRoot.Add(target);
+            int ready = 0, released = 0, enters = 0, layouts = 0;
+            panel.OnRootVisualElementReady += (_, _) => ready++;
+            panel.OnRootVisualElementReleased += (_, _) => released++;
+            panel.OnLayoutChangeEvent += _ => layouts++;
+            ((IUIPanelPointerEventProvider)panel).AddPointerEvent(_ => enters++, _ => { });
+            try
+            {
+                Assert.That(panel.IsOpened, Is.False);
+                Assert.That(panel.RootVisualElement, Is.Null);
+                Assert.That(panel.UIDocument.enabled, Is.True);
+                Assert.That(nativePanel, Is.Not.Null);
+                Assert.That(documentRoot.style.display.value, Is.EqualTo(DisplayStyle.None));
+                for (int cycle = 0; cycle < 3; cycle++)
+                {
+                    ((IUIPanel)panel).OnOpenInternal(null);
+                    Assert.That(panel.RootVisualElement, Is.SameAs(documentRoot));
+                    Assert.That(panel.RootVisualElement.panel, Is.SameAs(nativePanel));
+                    SendMouseEnter(target);
+                    Assert.That(enters, Is.EqualTo(cycle + 1));
+                    CloseToolkitPanel(panel);
+                    Assert.That(panel.RootVisualElement, Is.Null);
+                    Assert.That(panel.UIDocument.enabled, Is.True);
+                    Assert.That(panel.UIDocument.rootVisualElement, Is.SameAs(documentRoot));
+                    Assert.That(documentRoot.panel, Is.SameAs(nativePanel));
+                    Assert.That(documentRoot.style.display.value, Is.EqualTo(DisplayStyle.None));
+                    SendMouseEnter(target);
+                    Assert.That(enters, Is.EqualTo(cycle + 1));
+                }
+                yield return null;
+                yield return null;
+                Assert.That(layouts, Is.Zero);
+                Assert.That(ready, Is.EqualTo(3));
+                Assert.That(released, Is.EqualTo(3));
+            }
+            finally
+            {
+                InvokeToolkitLifecycle(panel, "OnDisable");
+                Object.DestroyImmediate(settings);
+                Object.DestroyImmediate(tree);
+            }
+        }
+
         private UIToolkitPanel CreateToolkitPanel(UIToolkitPanelCloseMode mode,
             out PanelSettings settings, out VisualTreeAsset tree)
         {
@@ -362,10 +413,10 @@ namespace VMFramework.Editor.Tests
             typeof(ControllerGameItem).GetProperty("GamePrefab", BindingFlags.Instance | BindingFlags.NonPublic)
                 .SetValue(panel, new UIToolkitPanelConfig
                 {
-                    id = "root_lifetime_ui", isUnique = false, closeMode = mode,
+                    id = "root_lifetime_ui", isUnique = false, closeMode = mode, prefab = panelHost,
                     useDefaultPanelSettings = false, customPanelSettings = settings
                 });
-            typeof(UIToolkitPanel).GetProperty(nameof(UIToolkitPanel.UIDocument)).SetValue(panel, document);
+            InvokeToolkitLifecycle(panel, "OnCreate");
             return panel;
         }
 

@@ -4,6 +4,18 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.18] - 2026-10-11
+
+### Fixed
+
+- Apply UI Toolkit close policy at panel creation. DisplayNone documents remain
+  enabled and hidden before the first open and across subsequent closes, so
+  reopening retains their document and runtime panel instead of constructing
+  them inside gameplay callbacks. Consumer root bindings and pending layout
+  work still retire on close. Cover creation, native panel identity, repeated
+  opens, callback retirement and canceled layouts through the real producer.
+  See `Documentation~/UIToolkitRootLifetime.md` for the lifetime contract.
+
 ## [9.1.17] - 2026-10-10
 
 ### Fixed

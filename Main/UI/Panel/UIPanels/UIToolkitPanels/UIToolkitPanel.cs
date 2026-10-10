@@ -51,9 +51,8 @@ namespace VMFramework.UI
 
             uiDocument.visualTreeAsset = UIToolkitPanelConfig.VisualTree;
 
-            uiDocument.enabled = false;
-
             UIDocument = uiDocument;
+            ApplyClosedDocumentState();
         }
 
         protected virtual void OnEnable()
@@ -181,8 +180,9 @@ namespace VMFramework.UI
             {
                 UIDocument.enabled = false;
             }
-            else if (UIDocument.enabled)
+            else
             {
+                UIDocument.enabled = true;
                 UIDocument.rootVisualElement.DisplayNone();
             }
         }
