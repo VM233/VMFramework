@@ -4,6 +4,28 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+### Breaking
+
+- Make `ManagerBehaviour<TInstance>.Instance` a lifecycle-owned read-only publication.
+  Derived retirement hooks must override `OnDestroy` and release the base owner in
+  `finally`; external singleton assignment is removed. Retain actual subscription
+  and rental sources for their matching cleanup, including panel/localization,
+  GameItem events and optional FishNet UUID subscriptions. Merge the modified
+  GameEventManager and UUIDCoreManager partial declarations into their main owners.
+- Distinguish owned `GameEventManager.Register(id)` rentals from borrowed
+  `Register(existingEvent)` products. Unregister and manager retirement return
+  only owned rentals, after removing the original registration. See
+  `Documentation~/ManagerSingletonLifetime.md` for migration and focused validation.
+
+### Fixed
+
+- Release interface-valued manager singletons when their native owners retire,
+  allowing ManagerCreator's destroyed-base replacement to publish its selected
+  derived owner. Reject a second live physical owner at the publication boundary.
+- Keep standalone test owners isolated from production manager discovery and
+  remove test setter overrides. Cover native replacement, deferred destruction,
+  duplicate owners, failing cleanup and invalid generic contracts.
+
 ## [9.1.18] - 2026-10-11
 
 ### Fixed

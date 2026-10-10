@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using UnityEngine.Localization.Settings;
 using VMFramework.Procedure;
@@ -9,7 +10,10 @@ namespace VMFramework.UI
     public class LocalizedUIPanelManager : ManagerBehaviour<LocalizedUIPanelManager>
     {
         [ShowInInspector]
-        protected readonly HashSet<ILocalizedPanelModifier> localizedModifiers = new();
+        protected readonly Dictionary<IUIPanel, List<ILocalizedPanelModifier>> localizedModifiers = new();
+
+        private UIPanelManager panels;
+        private LocalizationSettings localization;
 
         protected override void Awake()
         {
@@ -18,11 +22,30 @@ namespace VMFramework.UI
             localizedModifiers.Clear();
         }
 
-        protected virtual void OnDestroy()
+        protected override void OnDestroy()
         {
-            foreach (var localizedPanelModifier in localizedModifiers)
+            var source = panels;
+            panels = null;
+            List<Exception> failures = null;
+            try
             {
-                LocalizationSettings.SelectedLocaleChanged -= localizedPanelModifier.OnCurrentLanguageChanged;
+                if (!ReferenceEquals(source, null))
+                {
+                    try { source.OnPanelCreatedEvent -= OnUIPanelCreated; }
+                    catch (Exception error) { (failures ??= new()).Add(error); }
+                }
+                foreach (var pair in localizedModifiers)
+                {
+                    try { RetirePanel(pair.Key, pair.Value); }
+                    catch (Exception error) { (failures ??= new()).Add(error); }
+                }
+                if (failures != null) throw new AggregateException(failures);
+            }
+            finally
+            {
+                localizedModifiers.Clear();
+                localization = null;
+                base.OnDestroy();
             }
         }
 
@@ -30,11 +53,14 @@ namespace VMFramework.UI
         {
             base.OnBeforeInitStart();
 
-            UIPanelManager.Instance.OnPanelCreatedEvent += OnUIPanelCreated;
+            panels = UIPanelManager.Instance;
+            localization = LocalizationSettings.Instance;
+            panels.OnPanelCreatedEvent += OnUIPanelCreated;
         }
 
         protected virtual void OnUIPanelCreated(IUIPanel uiPanelController)
         {
+            localizedModifiers.Add(uiPanelController, new());
             uiPanelController.OnOpen += OnUIPanelOpen;
             uiPanelController.OnPostClose += OnUIPanelClose;
             uiPanelController.OnDestruct += OnUIPanelDestruct;
@@ -42,62 +68,46 @@ namespace VMFramework.UI
 
         protected virtual void OnUIPanelOpen(IUIPanel uiPanelController)
         {
+            var subscriptions = localizedModifiers[uiPanelController];
             if (uiPanelController is ILocalizedPanelModifier localizedPanelController)
-            {
-                localizedPanelController.OnCurrentLanguageChanged(LocalizationSettings.SelectedLocale);
-                LocalizationSettings.SelectedLocaleChanged += localizedPanelController.OnCurrentLanguageChanged;
-                localizedModifiers.Add(localizedPanelController);
-            }
-
+                Subscribe(localizedPanelController, subscriptions);
             foreach (var modifier in uiPanelController.Modifiers)
             {
                 if (modifier is ILocalizedPanelModifier localizedPanelModifier)
-                {
-                    localizedPanelModifier.OnCurrentLanguageChanged(LocalizationSettings.SelectedLocale);
-
-                    LocalizationSettings.SelectedLocaleChanged += localizedPanelModifier.OnCurrentLanguageChanged;
-
-                    localizedModifiers.Add(localizedPanelModifier);
-                }
+                    Subscribe(localizedPanelModifier, subscriptions);
             }
+        }
+
+        private void Subscribe(ILocalizedPanelModifier modifier, List<ILocalizedPanelModifier> subscriptions)
+        {
+            modifier.OnCurrentLanguageChanged(localization.GetSelectedLocale());
+            localization.OnSelectedLocaleChanged += modifier.OnCurrentLanguageChanged;
+            subscriptions.Add(modifier);
         }
 
         protected virtual void OnUIPanelClose(IUIPanel uiPanelController)
         {
-            if (uiPanelController is ILocalizedPanelModifier localizedPanelController)
-            {
-                LocalizationSettings.SelectedLocaleChanged -= localizedPanelController.OnCurrentLanguageChanged;
-                localizedModifiers.Remove(localizedPanelController);
-            }
-
-            foreach (var modifier in uiPanelController.Modifiers)
-            {
-                if (modifier is ILocalizedPanelModifier localizedPanelModifier)
-                {
-                    LocalizationSettings.SelectedLocaleChanged -= localizedPanelModifier.OnCurrentLanguageChanged;
-
-                    localizedModifiers.Remove(localizedPanelModifier);
-                }
-            }
+            var subscriptions = localizedModifiers[uiPanelController];
+            foreach (var modifier in subscriptions)
+                localization.OnSelectedLocaleChanged -= modifier.OnCurrentLanguageChanged;
+            subscriptions.Clear();
         }
 
         protected virtual void OnUIPanelDestruct(IUIPanel uiPanelController)
         {
-            if (uiPanelController is ILocalizedPanelModifier localizedPanelController)
-            {
-                LocalizationSettings.SelectedLocaleChanged -= localizedPanelController.OnCurrentLanguageChanged;
-                localizedModifiers.Remove(localizedPanelController);
-            }
+            var subscriptions = localizedModifiers[uiPanelController];
+            RetirePanel(uiPanelController, subscriptions);
+            localizedModifiers.Remove(uiPanelController);
+        }
 
-            foreach (var modifier in uiPanelController.Modifiers)
-            {
-                if (modifier is ILocalizedPanelModifier localizedPanelModifier)
-                {
-                    LocalizationSettings.SelectedLocaleChanged -= localizedPanelModifier.OnCurrentLanguageChanged;
-
-                    localizedModifiers.Remove(localizedPanelModifier);
-                }
-            }
+        private void RetirePanel(IUIPanel panel, List<ILocalizedPanelModifier> subscriptions)
+        {
+            panel.OnOpen -= OnUIPanelOpen;
+            panel.OnPostClose -= OnUIPanelClose;
+            panel.OnDestruct -= OnUIPanelDestruct;
+            foreach (var modifier in subscriptions)
+                localization.OnSelectedLocaleChanged -= modifier.OnCurrentLanguageChanged;
+            subscriptions.Clear();
         }
     }
 }

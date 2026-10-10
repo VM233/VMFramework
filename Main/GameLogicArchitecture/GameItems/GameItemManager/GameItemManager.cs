@@ -14,16 +14,20 @@ namespace VMFramework.GameLogicArchitecture
     {
         public sealed class GameItemManagerEventsReceiver : IGameItemEventsReceiver
         {
+            private readonly IGameItemManager source;
+
+            public GameItemManagerEventsReceiver() => source = Instance;
+
             public event Action<IGameItem> OnGameItemCreated
             {
-                add => Instance.OnGameItemCreated += value;
-                remove => Instance.OnGameItemCreated -= value;
+                add => source.OnGameItemCreated += value;
+                remove => source.OnGameItemCreated -= value;
             }
             
             public event Action<IGameItem> OnGameItemDestroyed
             {
-                add => Instance.OnGameItemDestroyed += value;
-                remove => Instance.OnGameItemDestroyed -= value;
+                add => source.OnGameItemDestroyed += value;
+                remove => source.OnGameItemDestroyed -= value;
             }
         }
         

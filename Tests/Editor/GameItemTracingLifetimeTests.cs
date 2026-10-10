@@ -12,8 +12,6 @@ namespace VMFramework.Tests
     public sealed class GameItemTracingLifetimeTests
     {
         private const BindingFlags CALLBACK = BindingFlags.Instance | BindingFlags.NonPublic;
-        private GameItemTransformTracingManager previousTransforms;
-        private GameItemTracingManager previousItems;
         private Scene scene;
         private GameItemTransformTracingManager transforms;
         private GameItemTracingManager items;
@@ -21,10 +19,10 @@ namespace VMFramework.Tests
         [SetUp]
         public void SetUp()
         {
-            previousTransforms = GameItemTransformTracingManager.Instance;
-            previousItems = GameItemTracingManager.Instance;
-            GameItemTransformTracingManager.Instance = null;
-            GameItemTracingManager.Instance = null;
+            Assert.That(ReferenceEquals(GameItemTransformTracingManager.Instance, null), Is.True,
+                "The standalone fixture requires no published transform tracing owner.");
+            Assert.That(ReferenceEquals(GameItemTracingManager.Instance, null), Is.True,
+                "The standalone fixture requires no published item tracing owner.");
             scene = EditorSceneManager.NewPreviewScene();
             transforms = CreateObject("Transform Tracing Manager").AddComponent<GameItemTransformTracingManager>();
             items = CreateObject("Item Tracing Manager").AddComponent<GameItemTracingManager>();
@@ -35,9 +33,17 @@ namespace VMFramework.Tests
         [TearDown]
         public void TearDown()
         {
-            if (scene.IsValid() && scene.isLoaded) EditorSceneManager.ClosePreviewScene(scene);
-            GameItemTransformTracingManager.Instance = previousTransforms;
-            GameItemTracingManager.Instance = previousItems;
+            try { Invoke(items, "OnDestroy"); }
+            finally
+            {
+                try { Invoke(transforms, "OnDestroy"); }
+                finally
+                {
+                    if (scene.IsValid() && scene.isLoaded) EditorSceneManager.ClosePreviewScene(scene);
+                }
+            }
+            Assert.That(ReferenceEquals(GameItemTransformTracingManager.Instance, null), Is.True);
+            Assert.That(ReferenceEquals(GameItemTracingManager.Instance, null), Is.True);
         }
 
         [TestCase(true)]

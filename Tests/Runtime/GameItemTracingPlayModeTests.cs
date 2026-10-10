@@ -12,17 +12,15 @@ namespace VMFramework.Tests
     public sealed class GameItemTracingPlayModeTests
     {
         private GameObject host;
-        private GameItemTransformTracingManager previousTransforms;
-        private GameItemTracingManager previousItems;
 
         [SetUp]
         public void SetUp()
         {
             Assert.That(Application.isPlaying, Is.True);
-            previousTransforms = GameItemTransformTracingManager.Instance;
-            previousItems = GameItemTracingManager.Instance;
-            GameItemTransformTracingManager.Instance = null;
-            GameItemTracingManager.Instance = null;
+            Assert.That(ReferenceEquals(GameItemTransformTracingManager.Instance, null), Is.True,
+                "The standalone fixture requires no published transform tracing owner.");
+            Assert.That(ReferenceEquals(GameItemTracingManager.Instance, null), Is.True,
+                "The standalone fixture requires no published item tracing owner.");
             host = new GameObject("Tracing Lifetime Fixture");
         }
 
@@ -30,8 +28,8 @@ namespace VMFramework.Tests
         public void TearDown()
         {
             Object.DestroyImmediate(host);
-            GameItemTransformTracingManager.Instance = previousTransforms;
-            GameItemTracingManager.Instance = previousItems;
+            Assert.That(ReferenceEquals(GameItemTransformTracingManager.Instance, null), Is.True);
+            Assert.That(ReferenceEquals(GameItemTracingManager.Instance, null), Is.True);
         }
 
         [UnityTest]

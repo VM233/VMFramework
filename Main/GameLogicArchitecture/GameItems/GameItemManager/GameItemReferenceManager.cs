@@ -35,7 +35,8 @@ namespace VMFramework.GameLogicArchitecture
                 return null;
             }
 
-            var gameItem = GameItemManager.Instance.Get(id);
+            var rentalOwner = GameItemManager.Instance;
+            var gameItem = rentalOwner.Get(id);
             try
             {
                 if (gameItem.TryAsGameObject(out var gameItemObject))
@@ -51,9 +52,10 @@ namespace VMFramework.GameLogicArchitecture
                 references.Add(id, gameItem);
                 return gameItem;
             }
-            catch
+            catch (System.Exception primary)
             {
-                GameItemManager.Instance.Return(gameItem);
+                try { rentalOwner.Return(gameItem); }
+                catch (System.Exception retirement) { throw new System.AggregateException(primary, retirement); }
                 throw;
             }
         }

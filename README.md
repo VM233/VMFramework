@@ -38,7 +38,7 @@ dependencies are not supported.
 - `FishnetExtension`: FishNet integration.
 - `Experimental`: experimental framework code.
 - `GameResources`: font-authoring character lists and script templates.
-- `Tests`: package Editor tests.
+- `Tests`: package tests.
 
 ## Project Setup
 
@@ -61,6 +61,7 @@ Keep package `.meta` files intact so Unity asset GUID references remain stable.
 ## Changes and License
 
 See [CHANGELOG.md](CHANGELOG.md) for version-specific behavior, migrations, and breaking changes.
+See [Manager singleton lifetimes](Documentation~/ManagerSingletonLifetime.md) for publication and retirement.
 See [State cloning](Documentation~/StateCloning.md) for native initialization and clone publication.
 See [Priority events](Documentation~/PriorityEvents.md) for callback registration and publication.
 See [Game event propagation](Documentation~/GameEventPropagation.md) for callback snapshot lifetimes.

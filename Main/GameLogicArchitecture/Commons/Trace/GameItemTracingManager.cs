@@ -116,19 +116,25 @@ namespace VMFramework.GameLogicArchitecture
             RemovePositionSource(source);
         }
 
-        protected virtual void OnDestroy()
+        protected override void OnDestroy()
         {
-            foreach (var (source, offsetTargets) in offsetTargetLookup)
+            try
             {
-                source.OnReturnEvent -= sourceReturnFunc;
-                foreach (var target in offsetTargets.Keys)
-                    target.OnReturnEvent -= targetReturnFunc;
-                offsetTargets.Clear();
-                offsetTargets.ReturnToDefaultPool();
+                foreach (var (source, offsetTargets) in offsetTargetLookup)
+                {
+                    source.OnReturnEvent -= sourceReturnFunc;
+                    foreach (var target in offsetTargets.Keys)
+                        target.OnReturnEvent -= targetReturnFunc;
+                    offsetTargets.Clear();
+                    offsetTargets.ReturnToDefaultPool();
+                }
+                offsetTargetLookup.Clear();
+                positionSourceLookup.Clear();
             }
-            offsetTargetLookup.Clear();
-            positionSourceLookup.Clear();
-            if (ReferenceEquals(Instance, this)) Instance = null;
+            finally
+            {
+                base.OnDestroy();
+            }
         }
 
         protected virtual void Update()

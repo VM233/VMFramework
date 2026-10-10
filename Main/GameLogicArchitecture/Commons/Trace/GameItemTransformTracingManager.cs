@@ -168,25 +168,31 @@ namespace VMFramework.GameLogicArchitecture
             }
         }
 
-        protected virtual void OnDestroy()
+        protected override void OnDestroy()
         {
-            foreach (var (owner, transforms) in transformsByOwner)
+            try
             {
-                owner.OnReturnEvent -= ownerReturnFunc;
-                transforms.Clear();
-                transforms.ReturnToDefaultPool();
+                foreach (var (owner, transforms) in transformsByOwner)
+                {
+                    owner.OnReturnEvent -= ownerReturnFunc;
+                    transforms.Clear();
+                    transforms.ReturnToDefaultPool();
+                }
+                foreach (var (source, transforms) in transformsByPositionSource)
+                {
+                    source.OnReturnEvent -= positionSourceReturnFunc;
+                    transforms.Clear();
+                    transforms.ReturnToDefaultPool();
+                }
+                transformsByOwner.Clear();
+                transformsByPositionSource.Clear();
+                ownerLookup.Clear();
+                positionSourceLookup.Clear();
             }
-            foreach (var (source, transforms) in transformsByPositionSource)
+            finally
             {
-                source.OnReturnEvent -= positionSourceReturnFunc;
-                transforms.Clear();
-                transforms.ReturnToDefaultPool();
+                base.OnDestroy();
             }
-            transformsByOwner.Clear();
-            transformsByPositionSource.Clear();
-            ownerLookup.Clear();
-            positionSourceLookup.Clear();
-            if (ReferenceEquals(Instance, this)) Instance = null;
         }
 
         protected virtual void Update()

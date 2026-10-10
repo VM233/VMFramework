@@ -20,8 +20,6 @@ namespace VMFramework.Tests
 
         private const BindingFlags PRIVATE_INSTANCE = BindingFlags.Instance | BindingFlags.NonPublic;
         private readonly List<GameObject> objects = new();
-        private IGameItemManager previousRentalManager;
-        private GameItemReferenceManager previousReferenceManager;
         private GameItemManager rentals;
         private GameItemReferenceManager references;
         private string identity;
@@ -30,13 +28,14 @@ namespace VMFramework.Tests
         [SetUp]
         public void SetUp()
         {
-            previousRentalManager = GameItemManager.Instance;
-            previousReferenceManager = GameItemReferenceManager.Instance;
-            GameItemManager.Instance = null;
-            GameItemReferenceManager.Instance = null;
+            Assert.That(ReferenceEquals(GameItemManager.Instance, null), Is.True,
+                "The standalone fixture requires no published rental manager owner.");
+            Assert.That(ReferenceEquals(GameItemReferenceManager.Instance, null), Is.True,
+                "The standalone fixture requires no published reference manager owner.");
             identity = "reference_fixture_" + Guid.NewGuid().ToString("N");
             Assert.That(GamePrefabManager.RegisterGamePrefab(new ReferencePrefab(identity)), Is.True);
             rentals = CreateObject("Reference Rental Manager").AddComponent<GameItemManager>();
+            typeof(GameItemManager).GetMethod("Awake", PRIVATE_INSTANCE).Invoke(rentals, null);
             references = CreateObject("Reference Cache Manager").AddComponent<GameItemReferenceManager>();
             typeof(GameItemReferenceManager).GetMethod("Awake", PRIVATE_INSTANCE).Invoke(references, null);
         }
@@ -44,12 +43,14 @@ namespace VMFramework.Tests
         [TearDown]
         public void TearDown()
         {
+            typeof(GameItemReferenceManager).GetMethod("OnDestroy", PRIVATE_INSTANCE).Invoke(references, null);
+            typeof(GameItemManager).GetMethod("OnDestroy", PRIVATE_INSTANCE).Invoke(rentals, null);
             foreach (var item in objects)
                 if (item != null) Object.DestroyImmediate(item);
             objects.Clear();
             GamePrefabManager.UnregisterGamePrefab(identity);
-            GameItemManager.Instance = previousRentalManager;
-            GameItemReferenceManager.Instance = previousReferenceManager;
+            Assert.That(ReferenceEquals(GameItemManager.Instance, null), Is.True);
+            Assert.That(ReferenceEquals(GameItemReferenceManager.Instance, null), Is.True);
         }
 
         [Test]
@@ -127,7 +128,6 @@ namespace VMFramework.Tests
 
         private void InitializeRentals(Func<string, IGameItem> factory)
         {
-            typeof(GameItemManager).GetMethod("Awake", PRIVATE_INSTANCE).Invoke(rentals, null);
             typeof(GameItemManager).GetField("createGameItemHandler", PRIVATE_INSTANCE).SetValue(rentals, factory);
         }
 

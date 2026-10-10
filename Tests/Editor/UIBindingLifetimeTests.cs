@@ -17,28 +17,45 @@ namespace VMFramework.Editor.Tests
     {
         private GameObject host;
         private BindVisualElementsManager bindings;
-        private UIPanelManager previousPanelManager;
-        private GameEventManager previousEventManager;
+        private UIPanelManager panels;
         private GameEventManager events;
 
         [SetUp]
         public void SetUp()
         {
+            Assert.That(ReferenceEquals(UIPanelManager.Instance, null), Is.True,
+                "The standalone fixture requires no published panel manager owner.");
+            Assert.That(ReferenceEquals(GameEventManager.Instance, null), Is.True,
+                "The standalone fixture requires no published event manager owner.");
             host = new GameObject("UI Binding Lifetime Test");
-            previousPanelManager = UIPanelManager.Instance;
-            UIPanelManager.Instance = host.AddComponent<UIPanelManager>();
-            previousEventManager = GameEventManager.Instance;
+            panels = host.AddComponent<UIPanelManager>();
+            typeof(UIPanelManager).GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(panels, null);
             events = host.AddComponent<GameEventManager>();
-            GameEventManager.Instance = events;
+            typeof(GameEventManager).GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(events, null);
             bindings = host.AddComponent<BindVisualElementsManager>();
         }
 
         [TearDown]
         public void TearDown()
         {
-            Object.DestroyImmediate(host);
-            UIPanelManager.Instance = previousPanelManager;
-            GameEventManager.Instance = previousEventManager;
+            try
+            {
+                typeof(GameEventManager).GetMethod("OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(events, null);
+            }
+            finally
+            {
+                try
+                {
+                    typeof(UIPanelManager).GetMethod("OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic)
+                        .Invoke(panels, null);
+                }
+                finally { Object.DestroyImmediate(host); }
+            }
+            Assert.That(ReferenceEquals(UIPanelManager.Instance, null), Is.True);
+            Assert.That(ReferenceEquals(GameEventManager.Instance, null), Is.True);
         }
 
         [Test]

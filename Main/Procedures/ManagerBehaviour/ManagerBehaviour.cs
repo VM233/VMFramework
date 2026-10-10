@@ -17,26 +17,29 @@ namespace VMFramework.Procedure
         [ShowInInspector]
         [ReadOnly]
         [HideInEditorMode]
-        public static TInstance Instance { get; set; }
+        public static TInstance Instance { get; private set; }
 
         protected virtual void Awake()
         {
-            if (Instance != null)
+            if (this is not TInstance owner)
             {
-                if (Instance.GetType() != GetType())
-                {
-                    Debug.LogError($"Instance of {typeof(TInstance)} already exists!" +
-                                   $"Existing instance: {Instance}");
-                    return;
-                }
+                throw new InvalidOperationException($"Manager singleton publication rejected at Awake: " +
+                    $"candidate '{GetType().FullName}' does not implement '{typeof(TInstance).FullName}'.");
             }
-            
-            Instance = this as TInstance;
 
-            if (Instance == null)
+            if (!ReferenceEquals(Instance, null) && !ReferenceEquals(Instance, this))
             {
-                Debug.LogError($"Failed to set instance : Type {typeof(TInstance)} for {GetType().Name}!");
+                throw new InvalidOperationException($"Manager singleton publication rejected at Awake: " +
+                    $"owner '{Instance.GetType().FullName}' already owns '{typeof(TInstance).FullName}'; " +
+                    $"candidate '{GetType().FullName}' is a different physical owner.");
             }
+
+            Instance = owner;
+        }
+
+        protected virtual void OnDestroy()
+        {
+            if (ReferenceEquals(Instance, this)) Instance = null;
         }
 
         protected virtual void OnBeforeInitStart()

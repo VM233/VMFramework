@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
@@ -14,9 +15,11 @@ namespace VMFramework.Tests
         [SetUp]
         public void SetUp()
         {
-            LogicTickManager.Instance = null;
             managerObject = new GameObject(nameof(LogicTickManagerTests));
+            Assert.That(ReferenceEquals(LogicTickManager.Instance, null), Is.True);
             manager = managerObject.AddComponent<LogicTickManager>();
+            typeof(LogicTickManager).GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(manager, null);
         }
 
         [TearDown]
@@ -24,10 +27,15 @@ namespace VMFramework.Tests
         {
             if (managerObject != null)
             {
-                UnityEngine.Object.DestroyImmediate(managerObject);
+                try
+                {
+                    typeof(LogicTickManager).GetMethod("OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic)
+                        .Invoke(manager, null);
+                }
+                finally { UnityEngine.Object.DestroyImmediate(managerObject); }
             }
+            Assert.That(ReferenceEquals(LogicTickManager.Instance, null), Is.True);
 
-            LogicTickManager.Instance = null;
         }
 
         [Test]

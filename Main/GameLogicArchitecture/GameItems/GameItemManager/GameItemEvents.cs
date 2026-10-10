@@ -53,6 +53,11 @@ namespace VMFramework.GameLogicArchitecture
             base.Awake();
          
             receivers.Clear();
+        }
+
+        protected override void OnBeforeInitStart()
+        {
+            base.OnBeforeInitStart();
             foreach (var type in typeof(IGameItemEventsReceiver).GetDerivedInstantiableClasses(false))
             {
                 var receiver = (IGameItemEventsReceiver)Activator.CreateInstance(type);

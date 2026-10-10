@@ -23,8 +23,7 @@ namespace VMFramework.GameEvents
 
             foreach (var gameEventConfig in GamePrefabManager.GetAllActiveGamePrefabs<IGameEventConfig>())
             {
-                var gameEvent = GameItemManager.Instance.Get<IGameEvent>(gameEventConfig.id);
-                GameEventManager.Instance.Register(gameEvent);
+                GameEventManager.Instance.Register(gameEventConfig.id);
             }
 
             return UniTask.CompletedTask;

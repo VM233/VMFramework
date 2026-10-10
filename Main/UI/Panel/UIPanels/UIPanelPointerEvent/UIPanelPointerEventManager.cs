@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -15,6 +16,10 @@ namespace VMFramework.UI
     {
         [SerializeField]
         private bool isDebugging;
+
+        private UIPanelManager panels;
+        private UpdateDelegateManager updates;
+        private readonly HashSet<IUIPanel> watchedPanels = new();
 
         #region PanelOnMouseHover
 
@@ -62,14 +67,44 @@ namespace VMFramework.UI
         {
             base.OnBeforeInitStart();
             
-            UIPanelManager.Instance.OnPanelCreatedEvent += OnPanelCreated;
+            panels = UIPanelManager.Instance;
+            panels.OnPanelCreatedEvent += OnPanelCreated;
 
-            UpdateDelegateManager.Instance.OnUpdateEvent += StaticUpdate;
+            updates = UpdateDelegateManager.Instance;
+            updates.OnUpdateEvent += StaticUpdate;
         }
 
-        protected virtual void OnDestroy()
+        protected override void OnDestroy()
         {
-            UpdateDelegateManager.Instance.OnUpdateEvent -= StaticUpdate;
+            var panelSource = panels;
+            var updateSource = updates;
+            panels = null;
+            updates = null;
+            List<Exception> failures = null;
+            try
+            {
+                if (!ReferenceEquals(panelSource, null))
+                {
+                    try { panelSource.OnPanelCreatedEvent -= OnPanelCreated; }
+                    catch (Exception error) { (failures ??= new()).Add(error); }
+                }
+                if (!ReferenceEquals(updateSource, null))
+                {
+                    try { updateSource.OnUpdateEvent -= StaticUpdate; }
+                    catch (Exception error) { (failures ??= new()).Add(error); }
+                }
+                foreach (var panel in watchedPanels)
+                {
+                    try { RetirePanel(panel); }
+                    catch (Exception error) { (failures ??= new()).Add(error); }
+                }
+                if (failures != null) throw new AggregateException(failures);
+            }
+            finally
+            {
+                watchedPanels.Clear();
+                base.OnDestroy();
+            }
         }
 
         private static void StaticUpdate()
@@ -92,6 +127,7 @@ namespace VMFramework.UI
         {
             if (panel is IUIPanelPointerEventProvider)
             {
+                watchedPanels.Add(panel);
                 panel.OnOpen += OnPanelOpen;
                 panel.OnPostClose += OnPanelClose;
                 panel.OnDestruct += OnPanelDestruct;
@@ -118,12 +154,26 @@ namespace VMFramework.UI
 
         private void OnPanelDestruct(IUIPanel panel)
         {
-            if (panel is IUIPanelPointerEventProvider pointerEventProvider)
+            try { RetirePanel(panel); }
+            finally { watchedPanels.Remove(panel); }
+        }
+
+        private void RetirePanel(IUIPanel panel)
+        {
+            panel.OnOpen -= OnPanelOpen;
+            panel.OnPostClose -= OnPanelClose;
+            panel.OnDestruct -= OnPanelDestruct;
+            List<Exception> failures = null;
+            try { ((IUIPanelPointerEventProvider)panel).RemovePointerEvent(); }
+            catch (Exception error) { (failures ??= new()).Add(error); }
+            try { OnPointerLeave(panel); }
+            catch (Exception error) { (failures ??= new()).Add(error); }
+            try
             {
-                pointerEventProvider.RemovePointerEvent();
-                
-                OnPointerLeave(panel);
+                if (ReferenceEquals(panelOnMouseClick, panel)) panelOnMouseClick = null;
             }
+            catch (Exception error) { (failures ??= new()).Add(error); }
+            if (failures != null) throw new AggregateException(failures);
         }
 
         private void OnPointerEnter(IUIPanel panel)
