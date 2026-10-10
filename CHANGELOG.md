@@ -4,6 +4,17 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.23] - 2026-10-11
+
+### Fixed
+
+- Await each original initializer action once, keeping it owned through caller,
+  timeout and sibling cancellation. Check actual cancellation after source
+  completion instead of attaching a second pending continuation to its UniTask.
+- Retain late source failures with independently requested cancellation. Correct
+  the foreign-cancellation fixture to throw its original exception from the
+  pending async source; keep all eight focused cases and their assertions.
+
 ## [9.1.22] - 2026-10-11
 
 ### Fixed

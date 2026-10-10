@@ -185,36 +185,34 @@ namespace VMFramework.Procedure
             Action<Exception> onFailed)
         {
             execution.MarkRunning();
-            UniTask? actual = null;
-            Exception waitingFailure = null, sourceFailure = null;
+            Exception failure;
             try
             {
                 actionCancellationToken.ThrowIfCancellationRequested();
-                actual = execution.InitializationAction.action(actionCancellationToken).Preserve();
-                try { await actual.Value.AttachExternalCancellation(forcedCancellationToken); }
-                catch (Exception error) { waitingFailure = error; }
-                try { await actual.Value; }
-                catch (Exception error) { sourceFailure = error; }
+                await execution.InitializationAction.action(actionCancellationToken);
+                actionCancellationToken.ThrowIfCancellationRequested();
+                forcedCancellationToken.ThrowIfCancellationRequested();
+                execution.MarkSucceeded();
+                return;
             }
-            catch (Exception error) { sourceFailure = error; }
+            catch (Exception error) { failure = error; }
 
             bool OwnsCancellation(Exception error) => error is OperationCanceledException cancellation &&
                 cancellation.CancellationToken.IsCancellationRequested &&
                 (cancellation.CancellationToken == actionCancellationToken ||
                  cancellation.CancellationToken == forcedCancellationToken);
-            var failure = sourceFailure ?? waitingFailure;
-            if (failure == null)
-            {
-                execution.MarkSucceeded();
-                return;
-            }
             if (OwnsCancellation(failure))
             {
                 execution.MarkCanceled((OperationCanceledException)failure);
                 return;
             }
-            if (waitingFailure != null && sourceFailure != null && !ReferenceEquals(waitingFailure, sourceFailure))
-                failure = new AggregateException("Initializer source and its canceled wait failed.", sourceFailure, waitingFailure);
+
+            try { forcedCancellationToken.ThrowIfCancellationRequested(); }
+            catch (OperationCanceledException cancellation)
+            {
+                failure = new AggregateException("Initializer source and its forced cancellation failed.",
+                    failure, cancellation);
+            }
             if (failure is OperationCanceledException externalCancellation)
                 execution.MarkCanceled(externalCancellation);
             else execution.MarkFailed(failure);

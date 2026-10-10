@@ -308,13 +308,17 @@ namespace VMFramework.Tests
                 using var caller = new CancellationTokenSource();
                 using var foreign = new CancellationTokenSource();
                 foreign.Cancel();
-                var source = new UniTaskCompletionSource();
+                var release = new UniTaskCompletionSource();
                 var foreignFailure = new OperationCanceledException(foreign.Token);
-                var manager = CreateManager((0, _ => source.Task));
+                var manager = CreateManager((0, async _ =>
+                {
+                    await release.Task;
+                    throw foreignFailure;
+                }));
                 var actual = manager.Initialize(caller.Token).AsTask();
                 caller.Cancel();
                 try { Assert.That(actual.IsCompleted, Is.False); }
-                finally { source.TrySetException(foreignFailure); }
+                finally { release.TrySetResult(); }
                 AggregateException failure = null;
                 try { await actual; } catch (AggregateException error) { failure = error; }
                 Assert.That(failure, Is.Not.Null);
