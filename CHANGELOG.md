@@ -4,6 +4,20 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.20] - 2026-10-11
+
+### Fixed
+
+- Retain LogicTickTimerManager's actual clock for queue deadlines and stop
+  notifications after clock publication withdraws or changes. End its acquired
+  tick subscription before manager publication releases. Preserve pending queue
+  membership so each consumer can retire its original registration.
+- Merge the timer's Editor-only Inspector declaration into its actual owner and
+  cover clock replacement, pending timer retirement, event detachment and an
+  uninitialized owner. See `Documentation~/ManagerSingletonLifetime.md`.
+
+## [9.1.19] - 2026-10-11
+
 ### Breaking
 
 - Make `ManagerBehaviour<TInstance>.Instance` a lifecycle-owned read-only publication.

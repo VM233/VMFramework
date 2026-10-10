@@ -8,6 +8,23 @@ The public setter is removed. Consumers create and retire the actual component t
 
 Subscriptions retain the source that accepted them. Localized and pointer managers capture the actual panel manager, update manager and LocalizationSettings instance. Their per-panel receipts survive removal of panel modifiers and retire the matching panel and locale callbacks. The localized manager's protected collection becomes a per-panel subscription dictionary; derived consumers that accessed its former HashSet must adopt this owner contract. `GameItemManagerEventsReceiver` captures its actual rental manager when `GameItemEvents` builds receivers at `BeforeInitStart`, after manager creation has completed all `Awake` publications. Later event removal uses that captured source.
 
+`LogicTickTimerManager` captures its actual `ILogicTickManager` at `BeforeInitStart`.
+The same clock supplies deadlines, stop notifications and the acquired tick
+subscription. Retirement detaches that subscription before releasing timer-manager
+publication. A manager that never initialized acquired no clock subscription.
+Pending queue membership stays with that physical timer manager until its consumer
+retires the registration. Consumers must retain the `ILogicTickTimerManager` that
+accepted their timers, and use it for registration, rearming and cleanup; a later
+`Instance` lookup cannot identify an old queue. Destroying or replacing the clock
+publication does not replace the original clock's final tick.
+
+The four `LogicTickTimerLifetime` cases in `VMFramework.Editor.Tests` exercise
+pending stop after clock replacement, stop through a retained retired timer owner,
+tick-subscription retirement and an owner that never initialized. They invoke the
+actual manager hooks explicitly in Edit Mode. They establish queue and callback
+contracts; an authorized consumer's native Play retirement and another admission
+remain required to prove Unity's real lifetime.
+
 FishNet UUIDCoreManager retains separate actual server and client event sources. Stopping either role removes only its acquired subscription; a host that did not acquire a client subscription has none to remove. Its Check, Query and Editor declarations merge into the main non-partial owner, with only the Editor method under `UNITY_EDITOR`. The main MonoScript GUID and all existing query/network behavior remain. DD2 has no `FISHNET` symbol, so this candidate establishes controlled static closure; native/network behavior remains unverified. No extra FishNet installation or another project's Editor is part of adoption.
 
 `GameEventManager.Register(string)` owns the rental acquired from its captured `IGameItemManager` until unregister or retirement. Failed dictionary adoption returns that rental once. `Register(IGameEvent)` borrows an existing managed or pooled product: the caller retains its lifetime, and unregister or manager retirement does not return it. The framework initializer now uses the owning ID overload.

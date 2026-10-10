@@ -2,17 +2,24 @@ using UnityEngine;
 using UnityEngine.Profiling;
 using VMFramework.Core;
 using VMFramework.Procedure;
+#if UNITY_EDITOR && ODIN_INSPECTOR
+using System.Collections.Generic;
+using System.Linq;
+using Sirenix.OdinInspector;
+#endif
 
 namespace VMFramework.Timers
 {
     [ManagerCreationProvider(ManagerType.TimerCore)]
     [DisallowMultipleComponent]
-    public partial class LogicTickTimerManager : ManagerBehaviour<ILogicTickTimerManager>, ILogicTickTimerManager
+    public class LogicTickTimerManager : ManagerBehaviour<ILogicTickTimerManager>, ILogicTickTimerManager
     {
         public const int INITIAL_QUEUE_SIZE = 100;
         public const int QUEUE_SIZE_GAP = 50;
         
-        protected ulong Tick => LogicTickManager.Instance.Tick;
+        private ILogicTickManager tickSource;
+
+        protected ulong Tick => tickSource.Tick;
         
         protected readonly GenericArrayPriorityQueue<ITimer<ulong>, ulong> queue = new(INITIAL_QUEUE_SIZE);
 
@@ -25,9 +32,25 @@ namespace VMFramework.Timers
 
         protected override void OnBeforeInitStart()
         {
+            tickSource = LogicTickManager.Instance;
             base.OnBeforeInitStart();
             
-            LogicTickManager.Instance.OnTick += OnTick;
+            tickSource.OnTick += OnTick;
+        }
+
+        protected override void OnDestroy()
+        {
+            try
+            {
+                if (tickSource is not null)
+                {
+                    tickSource.OnTick -= OnTick;
+                }
+            }
+            finally
+            {
+                base.OnDestroy();
+            }
         }
 
         protected virtual void OnTick()
@@ -95,5 +118,17 @@ namespace VMFramework.Timers
             Add(timer, delay);
             return result;
         }
+
+#if UNITY_EDITOR && ODIN_INSPECTOR
+        [ShowInInspector]
+        [EnableGUI]
+        private List<ITimer<ulong>> allTimers => queue.ToList();
+
+        [Button]
+        private bool ContainsTimer(ITimer<ulong> timer)
+        {
+            return Contains(timer);
+        }
+#endif
     }
 }
