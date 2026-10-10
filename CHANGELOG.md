@@ -4,6 +4,30 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.21] - 2026-10-11
+
+### Breaking
+
+- Return each procedure entry/exit request's actual Task from the existing
+  IProcedureManager APIs. Callers must await that accepted product instead of
+  creating an OnEnter callback completion or waiting synchronously for native
+  loading. Merge ProcedureManager's loading/query/Inspector partial declarations
+  into its single lifecycle owner; preserve the main script identity.
+
+### Fixed
+
+- Publish transition Tasks before work, retire loading and active request ownership
+  before completion, and preserve phase-specific entry failures with independent
+  inverse cleanup. Retire queued/active requests and all acquired initializer
+  sources on actual Play exit or owner destruction.
+- Preserve and join every original same-order initializer source after cancellation,
+  timeout or a sibling failure. Retain cancellation callback and late source errors
+  independently, and match actual cancellation tokens before classifying a source
+  as canceled or timed out. Extend the focused InitializerManagerTests fixture.
+- Keep the 9.1.20 physical LogicTickTimer clock/subscription retirement contract
+  unchanged. See Documentation~/ProcedureTransitionLifetime.md for the request,
+  rollback, source-lifetime and caller migration contract.
+
 ## [9.1.20] - 2026-10-11
 
 ### Fixed

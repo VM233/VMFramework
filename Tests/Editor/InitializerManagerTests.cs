@@ -199,37 +199,128 @@ namespace VMFramework.Tests
         }
 
         [UnityTest]
-        public IEnumerator TimeoutStopsWaitingForANonCooperativeAction()
+        public IEnumerator TimeoutJoinsTheActualNonCooperativeSourceBeforeTerminal()
         {
             return UniTask.ToCoroutine(async () =>
             {
-                var neverCompletes = new UniTaskCompletionSource();
-                InitActionHandler action = _ => neverCompletes.Task;
-
+                var release = new UniTaskCompletionSource();
+                var cancellationObserved = new UniTaskCompletionSource();
+                InitActionHandler action = async token =>
+                {
+                    using var registration = token.Register(() => cancellationObserved.TrySetResult());
+                    await release.Task;
+                };
                 var manager = CreateManager((0, action));
                 manager.InitializationTimeout = TimeSpan.FromMilliseconds(50);
-
-                TimeoutException caughtException = null;
+                var actual = manager.Initialize().AsTask();
                 try
                 {
-                    await manager.Initialize();
+                    await cancellationObserved.Task;
+                    Assert.That(actual.IsCompleted, Is.False, "Timeout does not retire the still-running source.");
+                    Assert.That(manager.IsInitializing, Is.True);
                 }
-                catch (TimeoutException exception)
-                {
-                    caughtException = exception;
-                }
-                finally
-                {
-                    neverCompletes.TrySetResult();
-                }
-
-                Assert.That(caughtException, Is.Not.Null);
-                Assert.That(caughtException.Message, Does.Contain("Current order: 0"));
-                Assert.That(manager.LastException, Is.SameAs(caughtException));
-                Assert.That(manager.IsInitialized, Is.False);
+                finally { release.TrySetResult(); }
+                TimeoutException failure = null;
+                try { await actual; } catch (TimeoutException error) { failure = error; }
+                Assert.That(failure, Is.Not.Null);
+                Assert.That(manager.LastException, Is.SameAs(failure));
                 Assert.That(manager.IsInitializing, Is.False);
-                Assert.That(manager.CurrentOrderExecutions[0].Status,
-                    Is.EqualTo(InitializationActionStatus.Canceled));
+                Assert.That(manager.CurrentOrderExecutions[0].Status, Is.EqualTo(InitializationActionStatus.Canceled));
+
+                var control = CreateManager((0, _ => UniTask.CompletedTask));
+                await control.Initialize();
+                Assert.That(control.IsInitialized, Is.True);
+                Assert.That(control.IsInitializing, Is.False);
+            });
+        }
+
+        [UnityTest]
+        public IEnumerator SiblingCancellationCallbackFailureDoesNotDetachItsActualSource()
+        {
+            return UniTask.ToCoroutine(async () =>
+            {
+                var primary = new InvalidOperationException("Actual failing initializer.");
+                var callbackFailure = new InvalidOperationException("Actual cancellation callback.");
+                var release = new UniTaskCompletionSource();
+                var siblingReady = new UniTaskCompletionSource();
+                var cancellationObserved = new UniTaskCompletionSource();
+                InitActionHandler failing = async _ => { await siblingReady.Task; throw primary; };
+                InitActionHandler sibling = async token =>
+                {
+                    using var registration = token.Register(() =>
+                    {
+                        cancellationObserved.TrySetResult();
+                        throw callbackFailure;
+                    });
+                    siblingReady.TrySetResult();
+                    await release.Task;
+                };
+                var manager = CreateManager((0, failing), (0, sibling));
+                var actual = manager.Initialize().AsTask();
+                try
+                {
+                    await cancellationObserved.Task;
+                    Assert.That(actual.IsCompleted, Is.False, "The callback failure cannot publish early terminal state.");
+                    Assert.That(manager.IsInitializing, Is.True);
+                }
+                finally { release.TrySetResult(); }
+                AggregateException failure = null;
+                try { await actual; } catch (AggregateException error) { failure = error; }
+                Assert.That(failure, Is.Not.Null);
+                Assert.That(failure.Flatten().InnerExceptions, Does.Contain(primary));
+                Assert.That(failure.Flatten().InnerExceptions, Does.Contain(callbackFailure));
+                Assert.That(manager.LastException, Is.SameAs(failure));
+                Assert.That(manager.IsInitializing, Is.False);
+            });
+        }
+
+        [UnityTest]
+        public IEnumerator ForcedCancellationJoinsAndPreservesTheLateSourceFailure()
+        {
+            return UniTask.ToCoroutine(async () =>
+            {
+                using var cancellation = new CancellationTokenSource();
+                var release = new UniTaskCompletionSource();
+                var primary = new InvalidOperationException("Actual source failed after cancellation.");
+                var manager = CreateManager((0, _ => release.Task));
+                var actual = manager.Initialize(cancellation.Token).AsTask();
+                cancellation.Cancel();
+                try
+                {
+                    Assert.That(actual.IsCompleted, Is.False);
+                    Assert.That(manager.IsInitializing, Is.True);
+                }
+                finally { release.TrySetException(primary); }
+                AggregateException failure = null;
+                try { await actual; } catch (AggregateException error) { failure = error; }
+                Assert.That(failure, Is.Not.Null);
+                Assert.That(failure.Flatten().InnerExceptions, Does.Contain(primary));
+                Assert.That(manager.LastException, Is.SameAs(failure));
+                Assert.That(manager.IsInitializing, Is.False);
+            });
+        }
+
+        [UnityTest]
+        public IEnumerator ForeignCancellationRemainsTheActualFailureWhenCallerAlsoCancels()
+        {
+            return UniTask.ToCoroutine(async () =>
+            {
+                using var caller = new CancellationTokenSource();
+                using var foreign = new CancellationTokenSource();
+                foreign.Cancel();
+                var source = new UniTaskCompletionSource();
+                var foreignFailure = new OperationCanceledException(foreign.Token);
+                var manager = CreateManager((0, _ => source.Task));
+                var actual = manager.Initialize(caller.Token).AsTask();
+                caller.Cancel();
+                try { Assert.That(actual.IsCompleted, Is.False); }
+                finally { source.TrySetException(foreignFailure); }
+                AggregateException failure = null;
+                try { await actual; } catch (AggregateException error) { failure = error; }
+                Assert.That(failure, Is.Not.Null);
+                Assert.That(failure.Flatten().InnerExceptions, Does.Contain(foreignFailure));
+                Assert.That(manager.LastException, Is.SameAs(failure));
+                Assert.That(manager.IsInitializing, Is.False);
             });
         }
 

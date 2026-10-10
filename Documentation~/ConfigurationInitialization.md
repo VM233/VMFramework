@@ -1,34 +1,9 @@
 # Runtime configuration initialization
 
-`GlobalSettingsFileLoadingInitializer` owns loading and validating global-setting
-files during `VMFrameworkInitializationDoneProcedure`. Loading finishes in
-`InitStart`. `GamePrefabRegisterInitializer` then collects, registers and validates
-the GamePrefab reference graph in `PostInit`. Global settings and GamePrefabs check
-their configuration in `InitComplete`, after that registry is available.
+GlobalSettingsFileLoadingInitializer loads and validates actual global-setting files during VMFrameworkInitializationDoneProcedure. Loading finishes in InitStart. GamePrefabRegisterInitializer then collects, registers and validates the GamePrefab reference graph in PostInit. Global settings and GamePrefabs check their configuration in InitComplete, after that registry is available. GameInitializationDoneProcedure adopts those completed configuration products for gameplay managers.
 
-Configuration checks may resolve strict GamePrefab references. They must not rely
-on the Editor's authoring registry, or construct a second registry. A missing
-reference remains an error in the published runtime graph. The subsequent
-`GameInitializationDoneProcedure` initializes general settings and gameplay
-managers using the completed framework configuration.
+Configuration checks may resolve strict GamePrefab references. They must use the runtime provider graph, rather than the Editor authoring registry or a second registration table. A missing reference remains the original configuration error. Cold Player validation must exercise startup without an Editor registry; successful Editor startup alone is not that proof.
 
-## Cold Player validation
+InitializerManager owns every accepted action source in a captured order. Failure, timeout or cancellation requests sibling cancellation and then joins each original preserved source before publishing terminal state. Throwing cancellation callbacks and late source failures do not detach those sources or allow later orders to start. Procedure entry/exit awaits the actual initialization product and retires it under the same transition lifetime. See ProcedureTransitionLifetime.md for cancellation identity, phase failure and request ownership.
 
-Validate a Player starting without any Editor registration state. A setting that
-resolves a configured item during `CheckSettings` must find the item registered by
-the runtime provider graph. Run the focused `InitializerManagerTests` fixture to
-check ordered phases, concurrent actions within a phase, cancellation and failure
-propagation. A successful Editor start alone does not cover cold registration.
-
-## Static Cost Ledger
-
-The validation-phase change adds no loop, registry, polling, allocation or task.
-It relocates the existing single validation invocation after the existing
-registration phase. Each global-setting file is still loaded and checked once.
-The consuming DoomsdayDiary witness contains five global-setting files, thirty-four
-general-setting assets and 310 registered GamePrefabs. There are five unchanged
-root validation calls and no additional configuration checks; nested checks keep
-their existing configured domains. Loading still allocates the same list of five
-tasks and awaits its completion once. Registration and validation remain startup
-work on the existing initializer scheduler. Incremental work and storage: zero.
-Pass. Changing domains or adding validation work requires a new ledger.
+The validation placement does not add a registry, polling loop or another loading pass. Each captured global-setting file is loaded and checked once, with one original task per file. Exact asset counts belong to the consuming project's current registered graph and cannot be copied from another project's historical checkpoint. The focused VMFramework.Editor.Tests.InitializerManagerTests fixture covers ordered sources and failure/cancellation ownership; cold configuration registration and native consumer startup remain separate integration witnesses.

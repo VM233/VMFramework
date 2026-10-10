@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace VMFramework.Core.FSM
 {
@@ -15,5 +15,7 @@ namespace VMFramework.Core.FSM
         public bool CanExitState(TID stateID);
         
         public bool ExitState(TID stateID);
+
+        public void RetireState(TID stateID);
     }
 }

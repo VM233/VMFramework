@@ -140,6 +140,13 @@ namespace VMFramework.Core.FSM
             return true;
         }
 
+        public void RetireState(TID stateID)
+        {
+            if (!currentStates.Remove(stateID, out var state))
+                throw new InvalidOperationException($"State '{stateID}' is not owned by this current FSM.");
+            state.OnExit();
+        }
+
         public void Update()
         {
             foreach (var state in states.Values)

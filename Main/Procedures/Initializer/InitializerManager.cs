@@ -110,6 +110,7 @@ namespace VMFramework.Procedure
 
                 foreach (var (order, listOfActions) in initializers.GetInitializationActions())
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     initializationCancellation.Token.ThrowIfCancellationRequested();
 
                     CurrentOrder = order;
@@ -123,12 +124,15 @@ namespace VMFramework.Procedure
                     using var orderCancellation = CancellationTokenSource.CreateLinkedTokenSource(
                         initializationCancellation.Token);
                     Exception firstActionException = null;
+                    var cancellationFailures = new List<Exception>();
 
                     void OnActionFailed(Exception exception)
                     {
                         if (Interlocked.CompareExchange(ref firstActionException, exception, null) == null)
                         {
-                            orderCancellation.Cancel();
+                            try { orderCancellation.Cancel(); }
+                            catch (Exception failure)
+                            { lock (cancellationFailures) cancellationFailures.Add(failure); }
                         }
                     }
 
@@ -144,15 +148,20 @@ namespace VMFramework.Procedure
 
                     if (firstActionException != null)
                     {
+                        if (cancellationFailures.Count > 0)
+                            throw new AggregateException("Initializer action and sibling cancellation callbacks failed.",
+                                new[] { firstActionException }.Concat(cancellationFailures));
                         ExceptionDispatchInfo.Capture(firstActionException).Throw();
                     }
 
+                    cancellationToken.ThrowIfCancellationRequested();
                     initializationCancellation.Token.ThrowIfCancellationRequested();
                 }
 
                 IsInitialized = true;
             }
-            catch (OperationCanceledException exception) when (timeoutCancellation.IsCancellationRequested &&
+            catch (OperationCanceledException exception) when (exception.CancellationToken == initializationCancellation.Token &&
+                                                               timeoutCancellation.IsCancellationRequested &&
                                                                cancellationToken.IsCancellationRequested == false)
             {
                 var timeoutException = new TimeoutException(
@@ -176,31 +185,40 @@ namespace VMFramework.Procedure
             Action<Exception> onFailed)
         {
             execution.MarkRunning();
-
+            UniTask? actual = null;
+            Exception waitingFailure = null, sourceFailure = null;
             try
             {
                 actionCancellationToken.ThrowIfCancellationRequested();
+                actual = execution.InitializationAction.action(actionCancellationToken).Preserve();
+                try { await actual.Value.AttachExternalCancellation(forcedCancellationToken); }
+                catch (Exception error) { waitingFailure = error; }
+                try { await actual.Value; }
+                catch (Exception error) { sourceFailure = error; }
+            }
+            catch (Exception error) { sourceFailure = error; }
 
-                var action = execution.InitializationAction.action;
-                await action(actionCancellationToken).AttachExternalCancellation(forcedCancellationToken);
-
-                actionCancellationToken.ThrowIfCancellationRequested();
+            bool OwnsCancellation(Exception error) => error is OperationCanceledException cancellation &&
+                cancellation.CancellationToken.IsCancellationRequested &&
+                (cancellation.CancellationToken == actionCancellationToken ||
+                 cancellation.CancellationToken == forcedCancellationToken);
+            var failure = sourceFailure ?? waitingFailure;
+            if (failure == null)
+            {
                 execution.MarkSucceeded();
+                return;
             }
-            catch (OperationCanceledException exception)
+            if (OwnsCancellation(failure))
             {
-                execution.MarkCanceled(exception);
-
-                if (actionCancellationToken.IsCancellationRequested == false)
-                {
-                    onFailed(exception);
-                }
+                execution.MarkCanceled((OperationCanceledException)failure);
+                return;
             }
-            catch (Exception exception)
-            {
-                execution.MarkFailed(exception);
-                onFailed(exception);
-            }
+            if (waitingFailure != null && sourceFailure != null && !ReferenceEquals(waitingFailure, sourceFailure))
+                failure = new AggregateException("Initializer source and its canceled wait failed.", sourceFailure, waitingFailure);
+            if (failure is OperationCanceledException externalCancellation)
+                execution.MarkCanceled(externalCancellation);
+            else execution.MarkFailed(failure);
+            onFailed(failure);
         }
 
         private static void LogActionStart(InitializationAction actionInfo)

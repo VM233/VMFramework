@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -12,268 +13,459 @@ using VMFramework.Core.FSM;
 namespace VMFramework.Procedure
 {
     [ManagerCreationProvider(ManagerType.ProcedureCore)]
-    public sealed partial class ProcedureManager : ManagerBehaviour<IProcedureManager>, IProcedureManager
+    public sealed class ProcedureManager : ManagerBehaviour<IProcedureManager>, IProcedureManager
     {
-        [ShowInInspector]
-        private IMultiFSM<string, ProcedureManager> fsm;
-
-        [ShowInInspector]
-        private List<IManagerBehaviour> managerBehaviours = new();
-
+        [ShowInInspector] private IMultiFSM<string, ProcedureManager> fsm;
+        [ShowInInspector] private List<IManagerBehaviour> managerBehaviours = new();
         private readonly Dictionary<string, IProcedure> procedures = new();
-        
-        [ShowInInspector]
-        public IReadOnlyList<IProcedure> Procedures => procedures.Values.ToList();
-
-        [ShowInInspector]
-        [ListDrawerSettings(ShowFoldout = false)]
-        public IReadOnlyList<string> CurrentProcedureIDs => fsm?.CurrentStates.Keys.ToList();
-
-        [ShowInInspector]
-        private readonly Queue<(string fromProcedureID, string toProcedureID)> procedureSwitchQueue =
-            new();
-
+        private readonly Queue<ProcedureTransitionRequest> procedureSwitchQueue = new();
+        private readonly CancellationTokenSource lifetime = new();
+        private ProcedureTransitionRequest activeRequest;
+        private TaskCompletionSource<bool> retirement;
+        public CancellationToken LifetimeToken => lifetime.Token;
+        public ProcedureResourceRetirement RetirementProduct { get; private set; }
+        [ShowInInspector] public IReadOnlyList<IProcedure> Procedures => procedures.Values.ToList();
+        [ShowInInspector] public IReadOnlyList<string> CurrentProcedureIDs => fsm?.CurrentStates.Keys.ToList();
         public event Action<string> OnEnterProcedureEvent;
-        
         public event Action<string> OnExitProcedureEvent;
 
-        #region Awake & Start & Update
-
+        protected override void Awake()
+        {
+            base.Awake();
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.playModeStateChanged += OnPlayModeChanged;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += OnBeforeReload;
+#endif
+        }
         private void Start()
         {
             procedures.Clear();
             fsm = new MultiFSM<string, ProcedureManager>();
-            
             string startProcedureID = null;
             int startProcedurePriority = 0;
-            
             foreach (var procedureType in typeof(IProcedure).GetDerivedInstantiableClasses(false))
             {
                 var procedure = (IProcedure)procedureType.CreateInstance();
-
                 procedures.Add(procedure.id, procedure);
-
                 fsm.AddState(procedure);
-
-                if (procedureType.TryGetAttribute<StartProcedureAttribute>(false,
-                        out var startProcedureAttribute))
+                if (procedureType.TryGetAttribute<StartProcedureAttribute>(false, out var startProcedureAttribute))
                 {
-                    if (startProcedureID == null)
-                    {
-                        startProcedureID = procedure.id;
-                        startProcedurePriority = startProcedureAttribute.Priority;
-                    }
-                    else if (startProcedureAttribute.Priority > startProcedurePriority)
-                    {
-                        startProcedureID = procedure.id;
-                        startProcedurePriority = startProcedureAttribute.Priority;
-                    }
+                    if (startProcedureID == null || startProcedureAttribute.Priority > startProcedurePriority)
+                    { startProcedureID = procedure.id; startProcedurePriority = startProcedureAttribute.Priority; }
                 }
             }
-
-            if (startProcedureID == null)
-            {
-                throw new InvalidOperationException("No start procedure found.");
-            }
-
+            if (startProcedureID == null) throw new InvalidOperationException("No start procedure found.");
             fsm.Init(this);
-
-            OnEnterProcedureEvent += procedureID => UnityEngine.Debug.Log($"Enter Procedure:<color=orange>{procedureID}</color>");
-
-            OnExitProcedureEvent += procedureID => UnityEngine.Debug.Log($"Exit Procedure:<color=orange>{procedureID}</color>");
-
+            OnEnterProcedureEvent += procedureID => Debug.Log($"Enter Procedure:<color=orange>{procedureID}</color>");
+            OnExitProcedureEvent += procedureID => Debug.Log($"Exit Procedure:<color=orange>{procedureID}</color>");
             ProcedureAutoSwitchBinder.Init(procedures.Values);
-
             OnEnterProcedureEvent += procedureID =>
             {
                 if (ProcedureAutoSwitchBinder.TryGetNextProcedureID(procedureID, out var nextProcedureID))
-                {
-                    EnterProcedure(procedureID, nextProcedureID);
-                }
+                    ObserveAutomaticTransition(EnterProcedure(procedureID, nextProcedureID));
             };
-
             CollectGameInitializers();
-
-            EnterProcedure(startProcedureID);
+            ObserveAutomaticTransition(EnterProcedure(startProcedureID));
         }
-
+        private async void ObserveAutomaticTransition(Task actual)
+        {
+            try { await actual; }
+            catch (OperationCanceledException) when (actual.IsCanceled) { }
+            catch (Exception error) { Debug.LogException(error, this); }
+        }
         private void Update()
         {
-            if (procedureSwitchQueue.Count == 0 || IsLoading)
+            if (procedureSwitchQueue.Count == 0 || IsLoading || activeRequest != null) return;
+            RunProcedureTransition(procedureSwitchQueue.Dequeue());
+        }
+        private void AdmitRequest(string fromID, string toID)
+        {
+            if (retirement != null) throw new InvalidOperationException("The procedure owner is retiring.");
+            lifetime.Token.ThrowIfCancellationRequested();
+            if (IsLoading) throw new InvalidOperationException("Procedure loading owns the current transition.");
+            if (fromID != null && !procedures.ContainsKey(fromID))
+                throw new ArgumentException($"Procedure '{fromID}' does not exist.", nameof(fromID));
+            if (toID != null && !procedures.ContainsKey(toID))
+                throw new ArgumentException($"Procedure '{toID}' does not exist.", nameof(toID));
+            if (fromID != null && !fsm.HasCurrentState(fromID))
+                throw new InvalidOperationException($"Procedure '{fromID}' is not the actual current source.");
+        }
+        private Task QueueRequest(string fromID, string toID)
+        {
+            AdmitRequest(fromID, toID);
+            var request = new ProcedureTransitionRequest(fromID, toID);
+            procedureSwitchQueue.Enqueue(request);
+            return request.Completion;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Task EnterProcedure(string procedureID) => QueueRequest(null, procedureID);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Task EnterProcedure(string fromProcedureID, string toProcedureID) => QueueRequest(fromProcedureID, toProcedureID);
+        public Task EnterProcedureImmediately(string procedureID)
+        {
+            AdmitRequest(null, procedureID);
+            return RunImmediate(new ProcedureTransitionRequest(null, procedureID));
+        }
+        public Task ExitProcedureImmediately(string procedureID)
+        {
+            AdmitRequest(procedureID, null);
+            return RunImmediate(new ProcedureTransitionRequest(procedureID, null));
+        }
+        private Task RunImmediate(ProcedureTransitionRequest request)
+        {
+            if (activeRequest?.Completion is { IsCompleted: false } || procedureSwitchQueue.Count != 0)
+                throw new InvalidOperationException("An accepted procedure request already owns this transition producer.");
+            RunProcedureTransition(request);
+            return request.Completion;
+        }
+        private void RunProcedureTransition(ProcedureTransitionRequest request)
+        {
+            activeRequest = request;
+            _ = request.RunAsync(token => ExecuteTransition(request, token), () => activeRequest = null, lifetime.Token);
+        }
+        private async UniTask ExecuteTransition(ProcedureTransitionRequest request, CancellationToken token)
+        {
+            var phase = ProcedureTransitionPhase.Admitted;
+            try
             {
-                return;
-            }
-
-            var (fromProcedureID, toProcedureID) = procedureSwitchQueue.Dequeue();
-
-            if (fromProcedureID.IsNullOrEmpty() == false)
-            {
-                if (HasCurrentProcedure(fromProcedureID) == false)
+                if (request.FromID != null)
                 {
-                    Debug.LogError($"Failed to switch procedure from {fromProcedureID} to {toProcedureID}. " +
-                                   $"{fromProcedureID} is not current state.");
-                    EnterProcedureImmediately(toProcedureID);
+                    token.ThrowIfCancellationRequested();
+                    if (!fsm.HasCurrentState(request.FromID) || !fsm.CanExitState(request.FromID))
+                        throw new InvalidOperationException($"Procedure '{request.FromID}' is not an exitable current source.");
+                    phase = ProcedureTransitionPhase.ExitingSourceLoading;
+                    await StartLoading(request.FromID, ProcedureLoadingType.OnExit, token);
+                    token.ThrowIfCancellationRequested();
+                    if (!fsm.CanExitState(request.FromID))
+                        throw new InvalidOperationException($"Procedure '{request.FromID}' cannot exit after loading.");
+                    phase = ProcedureTransitionPhase.ExitingSourceState;
+                    if (!fsm.ExitState(request.FromID))
+                        throw new InvalidOperationException($"Procedure '{request.FromID}' did not exit its actual current state.");
+                    phase = ProcedureTransitionPhase.PublishingSourceExit;
+                    PublishProcedureExit(request.FromID);
                 }
-                else
+                if (request.ToID != null)
                 {
-                    SwitchProcedureImmediately(fromProcedureID, toProcedureID);
+                    token.ThrowIfCancellationRequested();
+                    if (fsm.HasCurrentState(request.ToID) || !fsm.CanEnterState(request.ToID))
+                        throw new InvalidOperationException($"Procedure '{request.ToID}' is not an enterable target.");
+                    phase = ProcedureTransitionPhase.EnteringTargetLoading;
+                    await StartLoading(request.ToID, ProcedureLoadingType.OnEnter, token);
+                    token.ThrowIfCancellationRequested();
+                    if (!fsm.CanEnterState(request.ToID))
+                        throw new InvalidOperationException($"Procedure '{request.ToID}' cannot enter after loading.");
+                    phase = ProcedureTransitionPhase.EnteringTargetState;
+                    if (!fsm.EnterState(request.ToID))
+                        throw new InvalidOperationException($"Procedure '{request.ToID}' did not adopt its target state.");
+                    phase = ProcedureTransitionPhase.PublishingTargetEntry;
+                    OnEnterProcedureEvent?.Invoke(request.ToID);
                 }
             }
-            else
+            catch (Exception primary)
             {
-                EnterProcedureImmediately(toProcedureID);
+                var failures = new List<ProcedureTransitionRetirementFailure>(9);
+                bool targetStarted = phase is ProcedureTransitionPhase.EnteringTargetLoading or
+                    ProcedureTransitionPhase.EnteringTargetState or ProcedureTransitionPhase.PublishingTargetEntry;
+                if (targetStarted)
+                    await RetireProcedureAsync(request.ToID, true, true, failures);
+                else if (phase is ProcedureTransitionPhase.ExitingSourceLoading or
+                    ProcedureTransitionPhase.ExitingSourceState or ProcedureTransitionPhase.PublishingSourceExit)
+                    await RetireProcedureAsync(request.FromID, false,
+                        phase != ProcedureTransitionPhase.PublishingSourceExit, failures);
+                if (request.FromID != null && !fsm.HasCurrentState(request.FromID) &&
+                    targetStarted && retirement == null && !token.IsCancellationRequested)
+                    await RestoreSourceAsync(request.FromID, token, failures);
+                if (primary is OperationCanceledException cancellation && failures.Count == 0 &&
+                    token.IsCancellationRequested && cancellation.CancellationToken == token)
+                    System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(primary).Throw();
+                throw new ProcedureTransitionException(request.FromID, request.ToID, phase, primary,
+                    failures.AsReadOnly(), fsm.CurrentStates.Keys.ToList().AsReadOnly());
+            }
+        }
+        private void PublishProcedureExit(string procedureID)
+        {
+            var callbacks = OnExitProcedureEvent;
+            if (callbacks == null) return;
+            var failures = new List<Exception>();
+            foreach (Action<string> callback in callbacks.GetInvocationList())
+            {
+                try { callback(procedureID); }
+                catch (Exception failure) { failures.Add(failure); }
+            }
+            if (failures.Count == 1)
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failures[0]).Throw();
+            if (failures.Count > 1)
+                throw new AggregateException($"Procedure '{procedureID}' exit publication failed.", failures);
+        }
+        private async UniTask RetireProcedureAsync(string procedureID, bool retireLoading, bool publishExit,
+            List<ProcedureTransitionRetirementFailure> failures)
+        {
+            if (retireLoading)
+            {
+                try { await StartLoading(procedureID, ProcedureLoadingType.OnExit, CancellationToken.None); }
+                catch (Exception error)
+                { failures.Add(new ProcedureTransitionRetirementFailure(procedureID, ProcedureTransitionPhase.RetiringLoading, error)); }
+            }
+            try
+            {
+                if (fsm.HasCurrentState(procedureID)) fsm.RetireState(procedureID);
+            }
+            catch (Exception error)
+            { failures.Add(new ProcedureTransitionRetirementFailure(procedureID, ProcedureTransitionPhase.RetiringState, error)); }
+            if (!publishExit) return;
+            var callbacks = OnExitProcedureEvent;
+            if (callbacks == null) return;
+            foreach (Action<string> callback in callbacks.GetInvocationList())
+            {
+                try { callback(procedureID); }
+                catch (Exception error)
+                { failures.Add(new ProcedureTransitionRetirementFailure(procedureID, ProcedureTransitionPhase.PublishingRetirement, error)); }
+            }
+        }
+        private async UniTask RestoreSourceAsync(string procedureID, CancellationToken token,
+            List<ProcedureTransitionRetirementFailure> failures)
+        {
+            var phase = ProcedureTransitionPhase.RestoringSourceLoading;
+            try
+            {
+                await StartLoading(procedureID, ProcedureLoadingType.OnEnter, token);
+                token.ThrowIfCancellationRequested();
+                phase = ProcedureTransitionPhase.RestoringSourceState;
+                if (!fsm.EnterState(procedureID))
+                    throw new InvalidOperationException($"Procedure '{procedureID}' cannot adopt its restored source.");
+                phase = ProcedureTransitionPhase.PublishingSourceRestoration;
+                OnEnterProcedureEvent?.Invoke(procedureID);
+            }
+            catch (Exception error)
+            {
+                failures.Add(new ProcedureTransitionRetirementFailure(procedureID, phase, error));
+                await RetireProcedureAsync(procedureID, true, true, failures);
+            }
+        }
+        public Task RetireAsync()
+        {
+            if (retirement != null) return retirement.Task;
+            retirement = new TaskCompletionSource<bool>();
+            CompleteRetirementAsync(retirement);
+            return retirement.Task;
+        }
+        private async void CompleteRetirementAsync(TaskCompletionSource<bool> completion)
+        {
+            var token = lifetime.Token;
+            var running = activeRequest?.Completion;
+            bool released = true;
+            var failures = new List<Exception>();
+            try { lifetime.Cancel(); }
+            catch (Exception error) { failures.Add(error); }
+            while (procedureSwitchQueue.Count != 0)
+            {
+                var queued = procedureSwitchQueue.Dequeue();
+                try { queued.CancelQueued(token); }
+                catch (Exception error) { released = false; failures.Add(error); }
+            }
+            try { if (running != null) await running; }
+            catch (OperationCanceledException error) when (token.IsCancellationRequested && error.CancellationToken == token) { }
+            catch (Exception error)
+            {
+                failures.Add(error);
+                if (error is ProcedureTransitionException transition && transition.RetirementFailures.Count != 0)
+                    released = false;
+            }
+            try { lifetime.Dispose(); }
+            catch (Exception error) { released = false; failures.Add(error); }
+            var failure = failures.Count == 0 ? null : failures.Count == 1 ? failures[0] :
+                new AggregateException("Procedure source and owned queue retirement failed.", failures);
+            RetirementProduct = new ProcedureResourceRetirement(released, failure);
+            if (failures.Count == 1) completion.SetException(failures[0]);
+            else if (failures.Count > 1) completion.SetException(new AggregateException("Procedure source and owned queue retirement failed.", failures));
+            else completion.SetResult(true);
+        }
+#if UNITY_EDITOR
+        private void OnPlayModeChanged(UnityEditor.PlayModeStateChange state)
+        {
+            if (state == UnityEditor.PlayModeStateChange.ExitingPlayMode)
+                ObserveAutomaticTransition(RetireAsync());
+        }
+        private void OnBeforeReload() => ObserveAutomaticTransition(RetireAsync());
+#endif
+        protected override void OnDestroy()
+        {
+            try
+            {
+#if UNITY_EDITOR
+                UnityEditor.EditorApplication.playModeStateChanged -= OnPlayModeChanged;
+                UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= OnBeforeReload;
+#endif
+                ObserveAutomaticTransition(RetireAsync());
+            }
+            finally { base.OnDestroy(); }
+        }
+
+        [ShowInInspector]
+        public bool IsLoading => initializerManager is { IsInitializing: true };
+
+        [ShowInInspector]
+        private Dictionary<string, Dictionary<ProcedureLoadingType, List<IGameInitializer>>>
+            gameInitializers = new();
+
+        [ShowInInspector]
+        private InitializerManager initializerManager;
+
+        public void CollectGameInitializers()
+        {
+            gameInitializers.Clear();
+            initializerManager = new();
+
+            foreach (var derivedClass in typeof(IGameInitializer).GetDerivedInstantiableClasses(false))
+            {
+                if (derivedClass.TryGetAttribute<GameInitializerRegister>(false,
+                        out var register) == false)
+                {
+                    continue;
+                }
+
+                if (register.ProcedureID.IsNullOrEmpty())
+                {
+                    Debug.LogError(
+                        $"{derivedClass}'s {nameof(GameInitializerRegister)} Attribute " +
+                        $"has an empty {nameof(GameInitializerRegister.ProcedureID)}");
+                    continue;
+                }
+
+                if (HasProcedure(register.ProcedureID) == false)
+                {
+                    Debug.LogError(
+                        $"{nameof(ProcedureManager)} does not have a {nameof(IProcedure)} " +
+                        $"with ID {register.ProcedureID} " +
+                        $"required by {derivedClass}'s {nameof(GameInitializerRegister)} Attribute");
+                    continue;
+                }
+
+                if (derivedClass.CreateInstance() is not IGameInitializer initializer)
+                {
+                    Debug.LogError(
+                        $"Failed to create instance of {derivedClass} as an {nameof(IGameInitializer)}");
+                    continue;
+                }
+
+                var initializersByLoadingType = gameInitializers.GetOrCreate(register.ProcedureID);
+
+                var initializers = initializersByLoadingType.GetOrCreate(register.LoadingType);
+
+                initializers.Add(initializer);
             }
         }
 
-        #endregion
-
-        #region Enter & Exit Procedure
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void EnterProcedureImmediately(string procedureID)
+        private IReadOnlyList<IGameInitializer> GetGameInitializers(string procedureID,
+            ProcedureLoadingType loadingType)
+        {
+            if (gameInitializers.TryGetValue(procedureID, out var initializersByLoadingType) == false)
+            {
+                return Array.Empty<IGameInitializer>();
+            }
+
+            if (initializersByLoadingType.TryGetValue(loadingType, out var initializers) == false)
+            {
+                return Array.Empty<IGameInitializer>();
+            }
+
+            return initializers;
+        }
+
+        private async UniTask StartLoading(IReadOnlyList<IGameInitializer> initializers,
+            CancellationToken cancellationToken)
         {
             if (IsLoading)
             {
-                UnityEngine.Debug.LogWarning("ProcedureManager is still loading, cannot switch procedure.");
-                return;
-            }
-            
-            if (fsm.HasCurrentState(procedureID))
-            {
-                UnityEngine.Debug.LogWarning($"Procedure with ID:{procedureID} is already current state.");
-                return;
+                throw new InvalidOperationException("Loading already in progress.");
             }
 
-            if (fsm.CanEnterState(procedureID) == false)
-            {
-                Debug.LogError($"Failed to enter procedure with ID:{procedureID}.");
-                return;
-            }
-            
-            RunProcedureTransition(EnterProcedureImmediatelyAsync(procedureID,
-                this.GetCancellationTokenOnDestroy()));
+            initializerManager.Set(initializers);
+            await initializerManager.Initialize(cancellationToken);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ExitProcedureImmediately(string procedureID)
-        {
-            if (IsLoading)
-            {
-                UnityEngine.Debug.LogWarning("ProcedureManager is still loading, cannot switch procedure.");
-                return;
-            }
-            
-            if (fsm.HasCurrentState(procedureID) == false)
-            {
-                UnityEngine.Debug.LogWarning($"Procedure with ID:{procedureID} is not current state.");
-                return;
-            }
-
-            if (fsm.CanExitState(procedureID) == false)
-            {
-                Debug.LogError($"Failed to exit procedure with ID:{procedureID}.");
-                return;
-            }
-
-            RunProcedureTransition(ExitProcedureImmediatelyAsync(procedureID,
-                this.GetCancellationTokenOnDestroy()));
-        }
-
-        private async UniTask EnterProcedureImmediatelyAsync(string procedureID,
+        private UniTask StartLoading(string procedureID, ProcedureLoadingType loadingType,
             CancellationToken cancellationToken)
         {
-            await StartLoading(procedureID, ProcedureLoadingType.OnEnter, cancellationToken);
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (fsm.CanEnterState(procedureID) == false)
-            {
-                throw new InvalidOperationException($"Failed to enter procedure with ID:{procedureID}.");
-            }
-
-            fsm.EnterState(procedureID);
-            OnEnterProcedureEvent?.Invoke(procedureID);
-        }
-
-        private async UniTask ExitProcedureImmediatelyAsync(string procedureID,
-            CancellationToken cancellationToken)
-        {
-            await StartLoading(procedureID, ProcedureLoadingType.OnExit, cancellationToken);
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (fsm.CanExitState(procedureID) == false)
-            {
-                throw new InvalidOperationException($"Failed to exit procedure with ID:{procedureID}.");
-            }
-
-            fsm.ExitState(procedureID);
-            OnExitProcedureEvent?.Invoke(procedureID);
-        }
-
-        private void SwitchProcedureImmediately(string fromProcedureID, string toProcedureID)
-        {
-            RunProcedureTransition(SwitchProcedureImmediatelyAsync(fromProcedureID, toProcedureID,
-                this.GetCancellationTokenOnDestroy()));
-        }
-
-        private async UniTask SwitchProcedureImmediatelyAsync(string fromProcedureID, string toProcedureID,
-            CancellationToken cancellationToken)
-        {
-            await ExitProcedureImmediatelyAsync(fromProcedureID, cancellationToken);
-            await EnterProcedureImmediatelyAsync(toProcedureID, cancellationToken);
-        }
-
-        private void RunProcedureTransition(UniTask transition)
-        {
-            transition.Forget(exception =>
-            {
-                if (exception is OperationCanceledException)
-                {
-                    return;
-                }
-
-                Debug.LogException(exception, this);
-            });
+            var initializers = GetGameInitializers(procedureID, loadingType);
+            return StartLoading(initializers, cancellationToken);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void EnterProcedure(string procedureID)
+        public bool HasProcedure(string procedureID)
         {
-            if (IsLoading)
-            {
-                UnityEngine.Debug.LogWarning("ProcedureManager is still loading, cannot switch procedure.");
-                return;
-            }
-            
-            if (procedures.ContainsKey(procedureID) == false)
+            return procedures.ContainsKey(procedureID);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool HasCurrentProcedure(string procedureID)
+        {
+            return fsm.HasCurrentState(procedureID);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public IProcedure GetProcedure(string procedureID)
+        {
+            return procedures.GetValueOrDefault(procedureID);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public IProcedure GetProcedureStrictly(string procedureID)
+        {
+            if (procedures.TryGetValue(procedureID, out var procedure) == false)
             {
                 throw new ArgumentException($"Procedure with ID:{procedureID} does not exist.");
             }
-            
-            procedureSwitchQueue.Enqueue((null, procedureID));
+
+            return procedure;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void EnterProcedure(string fromProcedureID, string toProcedureID)
+        public bool TryGetProcedure(string procedureID, out IProcedure procedure)
         {
-            if (IsLoading)
-            {
-                UnityEngine.Debug.LogWarning("ProcedureManager is still loading, cannot switch procedure.");
-                return;
-            }
-            
-            if (procedures.ContainsKey(fromProcedureID) == false)
-            {
-                throw new ArgumentException($"Procedure with ID:{fromProcedureID} does not exist.");
-            }
-
-            if (procedures.ContainsKey(toProcedureID) == false)
-            {
-                throw new ArgumentException($"Procedure with ID:{toProcedureID} does not exist.");
-            }
-
-            procedureSwitchQueue.Enqueue((fromProcedureID, toProcedureID));
+            return procedures.TryGetValue(procedureID, out procedure);
         }
 
-        #endregion
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryGetProcedureWithWarning(string procedureID, out IProcedure procedure)
+        {
+            if (procedures.TryGetValue(procedureID, out procedure) == false)
+            {
+                UnityEngine.Debug.LogWarning($"Procedure with ID:{procedureID} does not exist.");
+                return false;
+            }
+            
+            return true;
+        }
+#if UNITY_EDITOR
+
+        private static readonly TypeCollector<IProcedure> procedureCollector = new()
+        {
+            IncludingSelf = false,
+            IncludingAbstract = false,
+            IncludingInterface = false,
+            IncludingGenericDefinition = false
+        };
+
+        public static IEnumerable<ValueDropdownItem> GetNameList()
+        {
+            if (procedureCollector.Count == 0)
+            {
+                procedureCollector.Collect();
+            }
+
+            foreach (var procedureType in procedureCollector.GetCollectedTypes())
+            {
+                var id = procedureType.GetStaticFieldValueByName<string>("ID");
+
+                if (id.IsNullOrEmpty() == false)
+                {
+                    yield return new ValueDropdownItem(procedureType.Name, id);
+                }
+            }
+        }
+#endif
     }
 }
