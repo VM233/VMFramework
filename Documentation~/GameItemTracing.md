@@ -9,12 +9,15 @@ the last group's subscription and collection lease. A single item may fill both
 roles, and either return order is valid.
 
 `GameItemTracingManager` owns the equivalent whole-item relationship and its
-offset. Removing its last target also detaches the source subscription. Manager
+offset, defined as target position minus source position at binding. The first
+render update preserves the published target position; subsequent source
+displacement produces the same target displacement. Removing its last target
+also detaches the source subscription. Manager
 destruction releases remaining subscriptions and collection leases in both
 implementations; no binding survives into a subsequent manager lifetime.
 
 These are render-frame consumers. They retain their existing Update clock,
-positions, offsets, public entry points and pooling authority. No gameplay
+public entry points and pooling authority. No gameplay
 timer, warmup, simulation cadence or performance threshold is changed.
 
 ## Static Cost Ledger
@@ -30,12 +33,12 @@ No new collection, cache, thread or native synchronization call is added.
 Collection leases retain the existing Default pool's 500-idle-collection bound
 per closed type; references are cleared before lease return.
 
-The focused fixtures freeze at 10 Edit Mode and two Play Mode cases, at most four bindings, three
+The focused fixtures freeze at 13 Edit Mode and two Play Mode cases, at most four bindings, three
 items, four target Transforms and two managers per case. Its repeated-rental
 case runs eight add/return cycles (16 group acquisitions/returns), never more
 than one simultaneous binding. Other cases perform at most four admissions and
-four removals, and six render updates. Total admissions <= 52, removals <= 52,
-render updates <= 66, native GameObjects <= 108 across the fixture; no physics
+four removals, and six render updates. Total admissions <= 64, removals <= 64,
+render updates <= 96, native GameObjects <= 144 across the fixtures; no physics
 or asset scan runs. Added fixture live storage budget is 64 KiB excluding Unity
 object/test-runner storage; added production scratch allocation is zero. PASS
 for this frozen fixture and the unchanged linear production traversal. Dynamic

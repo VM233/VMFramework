@@ -41,7 +41,7 @@ namespace VMFramework.GameLogicArchitecture
 
         public virtual void Add(IControllerGameItem positionSource, IControllerGameItem target)
         {
-            var offset = positionSource.transform.position - target.transform.position;
+            var offset = target.transform.position - positionSource.transform.position;
             Add(positionSource, target, offset);
         }
 

@@ -184,6 +184,27 @@ namespace VMFramework.Tests
             Assert.That(target.transform.position.x, Is.EqualTo(5));
         }
 
+        [TestCase(-4)]
+        [TestCase(0)]
+        [TestCase(6)]
+        public void WholeItemTracingPreservesItsPublishedPositionAndSourceDisplacement(int xOffset)
+        {
+            var source = Item("Source");
+            var target = Item("Target");
+            source.transform.position = new Vector3(2, 3, 0);
+            var initial = source.transform.position + new Vector3(xOffset, 5, 0);
+            target.transform.position = initial;
+            items.Add(source, target);
+            Invoke(items, "Update");
+            Assert.That(target.transform.position, Is.EqualTo(initial));
+            var displacement = new Vector3(7, -2, 0);
+            source.transform.position += displacement;
+            Invoke(items, "Update");
+            Assert.That(target.transform.position, Is.EqualTo(initial + displacement));
+            Return(target);
+            Assert.That(Callbacks(source), Is.Zero);
+        }
+
         [Test]
         public void WholeItemRebindingRetiresItsPreviousSource()
         {

@@ -4,6 +4,16 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.17] - 2026-10-10
+
+### Fixed
+
+- Give the native Play Mode tracing fixture a valid 32-digit script GUID so
+  Unity imports it and compiles its declared test assembly.
+- Preserve whole-item tracing's initial published target position instead of
+  reflecting its offset around the source. Cover both offset signs and source
+  displacement through the default Add entry point.
+
 ## [9.1.16] - 2026-10-10
 
 ### Fixed
