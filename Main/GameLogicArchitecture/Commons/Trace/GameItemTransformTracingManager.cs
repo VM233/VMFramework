@@ -71,8 +71,8 @@ namespace VMFramework.GameLogicArchitecture
         {
             RemoveTransform(targetTransform);
 
-            ownerLookup.Add(targetTransform, positionSource);
-            positionSourceLookup.Add(targetTransform, owner);
+            ownerLookup.Add(targetTransform, owner);
+            positionSourceLookup.Add(targetTransform, positionSource);
 
             var targetTransformsByOwner =
                 transformsByOwner.GetOrCreateFromFactory(owner, HashSetPoolFactory<Transform>.CreateFromDefaultPool);
@@ -103,36 +103,11 @@ namespace VMFramework.GameLogicArchitecture
                 return;
             }
 
-            if (positionSourceLookup.Remove(targetTransform, out var positionSource))
-            {
-                if (transformsByPositionSource.TryGetValue(positionSource, out var transforms))
-                {
-                    if (transforms.Remove(targetTransform))
-                    {
-                        if (transforms.Count < 0)
-                        {
-                            transformsByPositionSource.Remove(positionSource);
-                            transforms.ReturnToDefaultPool();
-
-                            positionSource.OnReturnEvent -= positionSourceReturnFunc;
-                        }
-                    }
-                }
-            }
-
-            if (transformsByPositionSource.TryGetValue(owner, out var targetTransforms))
-            {
-                if (targetTransforms.Remove(targetTransform))
-                {
-                    if (targetTransforms.Count < 0)
-                    {
-                        transformsByPositionSource.Remove(owner);
-                        targetTransforms.ReturnToDefaultPool();
-
-                        owner.OnReturnEvent -= ownerReturnFunc;
-                    }
-                }
-            }
+            var positionSource = positionSourceLookup[targetTransform];
+            positionSourceLookup.Remove(targetTransform);
+            RemoveGroupBinding(transformsByOwner, owner, targetTransform, ownerReturnFunc);
+            RemoveGroupBinding(transformsByPositionSource, positionSource, targetTransform,
+                positionSourceReturnFunc);
         }
 
         public virtual void RemoveOwner(IControllerGameItem owner)
@@ -146,26 +121,14 @@ namespace VMFramework.GameLogicArchitecture
 
             foreach (var targetTransform in targetTransforms)
             {
-                if (positionSourceLookup.Remove(targetTransform, out var positionSource))
-                {
-                    if (transformsByPositionSource.TryGetValue(positionSource, out var transforms))
-                    {
-                        if (transforms.Remove(targetTransform))
-                        {
-                            if (transforms.Count < 0)
-                            {
-                                transformsByPositionSource.Remove(positionSource);
-                                transforms.ReturnToDefaultPool();
-
-                                positionSource.OnReturnEvent -= positionSourceReturnFunc;
-                            }
-                        }
-                    }
-                }
-
+                var positionSource = positionSourceLookup[targetTransform];
+                positionSourceLookup.Remove(targetTransform);
+                RemoveGroupBinding(transformsByPositionSource, positionSource, targetTransform,
+                    positionSourceReturnFunc);
                 ownerLookup.Remove(targetTransform);
             }
 
+            targetTransforms.Clear();
             targetTransforms.ReturnToDefaultPool();
         }
 
@@ -182,25 +145,48 @@ namespace VMFramework.GameLogicArchitecture
             {
                 positionSourceLookup.Remove(targetTransform);
 
-                if (ownerLookup.Remove(targetTransform, out var owner))
-                {
-                    if (transformsByOwner.TryGetValue(owner, out var transforms))
-                    {
-                        if (transforms.Remove(targetTransform))
-                        {
-                            if (transforms.Count < 0)
-                            {
-                                transformsByOwner.Remove(owner);
-                                transforms.ReturnToDefaultPool();
-
-                                owner.OnReturnEvent -= ownerReturnFunc;
-                            }
-                        }
-                    }
-                }
+                var owner = ownerLookup[targetTransform];
+                ownerLookup.Remove(targetTransform);
+                RemoveGroupBinding(transformsByOwner, owner, targetTransform, ownerReturnFunc);
             }
 
+            targetTransforms.Clear();
             targetTransforms.ReturnToDefaultPool();
+        }
+
+        private static void RemoveGroupBinding(
+            Dictionary<IControllerGameItem, HashSet<Transform>> groups, IControllerGameItem item,
+            Transform targetTransform, IReturnEventProvider.ReturnHandler returnHandler)
+        {
+            var transforms = groups[item];
+            transforms.Remove(targetTransform);
+            if (transforms.Count == 0)
+            {
+                groups.Remove(item);
+                item.OnReturnEvent -= returnHandler;
+                transforms.ReturnToDefaultPool();
+            }
+        }
+
+        protected virtual void OnDestroy()
+        {
+            foreach (var (owner, transforms) in transformsByOwner)
+            {
+                owner.OnReturnEvent -= ownerReturnFunc;
+                transforms.Clear();
+                transforms.ReturnToDefaultPool();
+            }
+            foreach (var (source, transforms) in transformsByPositionSource)
+            {
+                source.OnReturnEvent -= positionSourceReturnFunc;
+                transforms.Clear();
+                transforms.ReturnToDefaultPool();
+            }
+            transformsByOwner.Clear();
+            transformsByPositionSource.Clear();
+            ownerLookup.Clear();
+            positionSourceLookup.Clear();
+            if (ReferenceEquals(Instance, this)) Instance = null;
         }
 
         protected virtual void Update()

@@ -4,6 +4,18 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.15] - 2026-10-10
+
+### Fixed
+
+- Preserve the distinct owner and position-source roles of Transform tracing.
+  Returning either role, removing or replacing a target now retires both indexes,
+  subscriptions and pooled group collections without retaining old rentals.
+- Detach the source when whole-item tracing loses its last target. Both tracing
+  managers release all remaining relationships when destroyed.
+- Add native Transform and ControllerGameItem lifetime regressions. See
+  `Documentation~/GameItemTracing.md` for the ownership and validation scope.
+
 ## [9.1.14] - 2026-10-09
 
 ### Fixed

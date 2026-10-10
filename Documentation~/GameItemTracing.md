@@ -1,0 +1,53 @@
+# Game item tracing lifetime
+
+`GameItemTransformTracingManager.Add` publishes one binding per target Transform:
+the position source supplies its rendered position and the owner supplies its
+pool lifetime. The two forward indexes and the two reverse group indexes have
+the same membership. Rebinding first retires the old binding. Returning either
+role, removing the target, or destroying the manager retires both indexes and
+the last group's subscription and collection lease. A single item may fill both
+roles, and either return order is valid.
+
+`GameItemTracingManager` owns the equivalent whole-item relationship and its
+offset. Removing its last target also detaches the source subscription. Manager
+destruction releases remaining subscriptions and collection leases in both
+implementations; no binding survives into a subsequent manager lifetime.
+
+These are render-frame consumers. They retain their existing Update clock,
+positions, offsets, public entry points and pooling authority. No gameplay
+timer, warmup, simulation cadence or performance threshold is changed.
+
+## Static Cost Ledger
+
+Before executable writes: each manager has one input axis, N currently admitted
+bindings. Source and owner group counts are each <= N; they are indexes of that
+same axis, not independent Cartesian axes. Add/remove uses expected constant
+dictionary/set work; removing a role visits exactly its k <= N bindings; Update
+visits N bindings. Destruction visits at most 2N group entries and clears at most
+2N binding references. There is no loop over prior rentals, ticks, assets or
+frames. Correct retirement removes the old unbounded-history membership defect.
+No new collection, cache, thread or native synchronization call is added.
+Collection leases retain the existing Default pool's 500-idle-collection bound
+per closed type; references are cleared before lease return.
+
+The focused native fixture freezes at 12 cases, at most four bindings, three
+items, four target Transforms and two managers per case. Its repeated-rental
+case runs eight add/return cycles (16 group acquisitions/returns), never more
+than one simultaneous binding. Other cases perform at most four admissions and
+four removals, and six render updates. Total admissions <= 52, removals <= 52,
+render updates <= 66, native GameObjects <= 108 across the fixture; no physics
+or asset scan runs. Added fixture live storage budget is 64 KiB excluding Unity
+object/test-runner storage; added production scratch allocation is zero. PASS
+for this frozen fixture and the unchanged linear production traversal. Dynamic
+gameplay admission remains the caller's input domain, not a claimed hard cap or
+wall-clock guarantee.
+
+## Validation
+
+`GameItemTracingLifetimeTests` uses the production managers, ControllerGameItem
+pool-return callbacks and native Transforms. It checks visible motion, retiring
+subscriptions, role order, selective shared-group removal, replacing bindings,
+the same item in both roles, eight rental cycles and manager teardown. Package
+adoption, compilation and exact changed-source policy review remain separate.
+The calibration stall's original native trace remains a counterexample; this
+lifetime repair alone does not establish its complete CPU cause.

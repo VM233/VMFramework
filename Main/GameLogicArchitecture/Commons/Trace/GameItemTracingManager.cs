@@ -78,6 +78,7 @@ namespace VMFramework.GameLogicArchitecture
                     if (offsetTargets.Count == 0)
                     {
                         offsetTargetLookup.Remove(source);
+                        source.OnReturnEvent -= sourceReturnFunc;
                         offsetTargets.ReturnToDefaultPool();
                     }
                 }
@@ -98,6 +99,7 @@ namespace VMFramework.GameLogicArchitecture
                     target.OnReturnEvent -= targetReturnFunc;
                 }
 
+                offsetTargets.Clear();
                 offsetTargets.ReturnToDefaultPool();
             }
         }
@@ -112,6 +114,21 @@ namespace VMFramework.GameLogicArchitecture
         {
             var source = (IControllerGameItem)provider;
             RemovePositionSource(source);
+        }
+
+        protected virtual void OnDestroy()
+        {
+            foreach (var (source, offsetTargets) in offsetTargetLookup)
+            {
+                source.OnReturnEvent -= sourceReturnFunc;
+                foreach (var target in offsetTargets.Keys)
+                    target.OnReturnEvent -= targetReturnFunc;
+                offsetTargets.Clear();
+                offsetTargets.ReturnToDefaultPool();
+            }
+            offsetTargetLookup.Clear();
+            positionSourceLookup.Clear();
+            if (ReferenceEquals(Instance, this)) Instance = null;
         }
 
         protected virtual void Update()

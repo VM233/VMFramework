@@ -64,6 +64,7 @@ See [CHANGELOG.md](CHANGELOG.md) for version-specific behavior, migrations, and 
 See [State cloning](Documentation~/StateCloning.md) for native initialization and clone publication.
 See [Priority events](Documentation~/PriorityEvents.md) for callback registration and publication.
 See [Game event propagation](Documentation~/GameEventPropagation.md) for callback snapshot lifetimes.
+See [Game item tracing](Documentation~/GameItemTracing.md) for binding and pool-return lifetimes.
 See [Collider mouse point filters](Documentation~/ColliderMousePointFilters.md) for precise 2D picking.
 See [Logic tick profiling](Documentation~/LogicTickProfiling.md) for native phase timing.
 See [EventSystem input](Documentation~/InputBackend.md) for input backend setup.
