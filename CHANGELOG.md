@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.22] - 2026-10-11
+
+### Fixed
+
+- Publish matched procedure-request cancellation with the token-preserving
+  TaskCompletionSource API available in Unity's .NET Standard 2.1 profile. Keep
+  the original accepted Task and reject duplicate terminal publication directly.
+
 ## [9.1.21] - 2026-10-11
 
 ### Breaking

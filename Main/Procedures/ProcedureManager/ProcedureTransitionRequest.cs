@@ -13,7 +13,12 @@ namespace VMFramework.Procedure
         public Task Completion => completion.Task;
         public ProcedureTransitionRequest(string fromID, string toID)
         { FromID = fromID; ToID = toID; }
-        public void CancelQueued(CancellationToken token) => completion.SetCanceled(token);
+        public void CancelQueued(CancellationToken token) => PublishCancellation(token);
+        private void PublishCancellation(CancellationToken token)
+        {
+            if (!completion.TrySetCanceled(token))
+                throw new InvalidOperationException("The procedure request has already completed.");
+        }
         public async Task RunAsync(Func<CancellationToken, UniTask> transition, Action retireSource, CancellationToken token)
         {
             Exception failure = null;
@@ -25,7 +30,7 @@ namespace VMFramework.Procedure
             catch (Exception error) { failure = error; }
             retireSource();
             if (failure is OperationCanceledException cancellation && token.IsCancellationRequested &&
-                cancellation.CancellationToken == token) completion.SetCanceled(token);
+                cancellation.CancellationToken == token) PublishCancellation(token);
             else if (failure != null) completion.SetException(failure);
             else completion.SetResult(true);
         }
