@@ -169,7 +169,10 @@ namespace VMFramework.Editor.Tests
             var generate = (DescriptionManager.GenerateHandler)Delegate.CreateDelegate(
                 typeof(DescriptionManager.GenerateHandler), register,
                 registerType.GetMethod("Generate", flags));
-            manager.Register(DescriptionType, generate);
+            var generateAsync = (DescriptionManager.GenerateAsyncHandler)Delegate.CreateDelegate(
+                typeof(DescriptionManager.GenerateAsyncHandler), register,
+                registerType.GetMethod("GenerateAsync", flags));
+            manager.Register(DescriptionType, generate, generateAsync);
             var onGet = (Action<IPoolEventProvider>)Delegate.CreateDelegate(
                 typeof(Action<IPoolEventProvider>), register,
                 registerType.GetMethod("OnGet", flags));

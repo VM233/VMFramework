@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.26] - 2026-10-11
+
+### Fixed
+
+- Qualify NUnit assertions in native cleanup tests and migrate the localized
+  description fixture to register the actual synchronous and asynchronous
+  producers together. Package test assemblies compile with tests exposed.
+
 ## [9.1.25] - 2026-10-11
 
 ### Breaking

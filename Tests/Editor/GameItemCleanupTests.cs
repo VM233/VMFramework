@@ -6,6 +6,7 @@ using UnityEngine;
 using VMFramework.Core;
 using VMFramework.Core.Pools;
 using VMFramework.GameLogicArchitecture;
+using Assert = NUnit.Framework.Assert;
 using Object = UnityEngine.Object;
 
 namespace VMFramework.Tests
