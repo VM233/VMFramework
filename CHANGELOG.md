@@ -4,6 +4,35 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.25] - 2026-10-11
+
+### Breaking
+
+- Publish the original UI Toolkit layout Task and typed root retirement product.
+  Consumers retain their root resources until that Task terminates; release,
+  native destruction and pool retirement preserve the original failure while
+  independently completing each cleanup operation.
+- Publish panel rentals only after acquisition completes. Logical item retirement
+  precedes physical pool retention, and failed acquisition returns only its owned
+  prefix. Pool clearing withdraws its entry snapshot before invoking callbacks.
+- Consolidate controller, inspector and optional FishNet lifecycle members into
+  their canonical component source, preserving its Unity asset identity.
+- Description generators publish their synchronous and asynchronous producers
+  together. Description notifications receive an invocation-owned BindingRequest;
+  migrate bindings and await real localized names before root formatting.
+- Procedure UI authoring declares one typed entering page separately from auxiliary
+  panels. Page transitions consume that exact primary panel identity.
+
+### Fixed
+
+- Preserve post-close subscriber failures in the original typed root retirement.
+- Join actual Localization initialization and accepted string requests before
+  cancellation propagation; retire their exact references and subscriptions.
+
+### Dependencies
+
+- Require VMCore 1.1.8 for the matching acquisition and retirement contracts.
+
 ## [9.1.24] - 2026-10-11
 
 ### Fixed

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine.Localization.Settings;
 using VMFramework.Procedure;
@@ -10,9 +11,10 @@ namespace VMFramework.UI
     public class LocalizedUIPanelManager : ManagerBehaviour<LocalizedUIPanelManager>
     {
         [ShowInInspector]
-        protected readonly Dictionary<IUIPanel, List<ILocalizedPanelModifier>> localizedModifiers = new();
+        private readonly Dictionary<IUIPanel, LocalizedUIPanelSubscriptions> localizedModifiers = new();
 
-        private UIPanelManager panels;
+        private UIPanelManager createdSource;
+        private UIPanelManager destructedSource;
         private LocalizationSettings localization;
 
         protected override void Awake()
@@ -24,90 +26,81 @@ namespace VMFramework.UI
 
         protected override void OnDestroy()
         {
-            var source = panels;
-            panels = null;
-            List<Exception> failures = null;
-            try
-            {
-                if (!ReferenceEquals(source, null))
-                {
-                    try { source.OnPanelCreatedEvent -= OnUIPanelCreated; }
-                    catch (Exception error) { (failures ??= new()).Add(error); }
-                }
-                foreach (var pair in localizedModifiers)
-                {
-                    try { RetirePanel(pair.Key, pair.Value); }
-                    catch (Exception error) { (failures ??= new()).Add(error); }
-                }
-                if (failures != null) throw new AggregateException(failures);
-            }
-            finally
-            {
-                localizedModifiers.Clear();
-                localization = null;
-                base.OnDestroy();
-            }
+            var failures = new UIPanelReleaseFailures(nameof(LocalizedUIPanelManager));
+            failures.Attempt("manager-subscriptions.release", ReleaseManagerSubscriptions);
+            failures.Attempt("base.destroy", () => base.OnDestroy());
+            failures.ThrowIfFailed();
         }
 
         protected override void OnBeforeInitStart()
         {
             base.OnBeforeInitStart();
 
-            panels = UIPanelManager.Instance;
             localization = LocalizationSettings.Instance;
-            panels.OnPanelCreatedEvent += OnUIPanelCreated;
+            var panels = UIPanelManager.Instance;
+            try
+            {
+                panels.OnPanelCreatedEvent += OnUIPanelCreated; createdSource = panels;
+                panels.OnPanelDestructedEvent += OnUIPanelDestruct; destructedSource = panels;
+            }
+            catch (Exception primary)
+            {
+                var failures = new UIPanelReleaseFailures(nameof(LocalizedUIPanelManager), primary);
+                failures.Attempt("partial-init.release", ReleaseManagerSubscriptions);
+                failures.ThrowIfFailed(); throw;
+            }
         }
 
         protected virtual void OnUIPanelCreated(IUIPanel uiPanelController)
         {
-            localizedModifiers.Add(uiPanelController, new());
-            uiPanelController.OnOpen += OnUIPanelOpen;
-            uiPanelController.OnPostClose += OnUIPanelClose;
-            uiPanelController.OnDestruct += OnUIPanelDestruct;
+            var subscriptions = new LocalizedUIPanelSubscriptions(uiPanelController, localization);
+            localizedModifiers.Add(uiPanelController, subscriptions);
+            subscriptions.Acquire(OnUIPanelOpen, panel => subscriptions.ReleaseLocale());
         }
 
         protected virtual void OnUIPanelOpen(IUIPanel uiPanelController)
         {
             var subscriptions = localizedModifiers[uiPanelController];
+            try
+            {
             if (uiPanelController is ILocalizedPanelModifier localizedPanelController)
-                Subscribe(localizedPanelController, subscriptions);
+                subscriptions.Subscribe(localizedPanelController);
             foreach (var modifier in uiPanelController.Modifiers)
             {
                 if (modifier is ILocalizedPanelModifier localizedPanelModifier)
-                    Subscribe(localizedPanelModifier, subscriptions);
+                    subscriptions.Subscribe(localizedPanelModifier);
             }
-        }
-
-        private void Subscribe(ILocalizedPanelModifier modifier, List<ILocalizedPanelModifier> subscriptions)
-        {
-            modifier.OnCurrentLanguageChanged(localization.GetSelectedLocale());
-            localization.OnSelectedLocaleChanged += modifier.OnCurrentLanguageChanged;
-            subscriptions.Add(modifier);
-        }
-
-        protected virtual void OnUIPanelClose(IUIPanel uiPanelController)
-        {
-            var subscriptions = localizedModifiers[uiPanelController];
-            foreach (var modifier in subscriptions)
-                localization.OnSelectedLocaleChanged -= modifier.OnCurrentLanguageChanged;
-            subscriptions.Clear();
+            }
+            catch (Exception primary)
+            {
+                var failures = new UIPanelReleaseFailures(nameof(LocalizedUIPanelManager), primary);
+                failures.Attempt("partial-open.locale-release", subscriptions.ReleaseLocale);
+                failures.ThrowIfFailed(); throw;
+            }
         }
 
         protected virtual void OnUIPanelDestruct(IUIPanel uiPanelController)
         {
-            var subscriptions = localizedModifiers[uiPanelController];
-            RetirePanel(uiPanelController, subscriptions);
+            // A failed Created fanout may not have reached this subscriber.
+            if (!localizedModifiers.TryGetValue(uiPanelController, out var subscriptions)) return;
             localizedModifiers.Remove(uiPanelController);
+            subscriptions.Release();
         }
 
-        private void RetirePanel(IUIPanel panel, List<ILocalizedPanelModifier> subscriptions)
+        private void ReleaseManagerSubscriptions()
         {
-            panel.OnOpen -= OnUIPanelOpen;
-            panel.OnPostClose -= OnUIPanelClose;
-            panel.OnDestruct -= OnUIPanelDestruct;
-            foreach (var modifier in subscriptions)
-                localization.OnSelectedLocaleChanged -= modifier.OnCurrentLanguageChanged;
-            subscriptions.Clear();
+            var created = createdSource; createdSource = null;
+            var destructed = destructedSource; destructedSource = null;
+            var actual = localizedModifiers.Values.ToArray(); localizedModifiers.Clear();
+            localization = null;
+            var failures = new UIPanelReleaseFailures(nameof(LocalizedUIPanelManager));
+            if (!ReferenceEquals(created, null))
+                failures.Attempt("created.unsubscribe", () => created.OnPanelCreatedEvent -= OnUIPanelCreated);
+            if (!ReferenceEquals(destructed, null))
+                failures.Attempt("destructed.unsubscribe", () => destructed.OnPanelDestructedEvent -= OnUIPanelDestruct);
+            foreach (var subscriptions in actual)
+                failures.Attempt("panel-subscriptions.release", subscriptions.Release);
+            failures.ThrowIfFailed();
         }
     }
 }

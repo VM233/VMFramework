@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using VMFramework.Core;
 using VMFramework.GameLogicArchitecture;
 
@@ -45,6 +46,18 @@ namespace VMFramework.UI
         internal void OnPreCloseInternal();
 
         internal void OnPostCloseInternal();
+
+        internal void RetireFailedOpen(Exception failure);
+
+        internal void RetireFailedClose(Exception failure);
+
+        internal UIPanelManager RegistrationOwner { get; }
+
+        internal void AdoptRegistration(UIPanelManager owner);
+
+        internal void WithdrawRegistration(UIPanelManager owner);
+
+        internal void PublishDestroyedClose(bool preClosePublished);
 
         /// <summary>
         /// 重新进入UI，只在<see cref="IsOpened"/>为true时有效

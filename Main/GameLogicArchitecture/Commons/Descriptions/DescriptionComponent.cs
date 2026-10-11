@@ -1,4 +1,7 @@
-﻿using Sirenix.OdinInspector;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using VMFramework.Localization;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Localization;
 using UnityEngine.Localization.Tables;
@@ -29,8 +32,14 @@ namespace VMFramework.GameLogicArchitecture
                 return;
             }
 
-            descriptionManager.Register(type, Generate);
+            descriptionManager.Register(type, Generate, GenerateAsync);
             descriptionManager.Register(type, localizedDescription);
+        }
+
+        protected virtual async Task<DescriptionManager.DescriptionResult> GenerateAsync(CancellationToken cancellationToken)
+        {
+            string description = await localizedDescription.GetLocalizedTextAsync(cancellationToken);
+            return new DescriptionManager.DescriptionResult(true, description);
         }
 
         protected virtual bool Generate(out string description)

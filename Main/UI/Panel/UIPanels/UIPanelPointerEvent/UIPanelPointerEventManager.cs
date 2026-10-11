@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -17,9 +18,10 @@ namespace VMFramework.UI
         [SerializeField]
         private bool isDebugging;
 
-        private UIPanelManager panels;
+        private UIPanelManager createdSource;
+        private UIPanelManager destructedSource;
         private UpdateDelegateManager updates;
-        private readonly HashSet<IUIPanel> watchedPanels = new();
+        private readonly Dictionary<IUIPanel, UIPanelPointerWatch> watchedPanels = new();
 
         #region PanelOnMouseHover
 
@@ -67,44 +69,28 @@ namespace VMFramework.UI
         {
             base.OnBeforeInitStart();
             
-            panels = UIPanelManager.Instance;
-            panels.OnPanelCreatedEvent += OnPanelCreated;
-
-            updates = UpdateDelegateManager.Instance;
-            updates.OnUpdateEvent += StaticUpdate;
+            var panels = UIPanelManager.Instance;
+            var updateSource = UpdateDelegateManager.Instance;
+            try
+            {
+                panels.OnPanelCreatedEvent += OnPanelCreated; createdSource = panels;
+                panels.OnPanelDestructedEvent += OnPanelDestruct; destructedSource = panels;
+                updateSource.OnUpdateEvent += StaticUpdate; updates = updateSource;
+            }
+            catch (Exception primary)
+            {
+                var failures = new UIPanelReleaseFailures(nameof(UIPanelPointerEventManager), primary);
+                failures.Attempt("partial-init.release", ReleaseManagerSubscriptions);
+                failures.ThrowIfFailed(); throw;
+            }
         }
 
         protected override void OnDestroy()
         {
-            var panelSource = panels;
-            var updateSource = updates;
-            panels = null;
-            updates = null;
-            List<Exception> failures = null;
-            try
-            {
-                if (!ReferenceEquals(panelSource, null))
-                {
-                    try { panelSource.OnPanelCreatedEvent -= OnPanelCreated; }
-                    catch (Exception error) { (failures ??= new()).Add(error); }
-                }
-                if (!ReferenceEquals(updateSource, null))
-                {
-                    try { updateSource.OnUpdateEvent -= StaticUpdate; }
-                    catch (Exception error) { (failures ??= new()).Add(error); }
-                }
-                foreach (var panel in watchedPanels)
-                {
-                    try { RetirePanel(panel); }
-                    catch (Exception error) { (failures ??= new()).Add(error); }
-                }
-                if (failures != null) throw new AggregateException(failures);
-            }
-            finally
-            {
-                watchedPanels.Clear();
-                base.OnDestroy();
-            }
+            var failures = new UIPanelReleaseFailures(nameof(UIPanelPointerEventManager));
+            failures.Attempt("manager-subscriptions.release", ReleaseManagerSubscriptions);
+            failures.Attempt("base.destroy", () => base.OnDestroy());
+            failures.ThrowIfFailed();
         }
 
         private static void StaticUpdate()
@@ -125,55 +111,60 @@ namespace VMFramework.UI
 
         private void OnPanelCreated(IUIPanel panel)
         {
-            if (panel is IUIPanelPointerEventProvider)
+            if (panel is IUIPanelPointerEventProvider provider)
             {
-                watchedPanels.Add(panel);
-                panel.OnOpen += OnPanelOpen;
-                panel.OnPostClose += OnPanelClose;
-                panel.OnDestruct += OnPanelDestruct;
+                var watch = new UIPanelPointerWatch(panel, provider);
+                watchedPanels.Add(panel, watch);
+                watch.Acquire(OnPanelOpen, closed => OnPanelClose(closed, watch));
             }
         }
 
         private void OnPanelOpen(IUIPanel panel)
         {
-            if (panel is IUIPanelPointerEventProvider pointerEventProvider)
-            {
-                pointerEventProvider.AddPointerEvent(OnPointerEnter, OnPointerLeave);
-            }
+            watchedPanels[panel].Activate(OnPointerEnter, OnPointerLeave);
         }
 
-        private void OnPanelClose(IUIPanel panel)
+        private void OnPanelClose(IUIPanel panel, UIPanelPointerWatch watch)
         {
-            if (panel is IUIPanelPointerEventProvider pointerEventProvider)
-            {
-                pointerEventProvider.RemovePointerEvent();
-                
-                OnPointerLeave(panel);
-            }
+            var failures = new UIPanelReleaseFailures(nameof(UIPanelPointerEventManager));
+            failures.Attempt("pointer.release", watch.ReleasePointer);
+            failures.Attempt("pointer.leave", () => OnPointerLeave(panel));
+            failures.ThrowIfFailed();
         }
 
         private void OnPanelDestruct(IUIPanel panel)
         {
-            try { RetirePanel(panel); }
-            finally { watchedPanels.Remove(panel); }
+            if (!watchedPanels.TryGetValue(panel, out var watch)) return;
+            watchedPanels.Remove(panel);
+            RetirePanel(panel, watch);
         }
 
-        private void RetirePanel(IUIPanel panel)
+        private void RetirePanel(IUIPanel panel, UIPanelPointerWatch watch)
         {
-            panel.OnOpen -= OnPanelOpen;
-            panel.OnPostClose -= OnPanelClose;
-            panel.OnDestruct -= OnPanelDestruct;
-            List<Exception> failures = null;
-            try { ((IUIPanelPointerEventProvider)panel).RemovePointerEvent(); }
-            catch (Exception error) { (failures ??= new()).Add(error); }
-            try { OnPointerLeave(panel); }
-            catch (Exception error) { (failures ??= new()).Add(error); }
-            try
-            {
-                if (ReferenceEquals(panelOnMouseClick, panel)) panelOnMouseClick = null;
-            }
-            catch (Exception error) { (failures ??= new()).Add(error); }
-            if (failures != null) throw new AggregateException(failures);
+            var failures = new UIPanelReleaseFailures(nameof(UIPanelPointerEventManager));
+            failures.Attempt("watch.release", watch.Release);
+            failures.Attempt("pointer.leave", () => OnPointerLeave(panel));
+            if (ReferenceEquals(panelOnMouseClick, panel))
+                failures.Attempt("click.clear", () => panelOnMouseClick = null);
+            failures.ThrowIfFailed();
+        }
+
+        private void ReleaseManagerSubscriptions()
+        {
+            var created = createdSource; createdSource = null;
+            var destructed = destructedSource; destructedSource = null;
+            var updated = updates; updates = null;
+            var actual = watchedPanels.ToArray(); watchedPanels.Clear();
+            var failures = new UIPanelReleaseFailures(nameof(UIPanelPointerEventManager));
+            if (!ReferenceEquals(created, null))
+                failures.Attempt("created.unsubscribe", () => created.OnPanelCreatedEvent -= OnPanelCreated);
+            if (!ReferenceEquals(destructed, null))
+                failures.Attempt("destructed.unsubscribe", () => destructed.OnPanelDestructedEvent -= OnPanelDestruct);
+            if (!ReferenceEquals(updated, null))
+                failures.Attempt("update.unsubscribe", () => updated.OnUpdateEvent -= StaticUpdate);
+            foreach (var pair in actual)
+                failures.Attempt("panel-watch.release", () => RetirePanel(pair.Key, pair.Value));
+            failures.ThrowIfFailed();
         }
 
         private void OnPointerEnter(IUIPanel panel)

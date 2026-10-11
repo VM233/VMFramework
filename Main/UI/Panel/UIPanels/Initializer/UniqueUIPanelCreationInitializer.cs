@@ -25,7 +25,7 @@ namespace VMFramework.UI
             {
                 if (config.IsUnique)
                 {
-                    GameItemManager.Instance.Get(config.id);
+                    UIPanelManager.Instance.CreatePanel(config.id);
                 }
             }
 

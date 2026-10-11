@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using VMFramework.Core;
 using Sirenix.OdinInspector;
@@ -53,60 +54,143 @@ namespace VMFramework.UI
         
         protected bool closableCheckAdded = false;
 
+        private UIPanelManager registration;
+
         #region Pool Events
 
         protected override void OnCreate()
         {
             base.OnCreate();
-
             BindObjectsManager = GetComponentInChildren<BindObjectsManager>();
-
-            modifiers.Clear();
-
-            foreach (var modifier in GetComponentsInChildren<IPanelModifier>())
+            var ordered = new List<IPanelModifier>(GetComponentsInChildren<IPanelModifier>());
+            ordered.Sort(modifier => modifier.InitializePriority);
+            try
             {
-                modifiers.Add(modifier);
+                foreach (var modifier in ordered)
+                {
+                    modifier.Initialize(this, Config);
+                    try { modifiers.Add(modifier); }
+                    catch (Exception primary)
+                    {
+                        var failures = new UIPanelReleaseFailures(nameof(UIPanel), primary);
+                        failures.Attempt("unadopted-modifier.deinitialize", modifier.Deinitialize);
+                        failures.ThrowIfFailed(); throw;
+                    }
+                }
             }
-            
-            modifiers.Sort(modifier => modifier.InitializePriority);
-
-            UIPanelManager.Instance.Register(this);
-            
-            foreach (var modifier in modifiers)
+            catch (Exception primary)
             {
-                modifier.Initialize(this, Config);
+                var failures = new UIPanelReleaseFailures(nameof(UIPanel), primary);
+                failures.Attempt("modifiers.deinitialize", DeinitializeModifiers);
+                failures.Attempt("panel.unregister", ReleaseRegistration);
+                failures.ThrowIfFailed(); throw;
             }
+        }
+
+        protected override void OnReturn()
+        {
+            IsOpened = false; IsClosing = false;
+            var failures = new UIPanelReleaseFailures(nameof(UIPanel));
+            failures.Attempt("rental.resources", ReleasePanelCloseSubscriptions);
+            failures.Attempt("rental.registration", ReleaseRegistration);
+            failures.Attempt("base.return", () => base.OnReturn());
+            failures.ThrowIfFailed();
         }
 
         protected override void OnClear()
         {
-            base.OnClear();
-            
-            if (closableCheckAdded)
-            {
-                UpdateDelegateManager.Instance.OnUpdateEvent -= OnCheckingClosable;
-                closableCheckAdded = false;
-            }
-
-            DeinitializeModifiers();
-            
-            UIPanelManager.Instance.Unregister(this);
-            
-            OnDestruct?.Invoke(this);
+            var failures = new UIPanelReleaseFailures(nameof(UIPanel));
+            failures.Attempt("base.clear", () => base.OnClear());
+            failures.Attempt("close-subscriptions.release", ReleasePanelCloseSubscriptions);
+            failures.Attempt("close-check.unsubscribe", ReleaseClosableCheck);
+            failures.Attempt("modifiers.deinitialize", DeinitializeModifiers);
+            failures.Attempt("panel.unregister", ReleaseRegistration);
+            PublishDestruct(ref failures);
+            failures.Attempt("native-panel.destroy", () => UnityEngine.Object.Destroy(gameObject));
+            failures.ThrowIfFailed();
         }
 
-        protected virtual void OnDestroy()
+        protected override void OnDestroy()
         {
-            DeinitializeModifiers();
+            var failures = new UIPanelReleaseFailures(nameof(UIPanel));
+            failures.Attempt("native-destruction.close", BeginPanelDestruction);
+            failures.Attempt("native-destruction.resources", CompletePanelDestruction);
+            failures.ThrowIfFailed();
+        }
+
+        protected void BeginPanelDestruction()
+        {
+            base.OnDestroy();
+            var owner = registration;
+            if (!ReferenceEquals(owner, null)) owner.RetireDestroyedPanel(this);
+        }
+
+        protected void CompletePanelDestruction()
+        {
+            var failures = new UIPanelReleaseFailures(nameof(UIPanel));
+            failures.Attempt("close-subscriptions.release", ReleasePanelCloseSubscriptions);
+            failures.Attempt("close-check.unsubscribe", ReleaseClosableCheck);
+            failures.Attempt("modifiers.deinitialize", DeinitializeModifiers);
+            failures.Attempt("panel.unregister", ReleaseRegistration);
+            PublishDestruct(ref failures);
+            failures.ThrowIfFailed();
+        }
+
+        private void PublishDestruct(ref UIPanelReleaseFailures failures)
+        {
+            var subscribers = OnDestruct; OnDestruct = null;
+            if (subscribers != null)
+                foreach (IUIPanel.DestructHandler subscriber in subscribers.GetInvocationList())
+                    try { subscriber(this); }
+                    catch (Exception error) { failures.Capture("destruct.subscriber", error); }
+        }
+
+        private void ReleaseRegistration()
+        {
+            var actual = registration;
+            if (!ReferenceEquals(actual, null)) actual.Unregister(this);
+        }
+
+        UIPanelManager IUIPanel.RegistrationOwner => registration;
+
+        void IUIPanel.AdoptRegistration(UIPanelManager owner)
+        {
+            if (!ReferenceEquals(registration, null))
+                throw new InvalidOperationException($"Panel {id} already owns its registration.");
+            registration = owner;
+        }
+
+        void IUIPanel.WithdrawRegistration(UIPanelManager owner)
+        {
+            if (!ReferenceEquals(registration, owner))
+                throw new InvalidOperationException($"Panel {id} registration is owned by a different manager.");
+            registration = null;
+        }
+
+        void IUIPanel.PublishDestroyedClose(bool preClosePublished)
+        {
+            IsOpened = false; IsClosing = false;
+            var failures = new UIPanelReleaseFailures(nameof(UIPanel));
+            if (!preClosePublished) PublishClose(OnPreClose, "native-destruction.pre-close", ref failures);
+            PublishClose(OnPostClose, "native-destruction.post-close", ref failures);
+            failures.Attempt("native-destruction.close-subscriptions", ReleasePanelCloseSubscriptions);
+            failures.ThrowIfFailed();
+        }
+
+        private void ReleaseClosableCheck()
+        {
+            if (!closableCheckAdded) return;
+            closableCheckAdded = false;
+            UpdateDelegateManager.Instance.OnUpdateEvent -= OnCheckingClosable;
         }
 
         private void DeinitializeModifiers()
         {
-            foreach (var modifier in modifiers)
-            {
-                modifier.Deinitialize();
-            }
-            modifiers.Clear();
+            var actual = modifiers.ToArray(); modifiers.Clear();
+            var failures = new UIPanelReleaseFailures(nameof(UIPanel));
+            foreach (var modifier in actual)
+                failures.Attempt("modifier.deinitialize", modifier.Deinitialize);
+            failures.ThrowIfFailed();
         }
 
         #endregion
@@ -123,37 +207,23 @@ namespace VMFramework.UI
         #region Open
 
         void IUIPanel.OnOpenInternal(IUIPanel source)
-        { 
-            if (IsOpened)
-            {
-                return;
-            }
-
+        {
+            if (IsOpened) return;
             IsClosing = false;
-            
             OnOpenInternal(source);
-
-            SourceUIPanel = source;
-
-            if (SourceUIPanel != null)
+            if (source != null)
             {
-                SourceUIPanel.OnPostClose += OnSourcePanelClose;
+                source.OnPostClose += OnSourcePanelClose;
+                SourceUIPanel = source;
             }
-            
             IsOpened = true;
-            
             OnPostOpenInternal(source);
-            
             OnOpen?.Invoke(this);
         }
 
         protected virtual void OnOpenInternal(IUIPanel source)
         {
-            if (closableCheckAdded)
-            {
-                UpdateDelegateManager.Instance.OnUpdateEvent -= OnCheckingClosable;
-                closableCheckAdded = false;
-            }
+            ReleaseClosableCheck();
         }
 
         protected virtual void OnPostOpenInternal(IUIPanel source)
@@ -203,33 +273,68 @@ namespace VMFramework.UI
             }
         }
 
-        protected virtual void OnPostCloseInternal()
+        protected virtual void OnPostCloseInternal(Exception failure)
         {
-            if (closableCheckAdded)
-            {
-                UpdateDelegateManager.Instance.OnUpdateEvent -= OnCheckingClosable;
-                closableCheckAdded = false;
-            }
-            
-            if (SourceUIPanel != null)
-            {
-                SourceUIPanel.OnPostClose -= OnSourcePanelClose;
-            }
+            ReleasePanelCloseSubscriptions();
+        }
 
-            SourceUIPanel = null;
+        private void ReleasePanelCloseSubscriptions()
+        {
+            var failures = new UIPanelReleaseFailures(nameof(UIPanel));
+            failures.Attempt("close-check.unsubscribe", ReleaseClosableCheck);
+            var source = SourceUIPanel; SourceUIPanel = null;
+            if (source != null)
+                failures.Attempt("source-close.unsubscribe", () => source.OnPostClose -= OnSourcePanelClose);
+            failures.ThrowIfReleaseFailed();
         }
 
         void IUIPanel.OnPreCloseInternal()
         {
-            OnPreClose?.Invoke(this);
-            OnPreCloseInternal();
+            var failures = new UIPanelReleaseFailures(nameof(UIPanel));
+            PublishClose(OnPreClose, "pre-close.subscriber", ref failures);
+            failures.Attempt("pre-close.internal", OnPreCloseInternal);
+            failures.ThrowIfFailed();
         }
 
         void IUIPanel.OnPostCloseInternal()
         {
-            IsClosing = false;
-            OnPostClose?.Invoke(this);
-            OnPostCloseInternal();
+            IsOpened = false; IsClosing = false;
+            var failures = new UIPanelReleaseFailures(nameof(UIPanel));
+            PublishClose(OnPostClose, "post-close.subscriber", ref failures);
+            var failure = failures.PrimaryFailure;
+            failures.Attempt("post-close.internal", () => OnPostCloseInternal(failure));
+            failures.ThrowIfFailed();
+        }
+
+        void IUIPanel.RetireFailedOpen(Exception failure)
+        {
+            bool adopted = IsOpened;
+            IsOpened = false; IsClosing = false;
+            var failures = new UIPanelReleaseFailures(nameof(UIPanel), failure);
+            if (adopted)
+            {
+                PublishClose(OnPreClose, "failed-open.pre-close", ref failures);
+                PublishClose(OnPostClose, "failed-open.post-close", ref failures);
+            }
+            failures.Attempt("failed-open.resources", () => OnPostCloseInternal(failure));
+            failures.ThrowIfReleaseFailed();
+        }
+
+        void IUIPanel.RetireFailedClose(Exception failure)
+        {
+            IsOpened = false; IsClosing = false;
+            var failures = new UIPanelReleaseFailures(nameof(UIPanel), failure);
+            PublishClose(OnPostClose, "failed-close.post-close", ref failures);
+            failures.Attempt("failed-close.resources", () => OnPostCloseInternal(failure));
+            failures.ThrowIfReleaseFailed();
+        }
+
+        private void PublishClose(IUIPanel.CloseHandler subscribers, string stage, ref UIPanelReleaseFailures failures)
+        {
+            if (subscribers == null) return;
+            foreach (IUIPanel.CloseHandler subscriber in subscribers.GetInvocationList())
+                try { subscriber(this); }
+                catch (Exception error) { failures.Capture(stage, error); }
         }
 
         #endregion

@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.ExceptionServices;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using VMFramework.Core;
@@ -8,11 +11,14 @@ using VMFramework.Core.Pools;
 using VMFramework.GameLogicArchitecture;
 using VMFramework.Procedure;
 using VMFramework.Tools;
+#if UNITY_EDITOR
+using VMFramework.OdinExtensions;
+#endif
 
 namespace VMFramework.UI
 {
     [ManagerCreationProvider(ManagerType.UICore)]
-    public partial class UIPanelManager : ManagerBehaviour<UIPanelManager>
+    public class UIPanelManager : ManagerBehaviour<UIPanelManager>
     {
         public Transform UIContainer { get; private set; }
 
@@ -27,14 +33,11 @@ namespace VMFramework.UI
         private readonly Dictionary<string, HashSet<IUIPanel>> openedPanels = new();
 
         [ShowInInspector]
-        private readonly HashSet<IUIPanel> preOpeningPanels = new();
-
-        private readonly HashSet<IUIPanel> preOpeningPanelsCache = new();
-        
-        [ShowInInspector]
         private readonly HashSet<IUIPanel> closingPanels = new();
 
         private readonly List<IUIPanel> closedPanels = new();
+
+        private readonly Dictionary<IUIPanel, Task> retiringRentals = new();
 
         #region Init
 
@@ -47,8 +50,6 @@ namespace VMFramework.UI
             
             uniquePanels.Clear();
             openedPanels.Clear();
-            preOpeningPanels.Clear();
-            preOpeningPanelsCache.Clear();
             closingPanels.Clear();
             closedPanels.Clear();
         }
@@ -65,40 +66,38 @@ namespace VMFramework.UI
         #region Register & Unregister
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Register(IUIPanel panel)
+        private void Register(IUIPanel panel)
         {
-            var id = panel.id;
-
-            if (panel.IsUnique)
+            panel.AdoptRegistration(this);
+            try
             {
-                if (uniquePanels.ContainsKey(id))
-                {
-                    UnityEngine.Debug.LogWarning($"The unique UI panel with ID {id} has already been created, " +
-                                        "the old panel will be overwritten");
-                }
-
-                uniquePanels[id] = panel;
+                if (panel.IsUnique) uniquePanels.Add(panel.id, panel);
+                OnPanelCreatedEvent?.Invoke(panel);
             }
-
-            OnPanelCreatedEvent?.Invoke(panel);
+            catch (Exception primary)
+            {
+                var failures = new UIPanelReleaseFailures(nameof(UIPanelManager), primary);
+                if (ReferenceEquals(panel.RegistrationOwner, this))
+                    failures.Attempt("unadopted-registration.unregister", () => Unregister(panel));
+                failures.ThrowIfFailed(); throw;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Unregister(IUIPanel panel)
+        internal void Unregister(IUIPanel panel)
         {
-            var id = panel.id;
-
-            if (panel.IsUnique)
+            panel.WithdrawRegistration(this);
+            if (panel.IsUnique && uniquePanels.TryGetValue(panel.id, out var actual) && ReferenceEquals(actual, panel))
             {
-                if (uniquePanels.Remove(id) == false)
-                {
-                    UnityEngine.Debug.LogWarning($"The unique UI panel with ID {id} has not been created, " +
-                                        "cannot unregister it");
-                    return;
-                }
+                uniquePanels.Remove(panel.id);
             }
-
-            OnPanelDestructedEvent?.Invoke(panel);
+            var failures = new UIPanelReleaseFailures(nameof(UIPanelManager));
+            var subscribers = OnPanelDestructedEvent;
+            if (subscribers != null)
+                foreach (Action<IUIPanel> subscriber in subscribers.GetInvocationList())
+                    try { subscriber(panel); }
+                    catch (Exception error) { failures.Capture("panel-destructed.subscriber", error); }
+            failures.ThrowIfFailed();
         }
 
         #endregion
@@ -127,130 +126,148 @@ namespace VMFramework.UI
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryOpen(IUIPanel panel, IUIPanel source)
         {
-            // if (preOpeningPanels.Add(panel) == false)
-            // {
-            //     UnityEngine.Debug.LogWarning($"The UI panel: {panel.id} is already pre-opening, cannot open it again");
-            //     return false;
-            // }
-            
+            if (retiringRentals.ContainsKey(panel))
+                throw new InvalidOperationException($"Panel {panel.id} has a rental already handed to retirement.");
+            if (!ReferenceEquals(panel.RegistrationOwner, this))
+                throw new InvalidOperationException($"Panel {panel.id} Open requires this manager's completed rental admission.");
+            try
+            {
             if (closingPanels.Remove(panel))
             {
-                OnPanelClosing(panel);
+                panel.OnPostCloseInternal();
             }
-
             panel.OnOpenInternal(source);
-
             var set = openedPanels.GetOrCreateFromFactory(panel.id, HashSetPoolFactory<IUIPanel>.CreateFromDefaultPool);
-            
             set.Add(panel);
-
             return true;
+            }
+            catch (Exception primary)
+            {
+                var failures = new UIPanelReleaseFailures(nameof(UIPanelManager), primary);
+                failures.Attempt("open-prefix.retire", () => RetireFailedOpen(panel, primary));
+                failures.ThrowIfFailed(); throw;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryClose(IUIPanel panel)
         {
-            if (panel.IsOpened == false)
-            {
-                return false;
-            }
-            
-            if (closingPanels.Add(panel) == false)
-            {
-                if (preOpeningPanels.Remove(panel) == false)
-                {
-                    UnityEngine.Debug.LogWarning($"The UI panel with ID {panel.id} is already closing, cannot close it again");
-                }
-                
-                return false;
-            }
-
-            panel.OnPreCloseInternal();
-
-            if (openedPanels.TryGetValue(panel.id, out var set))
-            {
-                set.Remove(panel);
-            }
-            else
-            {
-                UnityEngine.Debug.LogWarning($"The UI panel with ID {panel.id} is not opened!");
-            }
-
+            if (!panel.IsOpened) return false;
+            if (!closingPanels.Add(panel)) return false;
+            try { panel.OnPreCloseInternal(); }
+            catch (Exception failure) { RetireFailedOpen(panel, failure); throw; }
+            RemoveOpened(panel);
             return true;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Close(IUIPanel panel)
+        private void RemoveOpened(IUIPanel panel)
         {
-            TryClose(panel);
+            if (openedPanels.TryGetValue(panel.id, out var set)) set.Remove(panel);
         }
+
+        internal void RetireFailedOpen(IUIPanel panel, Exception failure)
+        {
+            bool closingOwned = closingPanels.Remove(panel);
+            bool ownsRental = ReferenceEquals(panel.RegistrationOwner, this);
+            if (openedPanels.TryGetValue(panel.id, out var set)) set.Remove(panel);
+            var failures = new UIPanelReleaseFailures(nameof(UIPanelManager), failure);
+            failures.Attempt("failed-open.retire", () =>
+            {
+                if (closingOwned) panel.RetireFailedClose(failure);
+                else panel.RetireFailedOpen(failure);
+            });
+            if (ownsRental && !panel.IsUnique)
+                failures.Attempt("failed-open.return", () => ReturnAfterLayout(panel, failure));
+            failures.ThrowIfReleaseFailed();
+        }
+
+        internal void RetireDestroyedPanel(IUIPanel panel)
+        {
+            bool closingOwned = closingPanels.Remove(panel);
+            bool openedOwned = openedPanels.TryGetValue(panel.id, out var set) && set.Remove(panel);
+            // Native destruction consumes custody of this rental. A previously
+            // registered Task continuation must no longer return it to the pool.
+            retiringRentals.Remove(panel);
+            if (closingOwned || openedOwned || panel.IsOpened || panel.IsClosing)
+                panel.PublishDestroyedClose(closingOwned);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Close(IUIPanel panel) => TryClose(panel);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsClosing(IUIPanel panel) => closingPanels.Contains(panel);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void OnPanelClosing(IUIPanel panel)
         {
-            panel.OnPostCloseInternal();
+            var failures = new UIPanelReleaseFailures(nameof(UIPanelManager));
+            failures.Attempt("post-close.publish", panel.OnPostCloseInternal);
+            if (!panel.IsUnique) failures.Attempt("closed-rental.return", () => ReturnAfterLayout(panel, failures.PrimaryFailure));
+            failures.ThrowIfFailed();
+        }
 
-            if (panel.IsUnique == false)
+        private void ReturnAfterLayout(IUIPanel panel, Exception sourceCause)
+        {
+            // Controller lifetime retirement has already consumed this rental.
+            if (panel.IsDestroyed) return;
+            var toolkit = panel as IUIToolkitPanel;
+            var actualLayout = toolkit?.LayoutCompletion;
+            var token = toolkit?.LayoutCancellationToken ?? default;
+            var provider = GameItemManager.Instance;
+            if (actualLayout == null || actualLayout.IsCompleted)
             {
-                GameItemManager.Instance.Return(panel);
+                CompleteRentalRetirement(panel, toolkit, actualLayout, token, provider, sourceCause);
+                return;
             }
+            retiringRentals.Add(panel, actualLayout);
+            var awaiter = actualLayout.GetAwaiter();
+            awaiter.OnCompleted(() =>
+            {
+                if (!retiringRentals.Remove(panel)) return;
+                try { CompleteRentalRetirement(panel, toolkit, actualLayout, token, provider, sourceCause); }
+                catch (Exception failure) { Debug.LogException(failure, this); }
+            });
+        }
+
+        private static void CompleteRentalRetirement(IUIPanel panel, IUIToolkitPanel toolkit,
+            Task actualLayout, CancellationToken token, IGameItemManager provider, Exception sourceCause)
+        {
+            Exception layoutFailure = null, rootFailure = null, returnFailure = null;
+            if (actualLayout != null)
+            {
+                try { actualLayout.GetAwaiter().GetResult(); }
+                catch (OperationCanceledException cancellation) when
+                    (cancellation.CancellationToken == token && token.IsCancellationRequested) { }
+                catch (Exception failure) { layoutFailure = failure; }
+            }
+            try { toolkit?.CompleteLayoutRetirement(actualLayout); }
+            catch (Exception failure) { rootFailure = failure; }
+            try { if (!panel.IsDestroyed) provider.Return(panel); }
+            catch (Exception failure) { returnFailure = failure; }
+            var primary = sourceCause ?? layoutFailure ?? rootFailure ?? returnFailure;
+            if (primary == null) return;
+            if (layoutFailure != null || rootFailure != null || returnFailure != null)
+                primary.Data[typeof(UIPanelRentalRetirementFailure)] = new UIPanelRentalRetirementFailure(
+                    actualLayout, sourceCause, layoutFailure, rootFailure, returnFailure);
+            // The source caller already propagates its cause. This consumer
+            // reports only a newly observed source result or actual release failure.
+            if (sourceCause == null || rootFailure != null || returnFailure != null ||
+                (layoutFailure != null && !ReferenceEquals(layoutFailure, sourceCause)))
+                ExceptionDispatchInfo.Capture(primary).Throw();
         }
 
         private void Update()
         {
-            if (closingPanels.Count > 0)
+            foreach (var panel in closingPanels)
+                if (!panel.IsOpened) closedPanels.Add(panel);
+            var failures = new UIPanelReleaseFailures(nameof(UIPanelManager));
+            foreach (var panel in closedPanels)
             {
-                foreach (var closingPanel in closingPanels)
-                {
-                    if (closingPanel.IsOpened == false)
-                    {
-                        closedPanels.Add(closingPanel);
-                    }
-                }
-
-                if (closedPanels.Count > 0)
-                {
-                    foreach (var closedPanel in closedPanels)
-                    {
-                        OnPanelClosing(closedPanel);
-                        
-                        closingPanels.Remove(closedPanel);
-                    }
-
-                    closedPanels.Clear();
-                }
+                if (closingPanels.Remove(panel))
+                    failures.Attempt("closed-panel.retire", () => OnPanelClosing(panel));
             }
-
-            if (preOpeningPanels.Count > 0)
-            {
-                foreach (var preOpeningPanel in preOpeningPanels)
-                {
-                    if (preOpeningPanel.IsOpened)
-                    {
-                        UnityEngine.Debug.LogWarning($"The UI panel with ID {preOpeningPanel.id} is already opened, " +
-                                            $"cannot pre-open it again");
-                        
-                        continue;
-                    }
-                    
-                    TryOpen(preOpeningPanel, null);
-                    
-                    preOpeningPanelsCache.Add(preOpeningPanel);
-                }
-
-                if (preOpeningPanelsCache.Count > 0)
-                {
-                    foreach (var preOpeningPanel in preOpeningPanelsCache)
-                    {
-                        preOpeningPanels.Remove(preOpeningPanel);
-                    }
-                    
-                    preOpeningPanelsCache.Clear();
-                }
-            }
+            closedPanels.Clear();
+            failures.ThrowIfFailed();
         }
 
         #endregion
@@ -411,7 +428,7 @@ namespace VMFramework.UI
                 return panel;
             }
             
-            return CreateAndOpen(id);
+            return CreateAndOpen(id, source);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -433,27 +450,44 @@ namespace VMFramework.UI
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public IUIPanel CreateAndOpen(string id)
+        public IUIPanel CreateAndOpen(string id, IUIPanel source = null) => CreateAndOpen<IUIPanel>(id, source);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public TPanel CreateAndOpen<TPanel>(string id, IUIPanel source = null) where TPanel : IUIPanel
         {
-            var panel = GameItemManager.Instance.Get<IUIPanel>(id);
-
-            TryOpen(panel, null);
-
+            var panel = CreatePanel<TPanel>(id);
+            TryOpen(panel, source);
             return panel;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public TPanel CreateAndOpen<TPanel>(string id)
-            where TPanel : IUIPanel
-        {
-            var panel = GameItemManager.Instance.Get<TPanel>(id);
-            
-            TryOpen(panel, null);
+        public IUIPanel CreatePanel(string id) => CreatePanel<IUIPanel>(id);
 
+        public TPanel CreatePanel<TPanel>(string id) where TPanel : IUIPanel
+        {
+            var provider = GameItemManager.Instance;
+            var panel = provider.Get<TPanel>(id);
+            AdoptRental(panel, provider);
             return panel;
+        }
+
+        private void AdoptRental(IUIPanel panel, IGameItemManager provider)
+        {
+            try { Register(panel); }
+            catch (Exception primary)
+            {
+                var failures = new UIPanelReleaseFailures(nameof(UIPanelManager), primary);
+                if (!panel.IsDestroyed)
+                    failures.Attempt("unadopted-registration-rental.return", () => provider.Return(panel));
+                failures.ThrowIfFailed(); throw;
+            }
         }
 
         #endregion
+
+#if UNITY_EDITOR
+        [Button]
+        private void _CreateAndOpen([GamePrefabID(typeof(IUIPanelConfig))] string id) => CreateAndOpen(id);
+#endif
 
         #region Reenter
 

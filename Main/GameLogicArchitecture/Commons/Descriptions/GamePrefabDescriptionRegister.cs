@@ -1,4 +1,7 @@
-﻿using Sirenix.OdinInspector;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using VMFramework.Localization;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Localization;
 using VMFramework.Core;
@@ -33,7 +36,7 @@ namespace VMFramework.GameLogicArchitecture
             poolEventProvider.OnGetEvent += OnGet;
 
             descriptionManager = GetComponentInParent<DescriptionManager>();
-            descriptionManager.Register(type, Generate);
+            descriptionManager.Register(type, Generate, GenerateAsync);
             
             localizedDescription = null;
         }
@@ -70,6 +73,13 @@ namespace VMFramework.GameLogicArchitecture
             {
                 descriptionManager.Register(type, localizedDescription);
             }
+        }
+
+        protected virtual async Task<DescriptionManager.DescriptionResult> GenerateAsync(CancellationToken cancellationToken)
+        {
+            if (localizedDescription == null) return new DescriptionManager.DescriptionResult(false, null);
+            string description = await localizedDescription.GetLocalizedTextAsync(cancellationToken);
+            return new DescriptionManager.DescriptionResult(description.IsNullOrEmpty() == false, description);
         }
 
         protected virtual bool Generate(out string description)

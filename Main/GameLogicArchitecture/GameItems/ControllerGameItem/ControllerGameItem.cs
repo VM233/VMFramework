@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Sirenix.OdinInspector;
@@ -6,23 +6,30 @@ using UnityEngine;
 using VMFramework.Core;
 using VMFramework.Core.Pools;
 using VMFramework.GameEvents;
+#if FISHNET
+using System.Runtime.CompilerServices;
+using FishNet;
+using FishNet.Managing.Client;
+using FishNet.Managing.Server;
+using VMFramework.Network;
+#endif
 
 namespace VMFramework.GameLogicArchitecture
 {
-    public partial class ControllerGameItem : MonoBehaviour, IControllerGameItem
+    public class ControllerGameItem : MonoBehaviour, IControllerGameItem
     {
         #region Properties & Fields
 
         [TitleGroup(ComponentNames.RUNTIME)]
         [ShowInInspector, HideInEditorMode]
         protected IGamePrefab GamePrefab { get; private set; }
-        
+
         public string id => GamePrefab.id;
 
         public string Name => GamePrefab.Name;
 
         public bool IsDebugging => GamePrefab.IsDebugging;
-        
+
         public ICollection<string> GameTags => GamePrefab.GameTags;
 
         public IStateCloner StateCloner { get; protected set; }
@@ -68,7 +75,7 @@ namespace VMFramework.GameLogicArchitecture
         void ICreatablePoolItem<string>.OnCreate(string id)
         {
             GamePrefab = GamePrefabManager.GetGamePrefabStrictly<IGamePrefab>(id);
-            
+
             IsDestroyed = false;
             OnCreate();
             OnGet();
@@ -78,30 +85,56 @@ namespace VMFramework.GameLogicArchitecture
             }
         }
 
-        void IPoolItem.OnReturn()
+        void IPoolItem.OnReturn() => RetirePoolItem(false);
+
+        void IPoolItem.OnClear() => RetirePoolItem(true);
+
+        private void RetirePoolItem(bool clear)
         {
+            bool retireLease = !clear || !IsDestroyed;
             IsDestroyed = true;
-            
-            var callbacks = returnEvents.GetCombinedCallbacks().ToListDefaultPooled();
-            foreach (var callback in callbacks)
+            var failures = new GameItemCleanupFailures(this, clear ? "pool.clear" : "pool.return");
+            List<IReturnEventProvider.ReturnHandler> callbacks = null;
+            try
             {
-                callback(this);
+                if (retireLease)
+                {
+                    try
+                    {
+                        callbacks = ListPool<IReturnEventProvider.ReturnHandler>.Default.Get();
+                        callbacks.Clear();
+                        foreach (var combined in returnEvents.GetCombinedCallbacks())
+                            foreach (var callback in combined.GetInvocationList())
+                                callbacks.Add((IReturnEventProvider.ReturnHandler)callback);
+                    }
+                    catch (Exception failure) { failures.Capture(failure); }
+
+                    if (callbacks != null)
+                        foreach (var callback in callbacks)
+                            try { callback(this); }
+                            catch (Exception failure) { failures.Capture(failure); }
+
+                    try { OnReturn(); }
+                    catch (Exception failure) { failures.Capture(failure); }
+                }
+                if (clear)
+                    try { OnClear(); }
+                    catch (Exception failure) { failures.Capture(failure); }
             }
-            callbacks.ReturnToDefaultPool();
-            OnReturn();
+            finally
+            {
+                if (callbacks != null)
+                {
+                    try { callbacks.Clear(); }
+                    catch (Exception failure) { failures.Capture(failure); }
+                    try { callbacks.ReturnToDefaultPool(); }
+                    catch (Exception failure) { failures.Capture(failure); }
+                }
+            }
+            failures.ThrowIfFailed();
         }
 
-        void IPoolItem.OnClear()
-        {
-            IsDestroyed = true;
-            
-            foreach (var callback in returnEvents.GetCombinedCallbacks())
-            {
-                callback(this);
-            }
-            OnReturn();
-            OnClear();
-        }
+        protected virtual void OnDestroy() => IsDestroyed = true;
 
         protected virtual void OnGet()
         {
@@ -116,8 +149,15 @@ namespace VMFramework.GameLogicArchitecture
 
         protected virtual void OnReturn()
         {
-            OnDestructed?.Invoke(this);
-            gameObject.SetActive(false);
+            var failures = new GameItemCleanupFailures(this, "return.notification");
+            var subscribers = OnDestructed;
+            if (subscribers != null)
+                foreach (Action<IReadOnlyDestructible> subscriber in subscribers.GetInvocationList())
+                    try { subscriber(this); }
+                    catch (Exception failure) { failures.Capture(failure); }
+            try { gameObject.SetActive(false); }
+            catch (Exception failure) { failures.Capture(failure); }
+            failures.ThrowIfFailed();
         }
 
         protected virtual void OnClear()
@@ -126,6 +166,12 @@ namespace VMFramework.GameLogicArchitecture
         }
 
         #endregion
+
+#if UNITY_EDITOR
+        [TitleGroup(ComponentNames.RUNTIME)]
+        [ShowInInspector, DisplayAsString]
+        private string _id => GamePrefab?.id;
+#endif
 
         #region To String
 
@@ -148,5 +194,81 @@ namespace VMFramework.GameLogicArchitecture
         }
 
         #endregion
+
+#if FISHNET
+        private bool isInitialized;
+        private IUUIDOwner uuidOwner;
+        private INetworkSerializer networkSerializer;
+
+        public IUUIDOwner UUIDOwner
+        {
+            get
+            {
+                if (isInitialized == false)
+                {
+                    Initialize();
+                }
+
+                return uuidOwner;
+            }
+        }
+
+        public INetworkSerializer NetworkSerializer
+        {
+            get
+            {
+                if (isInitialized == false)
+                {
+                    Initialize();
+                }
+
+                return networkSerializer;
+            }
+        }
+
+        private void Initialize()
+        {
+            uuidOwner = GetComponent<IUUIDOwner>();
+            networkSerializer = GetComponent<INetworkSerializer>();
+            isInitialized = true;
+        }
+
+        #region Properties
+
+        public static bool IsServer
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => InstanceFinder.IsServerStarted;
+        }
+
+        public static bool IsClient
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => InstanceFinder.IsClientStarted;
+        }
+
+        public static bool IsHost
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => InstanceFinder.IsHostStarted;
+        }
+
+        public static bool IsServerOnly
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => InstanceFinder.IsServerOnlyStarted;
+        }
+
+        public static bool IsClientOnly
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => InstanceFinder.IsClientOnlyStarted;
+        }
+
+        public static ServerManager ServerManager => InstanceFinder.ServerManager;
+        public static ClientManager ClientManager => InstanceFinder.ClientManager;
+
+        #endregion
+#endif
     }
 }

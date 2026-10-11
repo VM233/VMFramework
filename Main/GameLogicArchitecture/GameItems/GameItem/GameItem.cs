@@ -5,13 +5,21 @@ using Sirenix.OdinInspector;
 using VMFramework.Core;
 using VMFramework.Core.Pools;
 using VMFramework.OdinExtensions;
+#if FISHNET
+using FishNet.CodeGenerating;
+using FishNet.Serializing;
+using VMFramework.Network;
+#endif
 
 namespace VMFramework.GameLogicArchitecture
 {
     [HideDuplicateReferenceBox]
     [HideReferenceObjectPicker]
     [PreviewComposite]
-    public abstract partial class GameItem : IGameItem, IStateCloner
+    public abstract class GameItem : IGameItem, IStateCloner
+#if FISHNET
+        , INetworkSerializer
+#endif
     {
         #region Properties & Fields
 
@@ -41,31 +49,40 @@ namespace VMFramework.GameLogicArchitecture
 
         void IPoolItem.OnGet()
         {
+            IsDestroyed = false;
             OnGet();
         }
 
         void ICreatablePoolItem<string>.OnCreate(string id)
         {
             GamePrefab = GamePrefabManager.GetGamePrefabStrictly(id);
-
+            IsDestroyed = false;
             OnCreate();
             OnGet();
         }
 
         void IPoolItem.OnReturn()
         {
+            IsDestroyed = true;
             OnReturn();
         }
 
         void IPoolItem.OnClear()
         {
-            OnReturn();
-            OnClear();
+            bool retireLease = !IsDestroyed;
+            IsDestroyed = true;
+            var failures = new GameItemCleanupFailures(this, "managed.clear");
+            if (retireLease)
+                try { OnReturn(); }
+                catch (Exception failure) { failures.Capture(failure); }
+            try { OnClear(); }
+            catch (Exception failure) { failures.Capture(failure); }
+            failures.ThrowIfFailed();
         }
 
         protected virtual void OnGet()
         {
-            IsDestroyed = false;
+
         }
 
         protected virtual void OnCreate()
@@ -75,8 +92,13 @@ namespace VMFramework.GameLogicArchitecture
 
         protected virtual void OnReturn()
         {
-            OnDestructed?.Invoke(this);
-            IsDestroyed = true;
+            var failures = new GameItemCleanupFailures(this, "return.notification");
+            var subscribers = OnDestructed;
+            if (subscribers != null)
+                foreach (Action<IReadOnlyDestructible> subscriber in subscribers.GetInvocationList())
+                    try { subscriber(this); }
+                    catch (Exception failure) { failures.Capture(failure); }
+            failures.ThrowIfFailed();
         }
 
         protected virtual void OnClear()
@@ -88,7 +110,7 @@ namespace VMFramework.GameLogicArchitecture
 
         public virtual void CloneFrom(IStateCloner cloner, StateCloneContext context)
         {
-            
+
         }
 
         #region To String
@@ -112,5 +134,45 @@ namespace VMFramework.GameLogicArchitecture
         }
 
         #endregion
+
+#if FISHNET
+        public virtual IUUIDOwner UUIDOwner => null;
+
+        public virtual INetworkSerializer NetworkSerializer => this;
+
+        #region Network Serialization
+
+        /// <summary>
+        /// 在网络上如何传输，当在此实例被写进byte流时调用
+        /// </summary>
+        /// <param name="writer"></param>
+        [NotSerializer]
+        protected virtual void OnWrite(Writer writer)
+        {
+
+        }
+
+        /// <summary>
+        /// 在网络上如何传输，当在此实例被从byte流中读出时调用
+        /// </summary>
+        /// <param name="reader"></param>
+        [NotSerializer]
+        protected virtual void OnRead(Reader reader)
+        {
+
+        }
+
+        void INetworkSerializer.WriteFishnet(Writer writer)
+        {
+            OnWrite(writer);
+        }
+
+        void INetworkSerializer.ReadFishnet(Reader reader)
+        {
+            OnRead(reader);
+        }
+
+        #endregion
+#endif
     }
 }

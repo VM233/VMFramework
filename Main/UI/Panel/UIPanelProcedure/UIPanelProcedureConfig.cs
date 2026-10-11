@@ -13,6 +13,10 @@ namespace VMFramework.UI
         [IsNotNullOrEmpty]
         public string procedureID;
 
+        [GamePrefabID(typeof(IUIToolkitPanelConfig))]
+        [UIPanelConfigID(true)]
+        public string enteringPage;
+
         [GamePrefabID(typeof(IUIPanelConfig))]
         [UIPanelConfigID(true)]
         [DisallowDuplicateElements]

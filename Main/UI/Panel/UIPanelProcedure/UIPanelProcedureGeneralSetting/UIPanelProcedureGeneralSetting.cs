@@ -1,3 +1,4 @@
+using System;
 using Sirenix.OdinInspector;
 using System.Collections.Generic;
 using UnityEngine;
@@ -57,6 +58,13 @@ namespace VMFramework.UI
             return false;
         }
 
+        public IUIToolkitPanel GetEnteringPageStrictly(string procedureID)
+        {
+            if (!TryGetProcedureConfig(procedureID, out var config) || string.IsNullOrEmpty(config.enteringPage))
+                throw new InvalidOperationException($"Procedure '{procedureID}' has no authored entering page.");
+            return (IUIToolkitPanel)UIPanelManager.Instance.GetUniquePanelStrictly(config.enteringPage);
+        }
+
         private void OnEnterProcedure(string procedureID)
         {
             if (TryGetProcedureConfig(procedureID, out var config) == false)
@@ -83,6 +91,8 @@ namespace VMFramework.UI
                     }
                 }
             }
+
+            if (!string.IsNullOrEmpty(config.enteringPage)) GetEnteringPageStrictly(procedureID).Open(null);
 
             if (config.uniqueUIPanelAutoOpenOnEnter != null)
             {

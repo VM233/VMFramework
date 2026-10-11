@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 using VMFramework.Core;
 
 namespace VMFramework.UI
@@ -17,8 +18,13 @@ namespace VMFramework.UI
         {
             Panel = panel;
             UIPanelConfig = config;
-            OnInitialize();
-            IsInitialized = true;
+            try { OnInitialize(); IsInitialized = true; }
+            catch (Exception primary)
+            {
+                var failures = new UIPanelReleaseFailures(GetType().Name, primary);
+                failures.Attempt("initialize-prefix.deinitialize", Deinitialize);
+                failures.ThrowIfFailed(); throw;
+            }
         }
 
         protected virtual void OnInitialize()
@@ -28,8 +34,8 @@ namespace VMFramework.UI
 
         public void Deinitialize()
         {
-            OnDeinitialize();
-            IsInitialized = false;
+            try { OnDeinitialize(); }
+            finally { IsInitialized = false; Panel = null; UIPanelConfig = null; }
         }
 
         protected virtual void OnDeinitialize()
