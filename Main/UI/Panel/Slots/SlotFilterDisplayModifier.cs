@@ -7,6 +7,7 @@ namespace VMFramework.UI
     public class SlotFilterDisplayModifier : PanelModifier
     {
         protected ISlotsPanelModifier slotsModifier;
+        private SlotGlobalFiltersManager filtersSource;
 
         protected readonly Dictionary<string, bool?> matchResults = new();
 
@@ -14,6 +15,7 @@ namespace VMFramework.UI
         {
             base.OnInitialize();
 
+            filtersSource = SlotGlobalFiltersManager.Instance;
             Panel.OnOpen += OnOpen;
             Panel.OnPostClose += OnPostClose;
 
@@ -21,14 +23,25 @@ namespace VMFramework.UI
             slotsModifier.OnSlotSourceChanged += OnSlotSourceChanged;
         }
 
+        protected override void OnDeinitialize()
+        {
+            Panel.OnOpen -= OnOpen;
+            Panel.OnPostClose -= OnPostClose;
+            filtersSource.OnFilterChanged -= OnFilterChanged;
+            slotsModifier.OnSlotSourceChanged -= OnSlotSourceChanged;
+            filtersSource = null;
+            slotsModifier = null;
+            base.OnDeinitialize();
+        }
+
         protected virtual void OnOpen(IUIPanel panel)
         {
-            SlotGlobalFiltersManager.Instance.OnFilterChanged += OnFilterChanged;
+            filtersSource.OnFilterChanged += OnFilterChanged;
         }
 
         protected virtual void OnPostClose(IUIPanel panel)
         {
-            SlotGlobalFiltersManager.Instance.OnFilterChanged -= OnFilterChanged;
+            filtersSource.OnFilterChanged -= OnFilterChanged;
         }
 
         protected virtual void OnSlotSourceChanged(ISlotsPanelModifier modifier, SlotVisualElement slot)
@@ -48,7 +61,7 @@ namespace VMFramework.UI
         {
             matchResults.Clear();
             
-            SlotGlobalFiltersManager.Instance.IsMatch(slot, matchResults);
+            filtersSource.IsMatch(slot, matchResults);
 
             foreach (var (filterID, isMatch) in matchResults)
             {

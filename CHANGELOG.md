@@ -4,6 +4,17 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.31] - 2026-10-11
+
+### Fixed
+
+- Slot filter producers and displays release filters, pointer callbacks and
+  event subscriptions through the actual manager source. Native manager
+  retirement can precede document disable or panel close without querying an
+  absent singleton. Modifier deinitialization also retires remaining live slots.
+- Add focused regressions for native disable, logical close and deinitialization,
+  with a real slot pointer callback and three consecutive owner admissions.
+
 ## [9.1.30] - 2026-10-11
 
 ### Fixed

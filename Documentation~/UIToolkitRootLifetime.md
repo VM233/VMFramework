@@ -46,6 +46,25 @@ publishes a new tracing lease; modifier deinitialization releases its root
 subscriptions and tracing source. UGUI and world-space tracers retain their
 logical open/close lifetime.
 
+Slot filter producers and displays retain the physical filter manager that
+accepted their registration or callback. Retiring its singleton publication does
+not replace that managed filter dictionary. Removing a slot releases its filter
+and pointer callbacks against that source; modifier deinitialization removes the
+slot event subscription and every remaining slot callback. Displays retire their
+open subscription and slot-source listener before releasing the same manager.
+
+The focused slot-filter retirement fixtures freeze three boundaries (native
+document disable, logical close and modifier deinitialization), each with three
+admissions, one real container slot and one filter source per admission. This is
+nine admissions, nine slots and nine manager retirements, executed sequentially;
+no inventory scan, GameItem rental or gameplay entity is involved. Each admission
+generates at most one slot and retires that slot once. Production modifier
+admission/retirement traverse the already owned slot collection once: for its
+frozen entry count S, at most S callback pairs are acquired and S are released.
+The budget is linear in that existing collection, with no new search axis or
+retained collection. These bounds pass the static cost review; the focused
+fixture and the consumer's native Play shutdown establish the runtime result.
+
 ## Cost and verification
 
 Each published root owns one cancellation source and one actual layout Task;

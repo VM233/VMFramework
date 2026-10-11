@@ -513,6 +513,116 @@ namespace VMFramework.Editor.Tests
             ExerciseTracingRootRetirement("disable");
 
         [UnityTest]
+        public IEnumerator SlotFilters_RetiredManagerSupportsNativeRootRetirement() =>
+            ExerciseSlotFilterRetirement("disable");
+
+        [UnityTest]
+        public IEnumerator SlotFilters_RetiredManagerSupportsLogicalClose() =>
+            ExerciseSlotFilterRetirement("close");
+
+        [UnityTest]
+        public IEnumerator SlotFilters_DeinitializeRetiresFiltersAndPointerCallbacks() =>
+            ExerciseSlotFilterRetirement("deinitialize");
+
+        private IEnumerator ExerciseSlotFilterRetirement(string boundary)
+        {
+            var panel = CreateToolkitPanel(UIToolkitPanelCloseMode.VisualElementDisplayNone,
+                out var settings, out var tree, includeObjects: true);
+            const string bindName = "filter_fixture_slots";
+            const string filterID = "filter_fixture";
+            var slots = panel.gameObject.AddComponent<UIToolkitContainerModifierBase>();
+            slots.bindObjectsName = bindName;
+            slots.slotDistributorConfigs.Add(new ContainerSlotDistributorConfig
+                { parentName = "Filter Fixture Slots", removeExtraSlots = false });
+            slots.Initialize(panel, panel.Config);
+            var adder = panel.gameObject.AddComponent<GeneralContainerItemSlotFilterAdderModifierBase>();
+            adder.filterID = filterID;
+            var display = panel.gameObject.AddComponent<SlotFilterDisplayModifier>();
+            var container = host.AddComponent<Container>();
+            container.ExpandTo(1);
+            ((HashSet<string>)typeof(BindObjectsManager)
+                .GetField("singleModeNames", BindingFlags.Instance | BindingFlags.NonPublic)
+                .GetValue(panel.BindObjectsManager)).Add(bindName);
+            SlotVisualElement slot = null;
+            panel.OnGenerateVisualElement += (_, root) =>
+            {
+                var parent = new VisualElement { name = "Filter Fixture Slots" };
+                slot = new SlotVisualElement();
+                parent.Add(slot);
+                root.Add(parent);
+            };
+            SlotGlobalFiltersManager filters = null;
+            try
+            {
+                for (int cycle = 0; cycle < 3; cycle++)
+                {
+                    filters = host.AddComponent<SlotGlobalFiltersManager>();
+                    typeof(SlotGlobalFiltersManager).GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic)
+                        .Invoke(filters, null);
+                    adder.Initialize(panel, panel.Config);
+                    display.Initialize(panel, panel.Config);
+                    panel.BindObjectsManager.AddObject(bindName, container);
+                    ((IUIPanel)panel).OnOpenInternal(null);
+                    yield return null;
+                    yield return null;
+                    Assert.That(slots.Slots.Count, Is.EqualTo(1));
+                    using (var enter = PointerEnterEvent.GetPooled())
+                    {
+                        enter.target = slot;
+                        slot.SendEvent(enter);
+                    }
+                    Assert.That(filters.RemoveFilter(filterID, slot), Is.True,
+                        "The real slot pointer callback must acquire a filter.");
+                    filters.AddFilter(filterID, slot, new GeneralContainerItemSlotFilter(container, 0));
+                    typeof(SlotGlobalFiltersManager).GetMethod("OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic)
+                        .Invoke(filters, null);
+                    Object.DestroyImmediate(filters);
+                    Assert.That(ReferenceEquals(SlotGlobalFiltersManager.Instance, null), Is.True);
+                    if (boundary == "deinitialize")
+                    {
+                        adder.Deinitialize();
+                        display.Deinitialize();
+                        using var leave = PointerLeaveEvent.GetPooled();
+                        leave.target = slot;
+                        Assert.DoesNotThrow(() => slot.SendEvent(leave));
+                        Assert.That(filters.RemoveFilter(filterID, slot), Is.False);
+                    }
+                    if (boundary == "close") CloseToolkitPanel(panel);
+                    else InvokeToolkitLifecycle(panel, "OnDisable");
+                    Assert.That(filters.RemoveFilter(filterID, slot), Is.False,
+                        "Retirement must release the original physical manager's filter.");
+                    CloseToolkitPanel(panel);
+                    if (adder.IsInitialized) adder.Deinitialize();
+                    if (display.IsInitialized) display.Deinitialize();
+                    var callbacks = typeof(SlotGlobalFiltersManager)
+                        .GetField("OnFilterChanged", BindingFlags.Instance | BindingFlags.NonPublic)
+                        .GetValue(filters) as System.Delegate;
+                    Assert.That(callbacks, Is.Null);
+                    Assert.That(typeof(UIToolkitContainerModifierBase)
+                        .GetField("OnSlotChanged", BindingFlags.Instance | BindingFlags.NonPublic)
+                        .GetValue(slots), Is.Null);
+                    panel.BindObjectsManager.ClearAllObjects();
+                    filters = null;
+                }
+            }
+            finally
+            {
+                if (adder.IsInitialized) adder.Deinitialize();
+                if (display.IsInitialized) display.Deinitialize();
+                slots.Deinitialize();
+                InvokeToolkitLifecycle(panel, "OnDisable");
+                if (!ReferenceEquals(filters, null))
+                {
+                    typeof(SlotGlobalFiltersManager).GetMethod("OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic)
+                        .Invoke(filters, null);
+                    Object.DestroyImmediate(filters);
+                }
+                Object.DestroyImmediate(settings);
+                Object.DestroyImmediate(tree);
+            }
+        }
+
+        [UnityTest]
         public IEnumerator Tracing_CloseAndReopenOwnSeparateRootLeases() =>
             ExerciseTracingRootRetirement("close");
 

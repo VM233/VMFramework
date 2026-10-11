@@ -17,6 +17,7 @@ namespace VMFramework.UI
         public string filterID;
 
         protected IContainerSlotsModifier slotsModifier;
+        private SlotGlobalFiltersManager filtersSource;
 
         protected EventCallback<PointerEnterEvent> onPointerEnterFunc;
         protected EventCallback<PointerLeaveEvent> onPointerLeaveFunc;
@@ -25,12 +26,25 @@ namespace VMFramework.UI
         {
             base.OnInitialize();
 
+            filtersSource = SlotGlobalFiltersManager.Instance;
             slotsModifier = GetComponent<IContainerSlotsModifier>();
-
-            slotsModifier.OnSlotChanged+= OnSlotChanged;
-
             onPointerEnterFunc = OnPointerEnter;
             onPointerLeaveFunc = OnPointerLeave;
+            slotsModifier.OnSlotChanged += OnSlotChanged;
+            foreach (var slot in slotsModifier.Slots)
+                OnSlotChanged(slotsModifier, slot, added: true);
+        }
+
+        protected override void OnDeinitialize()
+        {
+            var failures = new UIPanelReleaseFailures(nameof(GeneralContainerItemSlotFilterAdderModifierBase));
+            slotsModifier.OnSlotChanged -= OnSlotChanged;
+            foreach (var slot in slotsModifier.Slots)
+                failures.Attempt("slot-filter.retire", () => OnSlotChanged(slotsModifier, slot, added: false));
+            slotsModifier = null;
+            filtersSource = null;
+            failures.Attempt("base.deinitialize", () => base.OnDeinitialize());
+            failures.ThrowIfFailed();
         }
 
         protected virtual void OnSlotChanged(ISlotsPanelModifier modifier, SlotVisualElement slot, bool added)
@@ -42,9 +56,12 @@ namespace VMFramework.UI
             }
             else
             {
-                SlotGlobalFiltersManager.Instance.RemoveFilter(filterID, slot);
-                slot.UnregisterCallback(onPointerEnterFunc);
-                slot.UnregisterCallback(onPointerLeaveFunc);
+                try { filtersSource.RemoveFilter(filterID, slot); }
+                finally
+                {
+                    slot.UnregisterCallback(onPointerEnterFunc);
+                    slot.UnregisterCallback(onPointerLeaveFunc);
+                }
             }
         }
 
@@ -78,13 +95,13 @@ namespace VMFramework.UI
             }
 
             var filter = new GeneralContainerItemSlotFilter(container, slotIndex);
-            SlotGlobalFiltersManager.Instance.AddFilter(filterID, slot, filter);
+            filtersSource.AddFilter(filterID, slot, filter);
         }
 
         protected virtual void OnPointerLeave(PointerLeaveEvent evt)
         {
             var slot = (SlotVisualElement)evt.target;
-            SlotGlobalFiltersManager.Instance.RemoveFilter(filterID, slot);
+            filtersSource.RemoveFilter(filterID, slot);
         }
     }
 }
