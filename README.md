@@ -70,6 +70,7 @@ See [Collider mouse point filters](Documentation~/ColliderMousePointFilters.md) 
 See [Logic tick profiling](Documentation~/LogicTickProfiling.md) for native phase timing.
 See [EventSystem input](Documentation~/InputBackend.md) for input backend setup.
 See [UI Toolkit roots](Documentation~/UIToolkitRootLifetime.md) for live-view binding.
+See [Tooltip bindings](Documentation~/TooltipBindings.md) for default and explicit tooltip ownership.
 See [Configuration initialization](Documentation~/ConfigurationInitialization.md) for runtime loading and validation.
 See [Procedure transition lifetimes](Documentation~/ProcedureTransitionLifetime.md) for accepted request ownership.
 The package is licensed under [GPL-3.0-or-later](LICENSE).

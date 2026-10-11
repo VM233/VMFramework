@@ -23,22 +23,10 @@ namespace VMFramework.UI
 
         [TabGroup(TAB_GROUP_NAME, TOOLTIP_CATEGORY), TitleGroup(TOOLTIP_ID_BIND_CATEGORY)]
         [GamePrefabID(typeof(IUIPanelConfig))]
-        [IsNotNullOrEmpty]
         [JsonProperty]
         public string defaultTooltipID;
-
-        #region Check & Init
-
-        public override void CheckSettings()
-        {
-            base.CheckSettings();
-
-            if (defaultTooltipID.IsNullOrEmpty())
-            {
-                UnityEngine.Debug.LogWarning($"{nameof(defaultTooltipID)} is not set.");
-            }
-        }
-
-        #endregion
+        public string DefaultTooltipID => string.IsNullOrWhiteSpace(defaultTooltipID)
+            ? throw new System.InvalidOperationException("Default tooltip operations require an authored defaultTooltipID; explicit tooltip operations do not.")
+            : defaultTooltipID;
     }
 }

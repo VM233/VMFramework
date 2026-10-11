@@ -4,6 +4,12 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.24] - 2026-10-11
+
+### Fixed
+
+- Allow projects that use explicit tooltip IDs or their own inspection presentation to leave the default tooltip binding unset. Default Open/Close operations require that binding at their actual consumption boundary and report a direct configuration exception instead of silently returning or producing an unrelated startup warning.
+
 ## [9.1.23] - 2026-10-11
 
 ### Fixed

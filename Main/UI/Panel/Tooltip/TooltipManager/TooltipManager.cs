@@ -46,7 +46,7 @@ namespace VMFramework.UI
 
         public virtual bool Open(object target, IUIPanel source, TooltipOpenInfo info = default)
         {
-            return Open(Setting.defaultTooltipID, target, source, info);
+            return Open(Setting.DefaultTooltipID, target, source, info);
         }
 
         public virtual bool Open(string tooltipID, object target, IUIPanel source, TooltipOpenInfo info = default)
@@ -92,7 +92,7 @@ namespace VMFramework.UI
 
         public virtual void CloseDefault(object target)
         {
-            Close(Setting.defaultTooltipID, target);
+            Close(Setting.DefaultTooltipID, target);
         }
 
         public virtual void Close(string tooltipID, object target)
