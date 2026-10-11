@@ -59,11 +59,14 @@ admissions, one real container slot and one filter source per admission. This is
 nine admissions, nine slots and nine manager retirements, executed sequentially;
 the container owns a fixed-size-one `ContainerConfig` and runs its real
 `OnCreate` boundary before visual admission. No inventory scan, GameItem rental
-or gameplay entity is involved. Each admission
-verifies that its input target is the published, attached and enabled slot,
+or gameplay entity is involved. Input is selected from the published slot set,
+not captured from the generator shared with detached authoring previews. Each
+cycle generates one explicit detached preview before input. Admission verifies
+that its input target is the published, attached and enabled slot,
 belongs to the configured container index and acknowledges native delivery.
-The acknowledgement callback is removed before exercising retirement. Each admission
-generates at most one slot and retires that slot once. Production modifier
+The acknowledgement callback is removed before exercising retirement. Each
+admission owns one live slot and one explicit preview slot, and retires the live
+slot once. Production modifier
 admission/retirement traverse the already owned slot collection once: for its
 frozen entry count S, at most S callback pairs are acquired and S are released.
 The budget is linear in that existing collection, with no new search axis or

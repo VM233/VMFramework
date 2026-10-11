@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -547,12 +548,10 @@ namespace VMFramework.Editor.Tests
             ((HashSet<string>)typeof(BindObjectsManager)
                 .GetField("singleModeNames", BindingFlags.Instance | BindingFlags.NonPublic)
                 .GetValue(panel.BindObjectsManager)).Add(bindName);
-            SlotVisualElement slot = null;
             panel.OnGenerateVisualElement += (_, root) =>
             {
                 var parent = new VisualElement { name = "Filter Fixture Slots" };
-                slot = new SlotVisualElement();
-                parent.Add(slot);
+                parent.Add(new SlotVisualElement());
                 root.Add(parent);
             };
             SlotGlobalFiltersManager filters = null;
@@ -570,6 +569,9 @@ namespace VMFramework.Editor.Tests
                     yield return null;
                     yield return null;
                     Assert.That(slots.Slots.Count, Is.EqualTo(1));
+                    var slot = slots.Slots.Single();
+                    var preview = panel.GenerateVisualElement();
+                    Assert.That(preview.panel, Is.Null);
                     CollectionAssert.Contains(slots.Slots, slot, "Input must target the published slot.");
                     Assert.That(slot.panel, Is.Not.Null, "The input target must belong to a native panel.");
                     Assert.That(slot.enabledInHierarchy, Is.True, "The input target must be enabled.");

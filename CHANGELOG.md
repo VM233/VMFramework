@@ -4,6 +4,15 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.34] - 2026-10-11
+
+### Fixed
+
+- The native slot-filter retirement fixture selects its input from the actual
+  published slot owner. Detached authoring generation cannot overwrite the input
+  reference. Each cycle creates an explicit preview before native pointer input
+  to cover this lifetime boundary deterministically.
+
 ## [9.1.33] - 2026-10-11
 
 ### Fixed
