@@ -52,6 +52,13 @@ reference inactivity is not copied into their pool activation state.
 
 ## Cleanup and native lifetime
 
+Native fixture components belong to the runtime test assembly, even when their
+witness runs in Edit Mode. Unity does not attach an Editor-only script to a
+GameObject. The Editor test assembly references that runtime fixture assembly;
+empty native test subclasses should reuse the existing runtime component.
+Standalone test fixtures own manager publication and retire it during teardown,
+including when a witness throws before its expected terminal state.
+
 Controller lease retirement publishes IsDestroyed before its callbacks. It
 snapshots individual ReturnEvents invocations in priority and registration order,
 independently attempts all acquired component cleanup and root OnReturn, and

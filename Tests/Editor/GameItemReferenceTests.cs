@@ -16,7 +16,6 @@ namespace VMFramework.Tests
         }
 
         private sealed class ManagedItem : GameItem { }
-        private sealed class ControllerItem : ControllerGameItem { }
 
         private const BindingFlags PRIVATE_INSTANCE = BindingFlags.Instance | BindingFlags.NonPublic;
         private readonly List<GameObject> objects = new();
@@ -61,11 +60,11 @@ namespace VMFramework.Tests
             references.OnInitialize += item =>
             {
                 initialized++;
-                Assert.That(((ControllerItem)item).gameObject.activeSelf, Is.True);
-                ((ControllerItem)item).gameObject.SetActive(true);
+                Assert.That(((ControllerGameItem)item).gameObject.activeSelf, Is.True);
+                ((ControllerGameItem)item).gameObject.SetActive(true);
             };
 
-            var reference = (ControllerItem)references.Get(identity);
+            var reference = (ControllerGameItem)references.Get(identity);
             var referenceCollider = reference.GetComponent<BoxCollider2D>();
             Physics2D.SyncTransforms();
             Assert.That(reference.IsDestroyed, Is.False);
@@ -77,7 +76,7 @@ namespace VMFramework.Tests
             Assert.That(initialized, Is.EqualTo(1));
             Assert.That(PublishedCount, Is.EqualTo(1));
 
-            var independentRental = rentals.Get<ControllerItem>(identity);
+            var independentRental = rentals.Get<ControllerGameItem>(identity);
             Physics2D.SyncTransforms();
             Assert.That(independentRental, Is.Not.SameAs(reference));
             Assert.That(independentRental.gameObject.activeInHierarchy, Is.True);
@@ -113,14 +112,14 @@ namespace VMFramework.Tests
                 Is.SameAs(failure));
             Assert.That(PublishedCount, Is.Zero);
             Assert.That(rental.IsDestroyed, Is.True);
-            if (controller) Assert.That(((ControllerItem)rental).gameObject.activeSelf, Is.False);
+            if (controller) Assert.That(((ControllerGameItem)rental).gameObject.activeSelf, Is.False);
 
             references.OnInitialize -= initialize;
             var completed = references.Get(identity);
             Assert.That(completed, Is.SameAs(rental));
             Assert.That(completed.IsDestroyed, Is.False);
             Assert.That(PublishedCount, Is.EqualTo(1));
-            if (controller) Assert.That(((ControllerItem)completed).gameObject.activeSelf, Is.False);
+            if (controller) Assert.That(((ControllerGameItem)completed).gameObject.activeSelf, Is.False);
         }
 
         private int PublishedCount => ((Dictionary<string, IGameItem>)typeof(GameItemReferenceManager)
@@ -131,13 +130,13 @@ namespace VMFramework.Tests
             typeof(GameItemManager).GetField("createGameItemHandler", PRIVATE_INSTANCE).SetValue(rentals, factory);
         }
 
-        private ControllerItem CreateController()
+        private ControllerGameItem CreateController()
         {
             var root = CreateObject("Reference Controller");
             root.transform.position = queryPosition;
             root.AddComponent<Rigidbody2D>().gravityScale = 0;
             root.AddComponent<BoxCollider2D>();
-            return root.AddComponent<ControllerItem>();
+            return root.AddComponent<ControllerGameItem>();
         }
 
         private GameObject CreateObject(string name)

@@ -9,7 +9,8 @@
         "GUID:f5b42f5d067c7814d9b2dbeddfb9cb99",
         "Unity.InputSystem",
         "Unity.Localization",
-        "Unity.ResourceManager"
+        "Unity.ResourceManager",
+        "GUID:3c91bfe6d39d411f999154828774e18b"
     ],
     "includePlatforms": [
         "Editor"

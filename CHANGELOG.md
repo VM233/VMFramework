@@ -4,6 +4,18 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.27] - 2026-10-11
+
+### Fixed
+
+- Keep the native cleanup test component in the runtime test assembly so Unity
+  can attach it to a GameObject. Preserve its script GUID and reference the
+  fixture assembly from Edit Mode tests.
+- Reference-cache tests use the existing runtime ControllerGameItem directly
+  instead of an empty component declared inside an Editor-only fixture.
+- Cleanup fixture teardown owns manager retirement even when a witness stops
+  before its expected terminal state.
+
 ## [9.1.26] - 2026-10-11
 
 ### Fixed

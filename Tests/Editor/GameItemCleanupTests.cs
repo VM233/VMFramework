@@ -41,14 +41,15 @@ namespace VMFramework.Tests
         [TearDown]
         public void TearDown()
         {
-            foreach (var product in nativeProducts)
-                if (product != null) Object.DestroyImmediate(product);
-            nativeProducts.Clear();
             if (!ReferenceEquals(manager, null))
             {
+                typeof(GameItemManager).GetMethod("OnDestroy", PRIVATE_INSTANCE).Invoke(manager, null);
                 Assert.That(ReferenceEquals(GameItemManager.Instance, null), Is.True);
                 manager = null;
             }
+            foreach (var product in nativeProducts)
+                if (product != null) Object.DestroyImmediate(product);
+            nativeProducts.Clear();
             GamePrefabManager.UnregisterGamePrefab(id);
         }
 
@@ -255,8 +256,6 @@ namespace VMFramework.Tests
                 .GetField("pools", PRIVATE_INSTANCE).GetValue(manager);
             Assert.That(pools[id].Count, Is.Zero);
             Assert.That(factories, Is.EqualTo(1));
-            // EditMode test components use the same explicit singleton retirement as the existing focused fixture.
-            typeof(GameItemManager).GetMethod("OnDestroy", PRIVATE_INSTANCE).Invoke(manager, null);
         }
 
         [Test]
