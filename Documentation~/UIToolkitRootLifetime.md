@@ -60,6 +60,9 @@ nine admissions, nine slots and nine manager retirements, executed sequentially;
 the container owns a fixed-size-one `ContainerConfig` and runs its real
 `OnCreate` boundary before visual admission. No inventory scan, GameItem rental
 or gameplay entity is involved. Each admission
+verifies that its input target is the published, attached and enabled slot,
+belongs to the configured container index and acknowledges native delivery.
+The acknowledgement callback is removed before exercising retirement. Each admission
 generates at most one slot and retires that slot once. Production modifier
 admission/retirement traverse the already owned slot collection once: for its
 frozen entry count S, at most S callback pairs are acquired and S are released.

@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.33] - 2026-10-11
+
+### Fixed
+
+- Slot-filter regression fixtures report live-target, container-binding and
+  native pointer-delivery preconditions before claiming filter acquisition or
+  retirement. The input acknowledgement callback is retired within its stimulus.
+
 ## [9.1.32] - 2026-10-11
 
 ### Fixed

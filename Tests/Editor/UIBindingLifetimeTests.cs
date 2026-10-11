@@ -570,11 +570,23 @@ namespace VMFramework.Editor.Tests
                     yield return null;
                     yield return null;
                     Assert.That(slots.Slots.Count, Is.EqualTo(1));
-                    using (var enter = PointerEnterEvent.GetPooled())
+                    CollectionAssert.Contains(slots.Slots, slot, "Input must target the published slot.");
+                    Assert.That(slot.panel, Is.Not.Null, "The input target must belong to a native panel.");
+                    Assert.That(slot.enabledInHierarchy, Is.True, "The input target must be enabled.");
+                    Assert.That(slots.TryGetContainerAndIndex(slot, out var boundContainer, out var boundIndex), Is.True);
+                    Assert.That(boundContainer, Is.SameAs(container));
+                    Assert.That(boundIndex, Is.Zero);
+                    int deliveries = 0;
+                    EventCallback<PointerEnterEvent> acknowledge = _ => deliveries++;
+                    slot.RegisterCallback(acknowledge);
+                    try
                     {
+                        using var enter = PointerEnterEvent.GetPooled();
                         enter.target = slot;
                         slot.SendEvent(enter);
+                        Assert.That(deliveries, Is.EqualTo(1), "Native input dispatch must acknowledge the stimulus.");
                     }
+                    finally { slot.UnregisterCallback(acknowledge); }
                     Assert.That(filters.RemoveFilter(filterID, slot), Is.True,
                         "The real slot pointer callback must acquire a filter.");
                     filters.AddFilter(filterID, slot, new GeneralContainerItemSlotFilter(container, 0));
