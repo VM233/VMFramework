@@ -21,26 +21,55 @@ namespace VMFramework.UI
         [ShowIf(nameof(enableAutoMouseTracing))]
         [ToggleButtons("Persistent Tracing", "Single-Shot Tracing")]
         public bool persistentTracing = true;
+
+        private TracingUIManager tracingSource;
         
         protected override void OnInitialize()
         {
             base.OnInitialize();
+            SubscribeTracingLifecycle();
+        }
 
+        protected virtual void SubscribeTracingLifecycle()
+        {
             Panel.OnOpen += OnOpen;
             Panel.OnPostClose += OnPostClose;
+        }
+
+        protected virtual void UnsubscribeTracingLifecycle()
+        {
+            Panel.OnOpen -= OnOpen;
+            Panel.OnPostClose -= OnPostClose;
+        }
+
+        protected override void OnDeinitialize()
+        {
+            var failures = new UIPanelReleaseFailures(nameof(TracingPanelModifier));
+            failures.Attempt("tracing-lifecycle.unsubscribe", UnsubscribeTracingLifecycle);
+            failures.Attempt("tracing-source.release", ReleaseTracingSource);
+            failures.Attempt("base.deinitialize", base.OnDeinitialize);
+            failures.ThrowIfFailed();
         }
         
         protected virtual void OnOpen(IUIPanel panel)
         {
+            tracingSource = TracingUIManager.Instance;
             if (enableAutoMouseTracing)
             {
-                TracingUIManager.Instance.StartTracing(this, persistentTracing);
+                tracingSource.StartTracing(this, persistentTracing);
             }
         }
         
         protected virtual void OnPostClose(IUIPanel panel)
         {
-            TracingUIManager.Instance.StopTracing(this);
+            ReleaseTracingSource();
+        }
+
+        private void ReleaseTracingSource()
+        {
+            var source = tracingSource;
+            tracingSource = null;
+            if (!ReferenceEquals(source, null)) source.StopTracing(this);
         }
         
         public abstract bool TryUpdateScreenPosition(Vector2 screenPosition);

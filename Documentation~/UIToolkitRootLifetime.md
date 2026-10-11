@@ -38,6 +38,14 @@ can then finish independently, including when Unity disables a document before
 destroying its panel. Reopening or Live Reload adopts the current single-mode
 container into the new root; deinitialization retires both subscription scopes.
 
+Toolkit tracing also leases the published root and its configured container.
+Root retirement stops tracing through the actual manager source and performs
+any configured position reset against that released root before dropping the
+lease. A later logical close has no visual cleanup to repeat. Live Reload
+publishes a new tracing lease; modifier deinitialization releases its root
+subscriptions and tracing source. UGUI and world-space tracers retain their
+logical open/close lifetime.
+
 ## Cost and verification
 
 Each published root owns one cancellation source and one actual layout Task;

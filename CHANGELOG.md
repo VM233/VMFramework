@@ -4,6 +4,17 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.30] - 2026-10-11
+
+### Fixed
+
+- Toolkit tracing owns the actual published root and container until root
+  retirement. Position reset and tracing removal finish against those resources
+  before releasing them; later logical close cannot query a retired root.
+- Tracing subscriptions deinitialize in pairs and release their actual manager
+  source. Focused regressions exercise automatic and manual tracing across
+  close/reopen, native disable, Live Reload and modifier deinitialization.
+
 ## [9.1.29] - 2026-10-11
 
 ### Fixed

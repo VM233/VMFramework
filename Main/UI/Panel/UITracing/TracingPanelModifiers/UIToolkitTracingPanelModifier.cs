@@ -25,30 +25,53 @@ namespace VMFramework.UI
         
         protected bool setVisibleRequired = false;
 
-        protected override void OnOpen(IUIPanel panel)
+        private IUIToolkitPanel rootOwner;
+        private VisualElement tracingRoot;
+
+        protected override void SubscribeTracingLifecycle()
         {
-            TracingContainer = containerPath.MandatoryQuery(this.RootVisualElement(), nameof(containerPath));
+            rootOwner = (IUIToolkitPanel)Panel;
+            rootOwner.OnRootVisualElementReady += OnTracingRootReady;
+            rootOwner.OnRootVisualElementReleased += OnTracingRootReleased;
+        }
 
-            base.OnOpen(panel);
+        protected override void UnsubscribeTracingLifecycle()
+        {
+            var owner = rootOwner;
+            rootOwner = null;
+            if (!ReferenceEquals(owner, null))
+            {
+                owner.OnRootVisualElementReady -= OnTracingRootReady;
+                owner.OnRootVisualElementReleased -= OnTracingRootReleased;
+            }
+            ReleaseTracingRoot();
+        }
 
+        private void OnTracingRootReady(IUIToolkitPanel panel, VisualElement root)
+        {
+            tracingRoot = root;
+            TracingContainer = containerPath.MandatoryQuery(root, nameof(containerPath));
             if (hideContainerUntilFirstUpdate)
             {
                 TracingContainer.visible = false;
                 setVisibleRequired = true;
             }
+            base.OnOpen(panel);
         }
 
-        protected override void OnPostClose(IUIPanel panel)
+        private void OnTracingRootReleased(IUIToolkitPanel panel, UIToolkitRootRetirement retirement) =>
+            ReleaseTracingRoot();
+
+        private void ReleaseTracingRoot()
         {
-            base.OnPostClose(panel);
-
-            if (resetPositionOnClose)
-            {
-                TryUpdateScreenPosition(Vector2.zero);
-            }
-
+            var failures = new UIPanelReleaseFailures(nameof(UIToolkitTracingPanelModifier));
+            failures.Attempt("tracing-source.release", () => base.OnPostClose(Panel));
+            if (resetPositionOnClose && TracingContainer != null)
+                failures.Attempt("tracing-position.reset", () => TryUpdateScreenPosition(Vector2.zero));
             TracingContainer = null;
+            tracingRoot = null;
             setVisibleRequired = false;
+            failures.ThrowIfFailed();
         }
 
         public virtual bool TryUpdatePosition(Vector2 position, RectangleFloat bounds)
@@ -95,8 +118,7 @@ namespace VMFramework.UI
 
         public override bool TryUpdateScreenPosition(Vector2 screenPosition)
         {
-            var rootVisualElement = this.RootVisualElement();
-            var boundsSize = rootVisualElement.GetResolvedSize();
+            var boundsSize = tracingRoot.GetResolvedSize();
 
             if (boundsSize.TryGetPositionFromScreenPosition(screenPosition + screenPositionOffset, out var position) ==
                 false)

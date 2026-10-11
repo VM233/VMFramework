@@ -508,6 +508,91 @@ namespace VMFramework.Editor.Tests
             return count;
         }
 
+        [UnityTest]
+        public IEnumerator Tracing_DisabledRootRetiresBeforeLogicalClose() =>
+            ExerciseTracingRootRetirement("disable");
+
+        [UnityTest]
+        public IEnumerator Tracing_CloseAndReopenOwnSeparateRootLeases() =>
+            ExerciseTracingRootRetirement("close");
+
+        [UnityTest]
+        public IEnumerator Tracing_LiveReloadAdoptsTheNewRootOnce() =>
+            ExerciseTracingRootRetirement("live-reload");
+
+        [UnityTest]
+        public IEnumerator Tracing_DeinitializeReleasesTheLiveRootLease() =>
+            ExerciseTracingRootRetirement("deinitialize");
+
+        private IEnumerator ExerciseTracingRootRetirement(string boundary)
+        {
+            var manager = host.AddComponent<TracingUIManager>();
+            typeof(TracingUIManager).GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(manager, null);
+            var panel = CreateToolkitPanel(UIToolkitPanelCloseMode.VisualElementDisplayNone,
+                out var settings, out var tree);
+            var modifier = panel.gameObject.AddComponent<UIToolkitTracingPanelModifier>();
+            modifier.containerPath.names.Add("Fixture Trace");
+            modifier.resetPositionOnClose = true;
+            modifier.Initialize(panel, panel.Config);
+            panel.OnGenerateVisualElement += (_, root) =>
+            {
+                root.Clear();
+                root.style.width = 800;
+                root.style.height = 600;
+                var container = new VisualElement { name = "Fixture Trace" };
+                container.style.width = 100;
+                container.style.height = 40;
+                root.Add(container);
+            };
+            try
+            {
+                for (int cycle = 0; cycle < 3; cycle++)
+                {
+                    if (!modifier.IsInitialized) modifier.Initialize(panel, panel.Config);
+                    modifier.enableAutoMouseTracing = cycle != 1;
+                    ((IUIPanel)panel).OnOpenInternal(null);
+                    yield return null;
+                    yield return null;
+                    if (!modifier.enableAutoMouseTracing) manager.StartTracing(modifier, true);
+                    Assert.That(manager.TryGetConfig(modifier, out _), Is.True);
+                    Assert.DoesNotThrow(() => modifier.TryUpdateScreenPosition(new Vector2(200, 100)));
+                    if (boundary == "deinitialize") modifier.Deinitialize();
+                    else if (boundary == "close") CloseToolkitPanel(panel);
+                    else InvokeToolkitLifecycle(panel, "OnDisable");
+                    Assert.That(manager.TryGetConfig(modifier, out _), Is.False);
+                    Assert.That(typeof(UIToolkitTracingPanelModifier)
+                        .GetField("tracingRoot", BindingFlags.Instance | BindingFlags.NonPublic)
+                        .GetValue(modifier), Is.Null);
+                    Assert.DoesNotThrow(() => CloseToolkitPanel(panel),
+                        "Logical close must not query or reset an already retired Toolkit root.");
+                    if (boundary == "live-reload")
+                    {
+                        ((IUIPanel)panel).OnOpenInternal(null);
+                        yield return null;
+                        InvokeToolkitLifecycle(panel, "OnDisable");
+                        panel.UIDocument.visualTreeAsset = tree;
+                        InvokeToolkitLifecycle(panel, "OnEnable");
+                        yield return null;
+                        yield return null;
+                        if (!modifier.enableAutoMouseTracing) manager.StartTracing(modifier, true);
+                        Assert.That(manager.TryGetConfig(modifier, out _), Is.True);
+                        CloseToolkitPanel(panel);
+                        Assert.That(manager.TryGetConfig(modifier, out _), Is.False);
+                    }
+                }
+            }
+            finally
+            {
+                if (modifier.IsInitialized) modifier.Deinitialize();
+                InvokeToolkitLifecycle(panel, "OnDisable");
+                typeof(TracingUIManager).GetMethod("OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(manager, null);
+                Object.DestroyImmediate(settings);
+                Object.DestroyImmediate(tree);
+            }
+        }
+
         private UIToolkitPanel CreateToolkitPanel(UIToolkitPanelCloseMode mode,
             out PanelSettings settings, out VisualTreeAsset tree, bool includeObjects = false)
         {
