@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEngine.TestTools;
 using VMFramework.Core.Pools;
+using VMFramework.Containers;
 using VMFramework.GameEvents;
 using VMFramework.GameLogicArchitecture;
 using VMFramework.UI;
@@ -415,12 +416,105 @@ namespace VMFramework.Editor.Tests
             }
         }
 
+        [UnityTest]
+        public IEnumerator ContainerSlots_DisabledRootRetiresBeforeBindingRemoval() =>
+            ExerciseContainerRootRetirement("disable");
+
+        [UnityTest]
+        public IEnumerator ContainerSlots_CloseAndReopenOwnSeparateContainerSubscriptions() =>
+            ExerciseContainerRootRetirement("close");
+
+        [UnityTest]
+        public IEnumerator ContainerSlots_LiveReloadAdoptsTheCurrentBindingOnce() =>
+            ExerciseContainerRootRetirement("live-reload");
+
+        [UnityTest]
+        public IEnumerator ContainerSlots_DeinitializeReleasesTheLiveRootSubscriptions() =>
+            ExerciseContainerRootRetirement("deinitialize");
+
+        private IEnumerator ExerciseContainerRootRetirement(string boundary)
+        {
+            var panel = CreateToolkitPanel(UIToolkitPanelCloseMode.VisualElementDisplayNone,
+                out var settings, out var tree, includeObjects: true);
+            var objects = panel.BindObjectsManager;
+            const string bindName = "fixture_slots";
+            ((HashSet<string>)typeof(BindObjectsManager)
+                .GetField("singleModeNames", BindingFlags.Instance | BindingFlags.NonPublic)
+                .GetValue(objects)).Add(bindName);
+            var modifier = panel.gameObject.AddComponent<UIToolkitContainerModifierBase>();
+            modifier.bindObjectsName = bindName;
+            modifier.slotDistributorConfigs.Add(new ContainerSlotDistributorConfig
+                { parentName = "Fixture Slots", removeExtraSlots = false });
+            modifier.Initialize(panel, panel.Config);
+            panel.OnGenerateVisualElement += (_, root) =>
+                root.Add(new VisualElement { name = "Fixture Slots" });
+            var firstHost = new GameObject("First Slot Container");
+            firstHost.transform.SetParent(host.transform);
+            var first = firstHost.AddComponent<Container>();
+            var replacementHost = new GameObject("Replacement Slot Container");
+            replacementHost.transform.SetParent(host.transform);
+            var replacement = replacementHost.AddComponent<Container>();
+            try
+            {
+                for (int cycle = 0; cycle < 3; cycle++)
+                {
+                    if (!modifier.IsInitialized) modifier.Initialize(panel, panel.Config);
+                    objects.AddObject(bindName, first);
+                    Assert.That(ContainerVisualCallbacks(first), Is.Zero);
+                    ((IUIPanel)panel).OnOpenInternal(null);
+                    yield return null;
+                    yield return null;
+                    Assert.That(ContainerVisualCallbacks(first), Is.EqualTo(3));
+                    objects.AddObject(bindName, replacement);
+                    Assert.That(ContainerVisualCallbacks(first), Is.Zero);
+                    Assert.That(ContainerVisualCallbacks(replacement), Is.EqualTo(3));
+                    if (boundary == "deinitialize") modifier.Deinitialize();
+                    else if (boundary == "close") CloseToolkitPanel(panel);
+                    else InvokeToolkitLifecycle(panel, "OnDisable");
+                    Assert.That(ContainerVisualCallbacks(replacement), Is.Zero);
+                    if (boundary != "deinitialize") Assert.That(panel.RootVisualElement, Is.Null);
+                    Assert.DoesNotThrow(() => objects.ClearAllObjects(),
+                        "Logical binding retirement must not query a retired visual root.");
+                    if (boundary == "live-reload")
+                    {
+                        objects.AddObject(bindName, first);
+                        Assert.That(ContainerVisualCallbacks(first), Is.Zero);
+                        panel.UIDocument.visualTreeAsset = tree;
+                        InvokeToolkitLifecycle(panel, "OnEnable");
+                        yield return null;
+                        yield return null;
+                        Assert.That(ContainerVisualCallbacks(first), Is.EqualTo(3));
+                    }
+                    CloseToolkitPanel(panel);
+                    Assert.That(ContainerVisualCallbacks(first), Is.Zero);
+                    Assert.That(ContainerVisualCallbacks(replacement), Is.Zero);
+                }
+            }
+            finally
+            {
+                if (modifier.IsInitialized) modifier.Deinitialize();
+                InvokeToolkitLifecycle(panel, "OnDisable");
+                Object.DestroyImmediate(settings);
+                Object.DestroyImmediate(tree);
+            }
+        }
+
+        private static int ContainerVisualCallbacks(Container container)
+        {
+            int count = 0;
+            foreach (var name in new[] { "OnAfterItemChangedEvent", "OnItemDirtyEvent", "OnSizeChangedEvent" })
+                count += (typeof(Container).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)
+                    .GetValue(container) as System.Delegate)?.GetInvocationList().Length ?? 0;
+            return count;
+        }
+
         private UIToolkitPanel CreateToolkitPanel(UIToolkitPanelCloseMode mode,
-            out PanelSettings settings, out VisualTreeAsset tree)
+            out PanelSettings settings, out VisualTreeAsset tree, bool includeObjects = false)
         {
             var panelHost = new GameObject("Toolkit Root Lifetime Test");
             panelHost.transform.SetParent(host.transform);
             var panel = panelHost.AddComponent<UIToolkitPanel>();
+            if (includeObjects) panelHost.AddComponent<BindObjectsManager>();
             var document = panel.GetComponent<UIDocument>();
             document.enabled = false;
             settings = ScriptableObject.CreateInstance<PanelSettings>();

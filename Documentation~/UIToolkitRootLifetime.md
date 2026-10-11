@@ -30,6 +30,14 @@ creation retires its actually acquired prefix, and never publishes an unfinished
 panel. Panel modifiers and locale/pointer subscriptions belong to that rental
 and root. A callback failure does not suppress other independent releases.
 
+Container slot modifiers retain logical binding notifications for their rental.
+Their visual binding listener and the current container's item, dirty and size
+callbacks belong to the published root. Root retirement removes those callbacks
+before clearing slots and restoring disabled elements. Logical binding removal
+can then finish independently, including when Unity disables a document before
+destroying its panel. Reopening or Live Reload adopts the current single-mode
+container into the new root; deinitialization retires both subscription scopes.
+
 ## Cost and verification
 
 Each published root owns one cancellation source and one actual layout Task;

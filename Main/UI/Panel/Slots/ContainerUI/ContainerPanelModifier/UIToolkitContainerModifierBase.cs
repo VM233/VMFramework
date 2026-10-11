@@ -31,25 +31,59 @@ namespace VMFramework.UI
         protected bool refreshTag = false;
 
         private readonly HashSet<SlotVisualElement> slotsDisabledWhileContainerUnbound = new();
+        private IUIToolkitPanel rootOwner;
+        private IContainer slotSource;
 
         protected override void OnInitialize()
         {
             base.OnInitialize();
 
-            Panel.OnOpen += OnOpen;
-            Panel.OnPostClose += OnPostClose;
+            rootOwner = this.UIToolkitPanel();
+            rootOwner.OnRootVisualElementReady += OnRootReady;
+            rootOwner.OnRootVisualElementReleased += OnRootReleased;
             Panel.BindObjectsManager.OnBindObjectChanged += OnBindObjectChanged;
         }
 
-        protected virtual void OnOpen(IUIPanel panel)
+        protected override void OnDeinitialize()
         {
-            RefreshUnboundSlotsEnabledState();
+            var failures = new UIPanelReleaseFailures(nameof(UIToolkitContainerModifierBase));
+            failures.Attempt("binding.unsubscribe", () =>
+                Panel.BindObjectsManager.OnBindObjectChanged -= OnBindObjectChanged);
+            if (rootOwner != null)
+            {
+                rootOwner.OnRootVisualElementReady -= OnRootReady;
+                rootOwner.OnRootVisualElementReleased -= OnRootReleased;
+            }
+            failures.Attempt("slots.retire", RetireSlots);
+            rootOwner = null;
+            failures.Attempt("base.deinitialize", () => base.OnDeinitialize());
+            failures.ThrowIfFailed();
         }
 
-        protected virtual void OnPostClose(IUIPanel panel)
+        private void OnRootReady(IUIToolkitPanel panel, VisualElement root)
         {
-            ClearSlots();
-            RestoreSlotsDisabledWhileContainerUnbound();
+            Panel.BindObjectsManager.OnBindObjectChanged += OnSlotBindingChanged;
+            if (Panel.BindObjectsManager.GetObject(bindObjectsName) is IContainer container)
+                AdoptSlotSource(container);
+            else
+                RefreshUnboundSlotsEnabledState();
+        }
+
+        private void OnRootReleased(IUIToolkitPanel panel, UIToolkitRootRetirement retirement)
+        {
+            RetireSlots();
+        }
+
+        private void RetireSlots()
+        {
+            var failures = new UIPanelReleaseFailures(nameof(UIToolkitContainerModifierBase));
+            failures.Attempt("visual-binding.unsubscribe", () =>
+                Panel.BindObjectsManager.OnBindObjectChanged -= OnSlotBindingChanged);
+            failures.Attempt("container.unsubscribe", ReleaseSlotSource);
+            failures.Attempt("slots.clear", ClearSlots);
+            failures.Attempt("unbound-slots.restore", RestoreSlotsDisabledWhileContainerUnbound);
+            refreshTag = false;
+            failures.ThrowIfFailed();
         }
 
         protected virtual void Update()
@@ -120,6 +154,10 @@ namespace VMFramework.UI
 
         protected virtual void OnBindObjectChanged(string bindName, object bindObject, object parentObject, bool added)
         {
+        }
+
+        private void OnSlotBindingChanged(string bindName, object bindObject, object parentObject, bool added)
+        {
             if (bindName != bindObjectsName)
             {
                 return;
@@ -129,24 +167,35 @@ namespace VMFramework.UI
             {
                 if (added)
                 {
-                    RestoreSlotsDisabledWhileContainerUnbound();
-
-                    container.OnAfterItemChangedEvent += OnItemChanged;
-                    container.OnItemDirtyEvent += OnItemDirty;
-                    container.OnSizeChangedEvent += OnContainerSizeChanged;
-
-                    BuildSlots();
+                    AdoptSlotSource(container);
                 }
                 else
                 {
-                    container.OnAfterItemChangedEvent -= OnItemChanged;
-                    container.OnItemDirtyEvent -= OnItemDirty;
-                    container.OnSizeChangedEvent -= OnContainerSizeChanged;
-
+                    ReleaseSlotSource();
                     ClearSlots();
                     RefreshUnboundSlotsEnabledState();
                 }
             }
+        }
+
+        private void AdoptSlotSource(IContainer container)
+        {
+            slotSource = container;
+            RestoreSlotsDisabledWhileContainerUnbound();
+            container.OnAfterItemChangedEvent += OnItemChanged;
+            container.OnItemDirtyEvent += OnItemDirty;
+            container.OnSizeChangedEvent += OnContainerSizeChanged;
+            BuildSlots();
+        }
+
+        private void ReleaseSlotSource()
+        {
+            var container = slotSource;
+            slotSource = null;
+            if (container == null) return;
+            container.OnAfterItemChangedEvent -= OnItemChanged;
+            container.OnItemDirtyEvent -= OnItemDirty;
+            container.OnSizeChangedEvent -= OnContainerSizeChanged;
         }
 
         #endregion

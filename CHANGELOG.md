@@ -4,6 +4,18 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.29] - 2026-10-11
+
+### Fixed
+
+- Container slot visuals subscribe to binding and container changes only while
+  their UI Toolkit root is published. Root retirement detaches these callbacks
+  before clearing slots, so later logical binding cleanup cannot query a released
+  root. Reopening and Live Reload adopt the current single-mode container once;
+  modifier deinitialization releases both rental and visual subscriptions.
+- Add focused close/reopen, native-disable, Live Reload and deinitialization
+  regressions, including container replacement and exact callback retirement.
+
 ## [9.1.28] - 2026-10-11
 
 ### Fixed
