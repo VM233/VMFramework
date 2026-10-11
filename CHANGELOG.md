@@ -4,6 +4,15 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.32] - 2026-10-11
+
+### Fixed
+
+- Initialize the slot-filter lifetime fixture's real container with its owned
+  one-slot configuration before admitting a visual slot. The original fixture
+  attempted to expand an unconfigured controller and failed before exercising
+  filter retirement.
+
 ## [9.1.31] - 2026-10-11
 
 ### Fixed

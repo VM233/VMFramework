@@ -539,7 +539,11 @@ namespace VMFramework.Editor.Tests
             adder.filterID = filterID;
             var display = panel.gameObject.AddComponent<SlotFilterDisplayModifier>();
             var container = host.AddComponent<Container>();
-            container.ExpandTo(1);
+            typeof(ControllerGameItem).GetProperty("GamePrefab", BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(container, new ContainerConfig
+                    { id = "slot_filter_fixture_container", prefab = host, fixedSize = 1 });
+            typeof(Container).GetMethod("OnCreate", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(container, null);
             ((HashSet<string>)typeof(BindObjectsManager)
                 .GetField("singleModeNames", BindingFlags.Instance | BindingFlags.NonPublic)
                 .GetValue(panel.BindObjectsManager)).Add(bindName);

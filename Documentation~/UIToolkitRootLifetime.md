@@ -57,13 +57,15 @@ The focused slot-filter retirement fixtures freeze three boundaries (native
 document disable, logical close and modifier deinitialization), each with three
 admissions, one real container slot and one filter source per admission. This is
 nine admissions, nine slots and nine manager retirements, executed sequentially;
-no inventory scan, GameItem rental or gameplay entity is involved. Each admission
+the container owns a fixed-size-one `ContainerConfig` and runs its real
+`OnCreate` boundary before visual admission. No inventory scan, GameItem rental
+or gameplay entity is involved. Each admission
 generates at most one slot and retires that slot once. Production modifier
 admission/retirement traverse the already owned slot collection once: for its
 frozen entry count S, at most S callback pairs are acquired and S are released.
 The budget is linear in that existing collection, with no new search axis or
-retained collection. These bounds pass the static cost review; the focused
-fixture and the consumer's native Play shutdown establish the runtime result.
+retained collection. Use the focused fixture and the consumer's native Play
+shutdown to verify the runtime result independently of these static bounds.
 
 ## Cost and verification
 
