@@ -75,6 +75,20 @@ shutdown to verify the runtime result independently of these static bounds.
 
 ## Cost and verification
 
+Automatic panel data refresh leases one actual `Timer<double>` and its manager
+per open. Close retires that lease, stops the node against its original physical
+source and clears its callback. Deinitialization also removes both panel event
+subscriptions. Rearm consumes the same node identity, so close/reopen during a
+refresh cannot rearm the previous open. The modifier is no longer a priority
+queue node; its refreshInterval configuration and protected OnTimed extension
+remain unchanged. This preserves the existing data-refresh clock and traversal
+of its R refreshable children, adding one timer and method delegate per open
+and no loop or per-frame callback. The three focused fixtures freeze one panel,
+one refresher and one pending timer, repeating three cycles each and two native
+queue expiries per cycle. They cover retired sources, deinitialization, captured
+late callbacks and close/reopen inside refresh; the native clock advances to the
+actual node deadline. Consumer Play shutdown remains independent qualification.
+
 Each published root owns one cancellation source and one actual layout Task;
 retirement joins that Task rather than adding a polling loop or a scene scan.
 Pointer registration traverses the root's existing children once per lifetime.

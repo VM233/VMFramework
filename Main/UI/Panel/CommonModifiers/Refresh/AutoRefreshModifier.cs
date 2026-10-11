@@ -5,7 +5,7 @@ using VMFramework.Timers;
 
 namespace VMFramework.UI
 {
-    public class AutoRefreshModifier : PanelModifier, ITimer<double>
+    public class AutoRefreshModifier : PanelModifier
     {
         [TitleGroup(ComponentNames.CONFIG)]
         [MinValue(0)]
@@ -14,6 +14,9 @@ namespace VMFramework.UI
         [TitleGroup(ComponentNames.RUNTIME)]
         [ShowInInspector]
         protected IRefreshable[] refreshables;
+
+        private ITimerManager timerSource;
+        private Timer<double> refreshTimer;
 
         protected override void OnInitialize()
         {
@@ -27,12 +30,40 @@ namespace VMFramework.UI
 
         protected virtual void OnOpen(IUIPanel panel)
         {
-            TimerManager.Instance.Add(this, refreshInterval);
+            var source = TimerManager.Instance;
+            var timer = new Timer<double> { OnTimed = OnRefreshTimer };
+            source.Add(timer, refreshInterval);
+            timerSource = source;
+            refreshTimer = timer;
         }
         
         protected virtual void OnPostClose(IUIPanel panel)
         {
-            TimerManager.Instance.TryStop(this);
+            var source = timerSource;
+            var timer = refreshTimer;
+            timerSource = null;
+            refreshTimer = null;
+            if (timer != null)
+            {
+                try { source.TryStop(timer); }
+                finally { timer.OnTimed = null; }
+            }
+        }
+
+        protected override void OnDeinitialize()
+        {
+            Panel.OnOpen -= OnOpen;
+            Panel.OnPostClose -= OnPostClose;
+            try { OnPostClose(Panel); }
+            finally { base.OnDeinitialize(); }
+        }
+
+        private void OnRefreshTimer(Timer<double> timer)
+        {
+            if (!ReferenceEquals(refreshTimer, timer)) return;
+            var source = timerSource;
+            OnTimed();
+            if (ReferenceEquals(refreshTimer, timer)) source.Add(timer, refreshInterval);
         }
 
         protected virtual void OnTimed()
@@ -40,26 +71,10 @@ namespace VMFramework.UI
             foreach (var refreshable in refreshables)
             {
                 Profiler.BeginSample($"{refreshable.GetType().Name} Refresh");
-                refreshable.Refresh();
-                Profiler.EndSample();
+                try { refreshable.Refresh(); }
+                finally { Profiler.EndSample(); }
             }
             
-            TimerManager.Instance.Add(this, refreshInterval);
         }
-        
-        void ITimer<double>.OnTimed()
-        {
-            OnTimed();
-        }
-
-        #region Proprity Queue Node
-
-        double IGenericPriorityQueueNode<double>.Priority { get; set; }
-
-        int IGenericPriorityQueueNode<double>.QueueIndex { get; set; }
-
-        long IGenericPriorityQueueNode<double>.InsertionIndex { get; set; }
-
-        #endregion
     }
 }

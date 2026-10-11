@@ -4,6 +4,18 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.35] - 2026-10-11
+
+### Fixed
+
+- Automatic panel data refresh owns the actual timer node and manager acquired
+  for each open. Close and deinitialization release that registration after the
+  manager publication retires; old callbacks cannot rearm a subsequent open.
+- Removed the modifier's priority-queue-node surface. The existing Timer product
+  owns queue identity, while refreshInterval and the protected refresh callback
+  remain on the modifier. Focused fixtures cover native expiry, retirement,
+  deinitialization and reentrant close/reopen in three cycles each.
+
 ## [9.1.34] - 2026-10-11
 
 ### Fixed

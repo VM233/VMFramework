@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEngine.TestTools;
 using VMFramework.Core.Pools;
+using VMFramework.Timers;
 using VMFramework.Containers;
 using VMFramework.GameEvents;
 using VMFramework.GameLogicArchitecture;
@@ -638,6 +639,122 @@ namespace VMFramework.Editor.Tests
                 Object.DestroyImmediate(settings);
                 Object.DestroyImmediate(tree);
             }
+        }
+
+        [UnityTest]
+        public IEnumerator AutoRefresh_RetiredTimerSourceSupportsLogicalClose() =>
+            ExerciseAutoRefreshRetirement("retired-source");
+
+        [UnityTest]
+        public IEnumerator AutoRefresh_DeinitializeRetiresTimerAndPanelSubscriptions() =>
+            ExerciseAutoRefreshRetirement("deinitialize");
+
+        [UnityTest]
+        public IEnumerator AutoRefresh_ReentrantCloseAndReopenOwnSeparateTimers() =>
+            ExerciseAutoRefreshRetirement("reentrant");
+
+        public sealed class RefreshProbe : MonoBehaviour, VMFramework.Core.IRefreshable
+        {
+            public int Count { get; private set; }
+            public System.Action Action { get; set; }
+            public void Refresh() { Count++; Action?.Invoke(); }
+        }
+
+        private IEnumerator ExerciseAutoRefreshRetirement(string boundary)
+        {
+            var panel = CreateToolkitPanel(UIToolkitPanelCloseMode.VisualElementDisplayNone,
+                out var settings, out var tree);
+            var probe = panel.gameObject.AddComponent<RefreshProbe>();
+            var modifier = panel.gameObject.AddComponent<AutoRefreshModifier>();
+            modifier.refreshInterval = 100f;
+            TimerManager source = null;
+            try
+            {
+                for (int cycle = 0; cycle < 3; cycle++)
+                {
+                    source = host.AddComponent<TimerManager>();
+                    typeof(TimerManager).GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic)
+                        .Invoke(source, null);
+                    modifier.Initialize(panel, panel.Config);
+                    ((IUIPanel)panel).OnOpenInternal(null);
+                    yield return null;
+                    yield return null;
+                    var timer = RefreshTimer(modifier);
+                    Assert.That(source.Contains(timer), Is.True);
+                    int before = probe.Count;
+                    RunRefreshDeadline(source, timer);
+                    Assert.That(probe.Count, Is.EqualTo(before + 1));
+                    Assert.That(source.Contains(timer), Is.True);
+                    if (boundary == "reentrant")
+                        probe.Action = () =>
+                        {
+                            probe.Action = null;
+                            CloseToolkitPanel(panel);
+                            ((IUIPanel)panel).OnOpenInternal(null);
+                        };
+                    RunRefreshDeadline(source, timer);
+                    Assert.That(probe.Count, Is.EqualTo(before + 2));
+                    if (boundary == "reentrant")
+                    {
+                        var replacement = RefreshTimer(modifier);
+                        Assert.That(replacement, Is.Not.SameAs(timer));
+                        Assert.That(source.Contains(timer), Is.False);
+                        Assert.That(timer.OnTimed, Is.Null);
+                        Assert.That(source.Contains(replacement), Is.True);
+                        timer = replacement;
+                        yield return null;
+                        yield return null;
+                    }
+                    if (boundary == "retired-source")
+                    {
+                        RetireRefreshSource(source);
+                        Assert.That(ReferenceEquals(TimerManager.Instance, null), Is.True);
+                    }
+                    var queuedCallback = timer.OnTimed;
+                    if (boundary == "deinitialize") modifier.Deinitialize();
+                    else CloseToolkitPanel(panel);
+                    Assert.That(source.Contains(timer), Is.False);
+                    Assert.That(timer.OnTimed, Is.Null);
+                    queuedCallback(timer);
+                    Assert.That(probe.Count, Is.EqualTo(before + 2));
+                    CloseToolkitPanel(panel);
+                    if (modifier.IsInitialized) modifier.Deinitialize();
+                    Assert.That(typeof(UIPanel).GetField("OnOpen", BindingFlags.Instance | BindingFlags.NonPublic)
+                        .GetValue(panel), Is.Null);
+                    Assert.That(typeof(UIPanel).GetField("OnPostClose", BindingFlags.Instance | BindingFlags.NonPublic)
+                        .GetValue(panel), Is.Null);
+                    if (boundary != "retired-source") RetireRefreshSource(source);
+                    source = null;
+                }
+            }
+            finally
+            {
+                if (modifier.IsInitialized) modifier.Deinitialize();
+                CloseToolkitPanel(panel);
+                InvokeToolkitLifecycle(panel, "OnDisable");
+                if (!ReferenceEquals(source, null) && source != null) RetireRefreshSource(source);
+                Object.DestroyImmediate(settings);
+                Object.DestroyImmediate(tree);
+            }
+        }
+
+        private static Timer<double> RefreshTimer(AutoRefreshModifier modifier) =>
+            (Timer<double>)typeof(AutoRefreshModifier)
+                .GetField("refreshTimer", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(modifier);
+
+        private static void RunRefreshDeadline(TimerManager source, Timer<double> timer)
+        {
+            typeof(TimerManager).GetField("currentTime", BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(source, timer.ExpectedTime);
+            typeof(TimerManager).GetMethod("Update", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(source, null);
+        }
+
+        private static void RetireRefreshSource(TimerManager source)
+        {
+            typeof(TimerManager).GetMethod("OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(source, null);
+            Object.DestroyImmediate(source);
         }
 
         [UnityTest]
