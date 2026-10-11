@@ -56,6 +56,10 @@ Native fixture components belong to the runtime test assembly, even when their
 witness runs in Edit Mode. Unity does not attach an Editor-only script to a
 GameObject. The Editor test assembly references that runtime fixture assembly;
 empty native test subclasses should reuse the existing runtime component.
+Fixtures that observe native Unity callbacks during Edit Mode also declare
+ExecuteAlways. Destruction assertions consume the engine-delivered OnDestroy;
+they never call that callback manually. Production components retain their
+runtime execution contract.
 Standalone test fixtures own manager publication and retire it during teardown,
 including when a witness throws before its expected terminal state.
 

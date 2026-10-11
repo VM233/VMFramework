@@ -4,6 +4,15 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.28] - 2026-10-11
+
+### Fixed
+
+- Enable native Unity callbacks in the Edit Mode cleanup fixture. Runtime
+  placement permits attachment; ExecuteAlways permits the engine to deliver
+  OnDestroy during the actual Edit Mode destruction boundary. Cleanup assertions
+  and production ControllerGameItem behavior remain unchanged.
+
 ## [9.1.27] - 2026-10-11
 
 ### Fixed

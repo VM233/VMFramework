@@ -4,6 +4,7 @@ using VMFramework.GameLogicArchitecture;
 
 namespace VMFramework.Tests
 {
+    [ExecuteAlways]
     public sealed class ControllerCleanupTestItem : ControllerGameItem
     {
         public Action CreateAction, GetAction, ReturnAction, ClearAction, NativeDestroyedAction;
