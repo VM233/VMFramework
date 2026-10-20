@@ -1,5 +1,6 @@
 using System;
 using UnityEditor;
+using UnityEditor.Callbacks;
 
 namespace VMFramework.Editor.Tests
 {
@@ -7,8 +8,7 @@ namespace VMFramework.Editor.Tests
     {
         internal static event Action<string[], string[], string[], string[]> Changed;
 
-        public override int GetPostprocessOrder() => int.MaxValue;
-
+        [RunAfterAssembly("VMFramework")]
         private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets,
             string[] movedAssets, string[] movedFromAssetPaths) =>
             Changed?.Invoke(importedAssets, deletedAssets, movedAssets, movedFromAssetPaths);

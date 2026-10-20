@@ -4,6 +4,23 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.50] - 2026-10-20
+
+### Fixed
+
+- A configured settings root that returns after native removal invalidates
+  existing Game Editor hosts through its actual configured path, including
+  when the preceding menu graph no longer contains that root.
+- Native lifecycle observations run after the framework's post-import callbacks
+  using Unity's callback dependency contract. Cancellation asserts that actual
+  registration has not yet published at its interception boundary.
+
+### Added
+
+- Native configured-root move/return coverage with original path, GUID, bytes
+  and meta preservation, clean single-module source admission and paired
+  restoration on failure, reload and quit.
+
 ## [9.1.49] - 2026-10-20
 
 ### Fixed

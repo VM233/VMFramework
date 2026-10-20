@@ -18,6 +18,7 @@ namespace VMFramework.Editor.Tests
     public sealed class GamePrefabAuthoringLifecycleTests
     {
         private string directory, path, prefix;
+        private string protectedRootPath;
         private GamePrefabSingleWrapper wrapper;
 
         [UnitySetUp]
@@ -50,6 +51,8 @@ namespace VMFramework.Editor.Tests
         [UnityTearDown]
         public IEnumerator TearDown()
         {
+            Assert.That(protectedRootPath, Is.Null,
+                "A configured root was not restored. Preserve its temporary directory instead of deleting it.");
             if (directory != null && AssetDatabase.IsValidFolder(directory))
                 yield return NativeChange(directory, () =>
                     Assert.That(AssetDatabase.DeleteAsset(directory), Is.True));
@@ -169,16 +172,69 @@ namespace VMFramework.Editor.Tests
         }
 
         [UnityTest]
+        public IEnumerator ConfiguredRootReturnRebuildsTheExistingHost()
+        {
+            var editor = ExistingEditor();
+            var root = GlobalSettingFileEditorManager.GetGlobalSettings()
+                .OfType<BuiltInModulesSettingFile>().Single();
+            Assert.That(EditorUtility.IsDirty(root), Is.False, "Preserve unsaved root authoring changes.");
+            string originalPath = AssetDatabase.GetAssetPath(root);
+            Assert.That(originalPath.StartsWith("Assets/", StringComparison.Ordinal), Is.True);
+            string originalGuid = AssetDatabase.AssetPathToGUID(originalPath);
+            string temporaryPath = directory + "/Configured Root.asset";
+            string absolutePath = Path.Combine(Path.GetDirectoryName(Application.dataPath), originalPath);
+            Assert.That(new FileInfo(absolutePath).Length, Is.LessThanOrEqualTo(4 * 1024 * 1024));
+            Assert.That(new FileInfo(absolutePath + ".meta").Length, Is.LessThanOrEqualTo(4096));
+            byte[] originalBytes = File.ReadAllBytes(absolutePath);
+            byte[] originalMeta = File.ReadAllBytes(absolutePath + ".meta");
+            string[] originalIDs = GamePrefabManager.AllGamePrefabIDs.OrderBy(value => value,
+                StringComparer.Ordinal).ToArray();
+            bool ContainsRoot() => editor.MenuTree.EnumerateTree().Any(item => ReferenceEquals(item.Value, root));
+            void RestoreRoot()
+            {
+                if (AssetDatabase.AssetPathToGUID(temporaryPath) == originalGuid)
+                    Assert.That(AssetDatabase.MoveAsset(temporaryPath, originalPath), Is.Empty);
+                Assert.That(AssetDatabase.AssetPathToGUID(originalPath), Is.EqualTo(originalGuid));
+                protectedRootPath = null;
+            }
+            Assert.That(ContainsRoot(), Is.True, "The actual configured root must be in the existing host.");
+            AssemblyReloadEvents.beforeAssemblyReload += RestoreRoot;
+            EditorApplication.quitting += RestoreRoot;
+            try
+            {
+                protectedRootPath = temporaryPath;
+                yield return NativeChange(originalPath, () =>
+                    Assert.That(AssetDatabase.MoveAsset(originalPath, temporaryPath), Is.Empty));
+                Assert.That(ContainsRoot(), Is.False, "The native move did not retire the configured root.");
+                var absentTree = editor.MenuTree;
+                yield return NativeChange(originalPath, RestoreRoot);
+                Assert.That(editor.MenuTree, Is.Not.SameAs(absentTree));
+                Assert.That(ContainsRoot(), Is.True, "The actual configured root did not return to its host.");
+                CollectionAssert.AreEqual(originalBytes, File.ReadAllBytes(absolutePath));
+                CollectionAssert.AreEqual(originalMeta, File.ReadAllBytes(absolutePath + ".meta"));
+                CollectionAssert.AreEqual(originalIDs, GamePrefabManager.AllGamePrefabIDs.OrderBy(value => value,
+                    StringComparer.Ordinal).ToArray());
+            }
+            finally
+            {
+                AssemblyReloadEvents.beforeAssemblyReload -= RestoreRoot;
+                EditorApplication.quitting -= RestoreRoot;
+                RestoreRoot();
+            }
+        }
+
+        [UnityTest]
         public IEnumerator CancelRetiresTheActualQueuedNativeImport()
         {
             string secondPath = directory + "/Canceled Wrapper.asset";
             var cancel = typeof(GamePrefabWrapperInitializeUtility).Assembly
                 .GetType("VMFramework.GameLogicArchitecture.Editor.GamePrefabWrapperPostProcessor", true)
                 .GetMethod("Cancel", BindingFlags.Static | BindingFlags.NonPublic);
-            bool canceled = false;
+            bool canceled = false, observedBeforePublication = false;
             void CancelPublishedImport(string[] imported, string[] deleted, string[] moved, string[] movedFrom)
             {
                 if (!imported.Contains(secondPath)) return;
+                observedBeforePublication = !GamePrefabManager.TryGetGamePrefab(prefix + "_canceled", out _);
                 cancel.Invoke(null, null);
                 canceled = true;
             }
@@ -192,6 +248,8 @@ namespace VMFramework.Editor.Tests
                     AssetDatabase.CreateAsset(second, secondPath);
                 });
                 Assert.That(canceled, Is.True, "The actual native import was not observed before cancellation.");
+                Assert.That(observedBeforePublication, Is.True,
+                    "The native observer must intercept the import before deferred registration publishes.");
                 Assert.That(GamePrefabManager.TryGetGamePrefab(prefix + "_canceled", out _), Is.False);
                 Assert.That(GamePrefabManager.TryGetGamePrefab(prefix, out _), Is.True);
             }
