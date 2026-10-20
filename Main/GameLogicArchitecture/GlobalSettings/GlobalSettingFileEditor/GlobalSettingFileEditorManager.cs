@@ -123,7 +123,7 @@ namespace VMFramework.GameLogicArchitecture.Editor
                 fileName += ".asset";
             }
             
-            path = assetFolderPath.PathCombine(fileName);
+            path = assetFolderPath.PathCombine(fileName).Replace('\\', '/');
 
             return true;
         }

@@ -223,6 +223,19 @@ namespace VMFramework.Editor.Tests
             }
         }
 
+        [Test]
+        public void ConfiguredRootPathsMatchTheirNativeAssets()
+        {
+            var roots = GlobalSettingFileEditorManager.GetGlobalSettings().ToArray();
+            Assert.That(roots, Is.Not.Empty);
+            foreach (var root in roots)
+            {
+                Assert.That(root.TryGetGlobalSettingPath(out string declaredPath, out _), Is.True);
+                Assert.That(declaredPath, Is.EqualTo(AssetDatabase.GetAssetPath((UnityEngine.Object)root)),
+                    "Configured roots must publish the native Unity asset-path representation.");
+            }
+        }
+
         [UnityTest]
         public IEnumerator CancelRetiresTheActualQueuedNativeImport()
         {

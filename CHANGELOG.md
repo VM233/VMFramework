@@ -4,6 +4,18 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.51] - 2026-10-20
+
+### Fixed
+
+- Configured root paths publish Unity asset separators at their source, so
+  native imports match the same path on Windows and returning roots rebuild
+  their existing hosts. Generic filesystem path combination is unchanged.
+
+### Added
+
+- Native path identity coverage across all current configured root assets.
+
 ## [9.1.50] - 2026-10-20
 
 ### Fixed

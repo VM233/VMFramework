@@ -8,6 +8,8 @@ settings input; its key/reference snapshot is compared on project changes.
 Configured root imports additionally resolve their declared path through the
 root-settings owner. A root can therefore return after removal even when the
 preceding menu's native source set is empty for that root.
+The root-path owner publishes canonical Unity asset separators; native import
+qualification compares that product directly with Unity's event paths.
 
 The wrapper registration owner records actual wrapper, setting and provider
 paths. The native importer classifies live assets by their actual Unity type
