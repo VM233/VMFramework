@@ -304,6 +304,8 @@ namespace VMFramework.Procedure
         [ShowInInspector]
         public bool IsLoading => initializerManager is { IsInitializing: true };
 
+        public IReadOnlyInitializerManager Initialization => initializerManager;
+
         [ShowInInspector]
         private Dictionary<string, Dictionary<ProcedureLoadingType, List<IGameInitializer>>>
             gameInitializers = new();

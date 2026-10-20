@@ -10,7 +10,7 @@ namespace VMFramework.GameLogicArchitecture
     public static class GamePrefabCollectorManager
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static async UniTask<IEnumerable<IGamePrefab>> Collect(CancellationToken cancellationToken)
+        public static async UniTask<IReadOnlyList<IGamePrefab>> Collect(CancellationToken cancellationToken)
         {
             var result = new List<IGamePrefab>();
             

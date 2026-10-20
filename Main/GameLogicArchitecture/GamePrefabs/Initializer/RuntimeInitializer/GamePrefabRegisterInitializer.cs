@@ -10,15 +10,16 @@ namespace VMFramework.GameLogicArchitecture
 {
     [GameInitializerRegister(VMFrameworkInitializationDoneProcedure.ID, ProcedureLoadingType.OnEnter)]
     [Preserve]
-    public sealed class GamePrefabRegisterInitializer : IGameInitializer
+    public sealed class GamePrefabRegisterInitializer : IGameInitializer, IInitializationProgressSource
     {
+        public InitializationProgress Progress { get; private set; }
         void IInitializer.GetInitializationActions(ICollection<InitializationAction> actions)
         {
             actions.Add(new(InitializationOrder.PostInit, OnPostInit, this));
             actions.Add(new(InitializationOrder.InitComplete, OnInitComplete, this));
         }
 
-        private static async UniTask OnPostInit(CancellationToken cancellationToken)
+        private async UniTask OnPostInit(CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             GamePrefabManager.Clear();
@@ -26,29 +27,33 @@ namespace VMFramework.GameLogicArchitecture
             var gamePrefabs = await GamePrefabCollectorManager.Collect(cancellationToken);
 
             var slice = new InitializationWorkSlice();
+            Progress = new InitializationProgress(0, gamePrefabs.Count);
 
             foreach (var gamePrefab in gamePrefabs)
             {
                 await slice.YieldIfBudgetExpired(cancellationToken);
                 GamePrefabManager.RegisterGamePrefab(gamePrefab);
+                Progress = new InitializationProgress(Progress.Completed + 1, Progress.Total);
             }
 
             GamePrefabReferenceValidator.Validate(
                 GamePrefabManager.GetAllGamePrefabs());
         }
         
-        private static async UniTask OnInitComplete(CancellationToken cancellationToken)
+        private async UniTask OnInitComplete(CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var checkPipeline = new ActionProcessorPipeline<object, ICheckProcessor>();
             await checkPipeline.AutoCollectAsync(cancellationToken);
             var slice = new InitializationWorkSlice();
+            Progress = new InitializationProgress(0, GamePrefabManager.GetGamePrefabsCount());
             
             foreach (var gamePrefab in GamePrefabManager.GetAllGamePrefabs())
             {
                 await slice.YieldIfBudgetExpired(cancellationToken);
                 await ConfigurationValidation.CheckAsync(gamePrefab, cancellationToken);
                 checkPipeline.ProcessTarget(gamePrefab);
+                Progress = new InitializationProgress(Progress.Completed + 1, Progress.Total);
             }
         }
     }

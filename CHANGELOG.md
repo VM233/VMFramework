@@ -4,6 +4,15 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.44] - 2026-10-20
+
+### Added
+
+- Procedure initialization exposes its existing read-only manager. Initializers
+  may publish immutable completed/total work through IInitializationProgressSource.
+  GamePrefab registration and validation publish counts only after each real item
+  succeeds; failure and cancellation preserve the actual unfinished counts.
+
 ## [9.1.43] - 2026-10-20
 
 ### Fixed

@@ -9,6 +9,7 @@ namespace VMFramework.Procedure
     {
         public CancellationToken LifetimeToken { get; }
         public bool IsLoading { get; }
+        public IReadOnlyInitializerManager Initialization { get; }
         public IReadOnlyList<string> CurrentProcedureIDs { get; }
         public event Action<string> OnEnterProcedureEvent;
         public event Action<string> OnExitProcedureEvent;

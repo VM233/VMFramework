@@ -9,6 +9,17 @@ InitializerManager invokes and awaits each accepted action source exactly once i
 The validation placement does not add a registry, polling loop or another loading pass. Each captured global-setting file is loaded and checked once, with one original task per file. Exact asset counts belong to the consuming project's current registered graph and cannot be copied from another project's historical checkpoint. The focused VMFramework.Editor.Tests.InitializerManagerTests fixture covers ordered sources and failure/cancellation ownership; cold configuration registration and native consumer startup remain separate integration witnesses.
 ## Initialization CPU observation
 
+IProcedureManager.Initialization exposes the active read-only initialization
+manager. A running action's initializer may implement IInitializationProgressSource;
+its immutable Progress reports actual completed/total units for that source's
+current batch. GamePrefab registration and validation each publish their frozen
+registry count and advance only after the corresponding item's work succeeds.
+The pair measures batch work, not whole-application time or a predicted duration.
+Consumers must use the action's actual Running status; cancellation and failure
+do not manufacture completion. No extra registry traversal, timer or global
+progress singleton is introduced. Static cost is O(1) per existing item and one
+pair per source; observation is bounded by the current order's existing actions.
+
 Native CPU Profiler markers named `Collect initialization: <type>` and
 `Initialize: <type>.<method>` identify action construction and synchronous action
 invocation. The marker ends when the handler returns its UniTask; it does not
