@@ -4,6 +4,20 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.39] - 2026-10-20
+
+### Fixed
+
+- Runtime collector, check-processor and game-item receiver discovery capture
+  the loaded assembly domain once and consume the existing reflection owner one
+  assembly per work unit. Receiver discovery completes before the BeforeInitStart
+  subscriber phase. No new cache, thread or source detachment is introduced.
+- Global-setting validation adopts explicit asynchronous configuration checks;
+  shared ConfigurationValidation owns cancellation checks and capability dispatch.
+- Accepted global file loads and collector sources join before cancellation is
+  adopted; frame slicing does not detach those sources. Native discovery tests
+  compare the exact reflected type domain.
+
 ## [9.1.38] - 2026-10-20
 
 ### Fixed

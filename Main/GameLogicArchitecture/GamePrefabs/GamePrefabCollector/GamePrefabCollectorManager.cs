@@ -1,22 +1,27 @@
 ﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using VMFramework.Core;
+using VMFramework.Procedure;
 
 namespace VMFramework.GameLogicArchitecture
 {
     public static class GamePrefabCollectorManager
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static async UniTask<IEnumerable<IGamePrefab>> Collect()
+        public static async UniTask<IEnumerable<IGamePrefab>> Collect(CancellationToken cancellationToken)
         {
             var result = new List<IGamePrefab>();
             
-            foreach (var collectorType in typeof(IGamePrefabCollector).GetDerivedInstantiableClasses(false))
+            var types = await InitializationTypeDiscovery.FindAsync(typeof(IGamePrefabCollector), false, cancellationToken);
+            foreach (var collectorType in types)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var collector = (IGamePrefabCollector)collectorType.CreateInstance();
 
                 var gamePrefabs = await collector.CollectGamePrefabs();
+                cancellationToken.ThrowIfCancellationRequested();
                 
                 result.AddRange(gamePrefabs);
             }

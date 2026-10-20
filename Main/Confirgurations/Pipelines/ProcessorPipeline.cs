@@ -1,7 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using VMFramework.Core;
+using VMFramework.Procedure;
 
 namespace VMFramework.Configuration
 {
@@ -28,6 +31,15 @@ namespace VMFramework.Configuration
         public void AddProcessor(TProcessor processor, int priority)
         {
             processors.Add((processor, priority));
+            sortTag = true;
+        }
+
+        public async UniTask AutoCollectAsync(CancellationToken cancellationToken)
+        {
+            processors.Clear();
+            var types = await InitializationTypeDiscovery.FindAsync(typeof(TProcessor), true, cancellationToken);
+            foreach (var type in types)
+                processors.Add(((TProcessor)type.CreateInstance(), PriorityDefines.MEDIUM));
             sortTag = true;
         }
 

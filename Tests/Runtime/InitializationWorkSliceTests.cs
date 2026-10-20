@@ -1,17 +1,32 @@
 using System;
 using System.Collections;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using VMFramework.Procedure;
+using VMFramework.Configuration;
+using VMFramework.Core;
 
 namespace VMFramework.Tests
 {
     public sealed class InitializationWorkSliceTests
     {
+        [UnityTest]
+        public IEnumerator CooperativeDiscoveryPreservesTheActualTypeDomain()
+        {
+            return UniTask.ToCoroutine(async () =>
+            {
+                var expected = typeof(IAsyncCheckableConfig).GetDerivedInstantiableClasses(false).ToArray();
+                var actual = await InitializationTypeDiscovery.FindAsync(typeof(IAsyncCheckableConfig), false,
+                    CancellationToken.None);
+                Assert.That(actual, Is.EquivalentTo(expected));
+            });
+        }
+
         [UnityTest]
         public IEnumerator ExpiredBudgetReturnsToTheActualPlayerLoop()
         {

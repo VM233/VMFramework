@@ -23,8 +23,7 @@ namespace VMFramework.GameLogicArchitecture
             cancellationToken.ThrowIfCancellationRequested();
             GamePrefabManager.Clear();
 
-            var gamePrefabs = await GamePrefabCollectorManager.Collect()
-                .AttachExternalCancellation(cancellationToken);
+            var gamePrefabs = await GamePrefabCollectorManager.Collect(cancellationToken);
 
             var slice = new InitializationWorkSlice();
 
@@ -43,15 +42,13 @@ namespace VMFramework.GameLogicArchitecture
         {
             cancellationToken.ThrowIfCancellationRequested();
             var checkPipeline = new ActionProcessorPipeline<object, ICheckProcessor>();
-            checkPipeline.AutoCollect();
+            await checkPipeline.AutoCollectAsync(cancellationToken);
             var slice = new InitializationWorkSlice();
             
             foreach (var gamePrefab in GamePrefabManager.GetAllGamePrefabs())
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (gamePrefab is IAsyncCheckableConfig asynchronous)
-                    await asynchronous.CheckSettingsAsync(cancellationToken);
-                else gamePrefab.CheckSettings();
+                await ConfigurationValidation.CheckAsync(gamePrefab, cancellationToken);
                 checkPipeline.ProcessTarget(gamePrefab);
                 await slice.YieldIfBudgetExpired(cancellationToken);
             }

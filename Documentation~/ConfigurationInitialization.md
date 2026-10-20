@@ -38,3 +38,13 @@ of the frozen registered graph; unique-panel creation remains a single traversal
 and creates every unique config once. Each active action adds one constant-size
 slice and at most one pending frame wait; no history, worker queue or cache is
 introduced. Content-specific incremental checks own their bounded atomic steps.
+
+Cold runtime type discovery freezes the current AppDomain assembly array and
+checks each assembly once using ReflectionUtility's existing type cache. It keeps
+the original type order, inclusion and instantiability rules. There is one
+constant-size work slice and one result list bounded by the captured type domain.
+No second reflection cache is added. GameItemEvents receiver discovery is an
+explicit preceding initialization order, so subscriptions cannot observe a
+partially discovered receiver set. Global-setting files may explicitly implement
+IAsyncCheckableConfig to distribute their actual general-setting checks across
+frames; file-specific checks remain that implementer's responsibility.

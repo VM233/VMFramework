@@ -33,14 +33,19 @@ namespace VMFramework.GameLogicArchitecture
                 globalSettings.Add(globalSetting);
             }
             
-            await UniTask.WhenAll(tasks).AttachExternalCancellation(cancellationToken);
+            await UniTask.WhenAll(tasks);
+            cancellationToken.ThrowIfCancellationRequested();
         }
 
-        private static UniTask OnInitComplete(CancellationToken cancellationToken)
+        private static async UniTask OnInitComplete(CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            globalSettings.CheckSettings();
-            return UniTask.CompletedTask;
+            var slice = new InitializationWorkSlice();
+            foreach (var setting in globalSettings)
+            {
+                await ConfigurationValidation.CheckAsync(setting.GlobalSettingFile, cancellationToken);
+                await slice.YieldIfBudgetExpired(cancellationToken);
+            }
         }
     }
 }

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using VMFramework.Core;
 using VMFramework.Procedure;
@@ -55,11 +57,18 @@ namespace VMFramework.GameLogicArchitecture
             receivers.Clear();
         }
 
-        protected override void OnBeforeInitStart()
+        protected override void GetInitializationActions(ICollection<InitializationAction> actions)
         {
-            base.OnBeforeInitStart();
-            foreach (var type in typeof(IGameItemEventsReceiver).GetDerivedInstantiableClasses(false))
+            base.GetInitializationActions(actions);
+            actions.Add(new InitializationAction((int)InitializationOrder.BeforeInitStart - 1, CollectReceivers, this));
+        }
+
+        private async UniTask CollectReceivers(CancellationToken cancellationToken)
+        {
+            var types = await InitializationTypeDiscovery.FindAsync(typeof(IGameItemEventsReceiver), false, cancellationToken);
+            foreach (var type in types)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var receiver = (IGameItemEventsReceiver)Activator.CreateInstance(type);
                 receivers.Add(receiver);
             }
