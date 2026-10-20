@@ -17,19 +17,19 @@ namespace VMFramework.UI
             actions.Add(new(InitializationOrder.InitComplete, OnInitComplete, this));
         }
 
-        private static UniTask OnInitComplete(CancellationToken cancellationToken)
+        private static async UniTask OnInitComplete(CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            var slice = new InitializationWorkSlice();
 
             foreach (var config in GamePrefabManager.GetAllActiveGamePrefabs<IUIPanelConfig>())
             {
                 if (config.IsUnique)
                 {
                     UIPanelManager.Instance.CreatePanel(config.id);
+                    await slice.YieldIfBudgetExpired(cancellationToken);
                 }
             }
-
-            return UniTask.CompletedTask;
         }
     }
 }

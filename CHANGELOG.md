@@ -4,6 +4,17 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.37] - 2026-10-20
+
+### Fixed
+
+- Runtime GamePrefab registration, configuration validation and unique UI panel
+  creation return to the actual PlayerLoop when their4ms work budget expires.
+  Validation supports the explicit IAsyncCheckableConfig capability for content
+  whose complete check requires multiple main-thread steps. Procedure adoption
+  still joins every actual initialization source before publishing readiness.
+- Added native PlayerLoop and cancellation tests for initialization work slices.
+
 ## [9.1.36] - 2026-10-20
 
 ### Added
