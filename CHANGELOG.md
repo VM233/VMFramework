@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.36] - 2026-10-20
+
+### Added
+
+- Native CPU Profiler scopes identify initialization action collection and each
+  action's synchronous invocation prefix. Async waits remain outside these scopes,
+  so markers never span unrelated PlayerLoop work or a frame boundary.
+
 ## [9.1.35] - 2026-10-11
 
 ### Fixed

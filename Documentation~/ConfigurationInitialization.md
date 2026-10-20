@@ -7,3 +7,11 @@ Configuration checks may resolve strict GamePrefab references. They must use the
 InitializerManager invokes and awaits each accepted action source exactly once in its captured order. The action token already links sibling, caller and timeout cancellation; cancellation does not detach a pending source. After the source finishes, the manager checks those actual tokens before adopting success. A late source failure remains the first failure; an independently requested forced cancellation is recorded after that join through its actual token boundary. Original source exceptions and sibling cancellation callback failures remain observable. A foreign cancellation is identified by the token and exception actually received from the source, rather than an exception injected into a producer that only retains cancellation tokens. Procedure entry/exit awaits the actual initialization product and retires it under the same transition lifetime. See ProcedureTransitionLifetime.md for cancellation identity, phase failure and request ownership.
 
 The validation placement does not add a registry, polling loop or another loading pass. Each captured global-setting file is loaded and checked once, with one original task per file. Exact asset counts belong to the consuming project's current registered graph and cannot be copied from another project's historical checkpoint. The focused VMFramework.Editor.Tests.InitializerManagerTests fixture covers ordered sources and failure/cancellation ownership; cold configuration registration and native consumer startup remain separate integration witnesses.
+# Initialization CPU observation
+
+Native CPU Profiler markers named `Collect initialization: <type>` and
+`Initialize: <type>.<method>` identify action construction and synchronous action
+invocation. The marker ends when the handler returns its UniTask; it does not
+claim the cost of an asynchronous continuation or waiting frames. Existing order,
+sibling completion, error and cancellation ownership are unchanged. Each scope
+adds constant work and retains no timing history or native resource.

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using Unity.Profiling;
 using VMFramework.Core;
 
 namespace VMFramework.Procedure
@@ -16,7 +17,8 @@ namespace VMFramework.Procedure
 
             foreach (var initializer in initializers)
             {
-                initializer.GetInitializationActions(initializerActions);
+                using (new ProfilerMarker($"Collect initialization: {initializer.GetType().FullName}").Auto())
+                    initializer.GetInitializationActions(initializerActions);
             }
 
             foreach (var actionInfo in initializerActions)

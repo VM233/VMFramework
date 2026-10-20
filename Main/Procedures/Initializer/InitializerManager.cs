@@ -5,6 +5,7 @@ using System.Runtime.ExceptionServices;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
+using Unity.Profiling;
 using VMFramework.Core;
 
 namespace VMFramework.Procedure
@@ -189,7 +190,11 @@ namespace VMFramework.Procedure
             try
             {
                 actionCancellationToken.ThrowIfCancellationRequested();
-                await execution.InitializationAction.action(actionCancellationToken);
+                var action = execution.InitializationAction;
+                UniTask pendingAction;
+                using (new ProfilerMarker($"Initialize: {action.initializer.GetType().FullName}.{action.action.Method.Name}").Auto())
+                    pendingAction = action.action(actionCancellationToken);
+                await pendingAction;
                 actionCancellationToken.ThrowIfCancellationRequested();
                 forcedCancellationToken.ThrowIfCancellationRequested();
                 execution.MarkSucceeded();
