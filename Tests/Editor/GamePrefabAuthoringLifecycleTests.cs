@@ -23,6 +23,7 @@ namespace VMFramework.Editor.Tests
         [UnitySetUp]
         public IEnumerator SetUp()
         {
+            prefix = "authoring_lifecycle_" + Guid.NewGuid().ToString("N");
             var initialized = typeof(GamePrefabWrapperInitializeUtility).Assembly
                 .GetType("VMFramework.Procedure.Editor.EditorInitializer", true)
                 .GetProperty("IsInitialized", BindingFlags.Static | BindingFlags.Public);
@@ -33,7 +34,6 @@ namespace VMFramework.Editor.Tests
                     "The actual Edit initializer did not publish its registry.");
                 yield return null;
             }
-            prefix = "authoring_lifecycle_" + Guid.NewGuid().ToString("N");
             directory = "Assets/__" + prefix;
             path = directory + "/Wrapper.asset";
             yield return NativeChange(path, () =>
@@ -202,7 +202,7 @@ namespace VMFramework.Editor.Tests
         {
             var editors = Resources.FindObjectsOfTypeAll<FrameworkGameEditor>();
             Assert.That(editors, Is.Not.Empty, "This native host regression requires an already-open Game Editor.");
-            return editors.OrderBy(editor => editor.GetInstanceID()).First();
+            return editors.First();
         }
 
         private static IEnumerator NativeChange(string expectedPath, Action mutation)

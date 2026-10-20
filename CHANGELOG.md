@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.49] - 2026-10-20
+
+### Fixed
+
+- The authoring lifecycle tests reuse an existing Game Editor without the object
+  ID API removed in Unity6000.6. Test ownership is established before waiting for
+  initialization, so an admission failure still has a valid cleanup identity.
+
 ## [9.1.48] - 2026-10-20
 
 ### Fixed
