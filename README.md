@@ -73,5 +73,6 @@ See [UI Toolkit roots](Documentation~/UIToolkitRootLifetime.md) for live-view bi
 See [Tooltip bindings](Documentation~/TooltipBindings.md) for default and explicit tooltip ownership.
 See [Description generation](Documentation~/DescriptionGeneration.md) for variable binding and localized request ownership.
 See [Configuration initialization](Documentation~/ConfigurationInitialization.md) for runtime loading and validation.
+See [Authoring asset changes](Documentation~/AuthoringAssetChanges.md) for registration and menu invalidation.
 See [Procedure transition lifetimes](Documentation~/ProcedureTransitionLifetime.md) for accepted request ownership.
 The package is licensed under [GPL-3.0-or-later](LICENSE).

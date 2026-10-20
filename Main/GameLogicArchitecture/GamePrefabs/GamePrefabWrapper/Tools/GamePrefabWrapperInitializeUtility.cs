@@ -5,6 +5,7 @@ using UnityEngine;
 using VMFramework.Core;
 using VMFramework.Core.Editor;
 using VMFramework.Core.Linq;
+using VMFramework.Editor;
 
 namespace VMFramework.GameLogicArchitecture.Editor
 {
@@ -16,14 +17,36 @@ namespace VMFramework.GameLogicArchitecture.Editor
 
         private static readonly List<IGamePrefab> gamePrefabsCache = new();
 
-        private static readonly Dictionary<string, GamePrefabWrapper> gamePrefabWrapperSources = new();
+        private static readonly Dictionary<IGamePrefab, GamePrefabWrapper> gamePrefabWrapperSources = new();
+        private static readonly AuthoringAssetPathIndex sourceAssets = new();
+
+        internal static bool OwnsAssetPath(string path) => sourceAssets.ContainsSource(path);
+        internal static bool OwnsRemovedAssetPath(string path) => sourceAssets.ContainsSourceOrAncestor(path);
 
         public static void Refresh()
         {
+            foreach (var previous in gamePrefabWrapperSources.Keys)
+                previous.OnIDChangedEvent -= onGamePrefabIDChangedFunc;
+            gamePrefabWrapperSources.Clear();
+            sourceAssets.Clear();
             GamePrefabManager.Clear();
+
+            foreach (var root in GlobalSettingFileEditorManager.GetGlobalSettings())
+            {
+                sourceAssets.Add((UnityEngine.Object)root);
+                foreach (var setting in root.GetAllGeneralSettings())
+                {
+                    sourceAssets.Add((UnityEngine.Object)setting);
+                    if (setting is not GamePrefabGeneralSetting prefabs) continue;
+                    prefabs.RefreshInitialGamePrefabProviders();
+                    foreach (var provider in prefabs.initialGamePrefabProviders)
+                        sourceAssets.Add((UnityEngine.Object)provider);
+                }
+            }
 
             foreach (var wrapper in GamePrefabWrapperQueryTools.GetAllGamePrefabWrappers())
             {
+                sourceAssets.Add(wrapper);
                 gamePrefabsCache.Clear();
                 wrapper.GetGamePrefabs(gamePrefabsCache);
 
@@ -56,14 +79,15 @@ namespace VMFramework.GameLogicArchitecture.Editor
 
                     if (GamePrefabManager.RegisterGamePrefab(gamePrefab) == false)
                     {
-                        var existedWrapper = gamePrefabWrapperSources[gamePrefab.id];
+                        GamePrefabManager.TryGetGamePrefab(gamePrefab.id, out var existing);
+                        var existedWrapper = gamePrefabWrapperSources[existing];
                         Debug.LogWarning(
                             $"Registering Failed for {gamePrefab.id} in {wrapper.name}." +
                             $"It has already been registered in {existedWrapper.name}", existedWrapper);
                         continue;
                     }
 
-                    gamePrefabWrapperSources[gamePrefab.id] = wrapper;
+                    gamePrefabWrapperSources.Add(gamePrefab, wrapper);
 
                     gamePrefab.OnIDChangedEvent += onGamePrefabIDChangedFunc;
                 }

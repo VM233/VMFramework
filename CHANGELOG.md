@@ -4,6 +4,24 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.48] - 2026-10-20
+
+### Fixed
+
+- Native authoring imports invalidate the actual wrapper/settings/provider and
+  menu source graph. Unrelated Mesh assets no longer rebuild all registrations
+  and open Game Editor trees. Native moves/deletions and Common Preset membership
+  still update their real consumers.
+- Wrapper refresh pairs ID subscriptions with retirement and associates sources
+  with configuration identity. Repeated refresh, rename and removal cannot leave
+  duplicate callbacks or stale ID keys. Provider cleanup belongs to registration,
+  independent of whether a Game Editor window is open.
+- Queued native authoring work retires on Play admission and assembly reload.
+
+### Added
+
+- Native authoring lifecycle regression tests and focused ownership guidance.
+
 ## [9.1.47] - 2026-10-20
 
 ### Changed

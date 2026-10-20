@@ -26,6 +26,9 @@ namespace VMFramework.Editor.GameEditor
 
         private readonly Dictionary<object, object> visualNodeParentsLookup = new();
 
+        private readonly AuthoringAssetPathIndex sourceAssets = new();
+        private CommonPresetMenuSnapshot presetMenu;
+
         [SerializeField]
         private string[] selectedGameTags = Array.Empty<string>();
 
@@ -57,6 +60,8 @@ namespace VMFramework.Editor.GameEditor
 
         protected override OdinMenuTree BuildMenuTree()
         {
+            sourceAssets.Clear();
+            presetMenu = new CommonPresetMenuSnapshot();
             contextMenuProcessors.AutoCollect();
             toolbarButtonProcessors.AutoCollect();
             
@@ -93,17 +98,8 @@ namespace VMFramework.Editor.GameEditor
                 }
             }
 
-            int loopCount = 0;
             while (leftNodes.Count > 0)
             {
-                loopCount++;
-
-                if (loopCount > 10000)
-                {
-                    Debug.LogError("Infinite loop detected while building menu tree!");
-                    break;
-                }
-                
                 var leftNode = leftNodes.Dequeue();
 
                 if (leftNode.IsUnityNull())
@@ -152,6 +148,9 @@ namespace VMFramework.Editor.GameEditor
 
             foreach (var (node, info) in nodesInfo)
             {
+                if (node is Object source) sourceAssets.Add(source);
+                if (node is IGameEditorMenuTreeNode sourceNode && sourceNode.VisualNode is Object visualSource)
+                    sourceAssets.Add(visualSource);
                 if (info.parent == null)
                 {
                     continue;
@@ -469,11 +468,14 @@ namespace VMFramework.Editor.GameEditor
             SirenixEditorGUI.EndHorizontalToolbar();
         }
 
+        internal bool UsesChangedAssets(string[] imported, string[] deleted, string[] moved, string[] movedFrom) =>
+            sourceAssets.ContainsAnySources(imported) || sourceAssets.ContainsAnyRemovedSources(deleted) ||
+            sourceAssets.ContainsAnySources(moved) || sourceAssets.ContainsAnyRemovedSources(movedFrom);
+
         private void OnProjectChange()
         {
-            GamePrefabGeneralSettingUtility.RefreshAllInitialGamePrefabWrappers();
-            
-            ForceMenuTreeRebuild();
+            if (presetMenu != null && !presetMenu.IsCurrent)
+                ForceMenuTreeRebuild();
         }
     }
 }
