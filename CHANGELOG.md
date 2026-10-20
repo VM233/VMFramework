@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.38] - 2026-10-20
+
+### Fixed
+
+- The PlayMode test assembly explicitly references UniTask for the new
+  initialization frame-budget and cancellation fixtures.
+
 ## [9.1.37] - 2026-10-20
 
 ### Fixed

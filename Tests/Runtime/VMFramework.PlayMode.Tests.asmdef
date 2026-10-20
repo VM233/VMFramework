@@ -1,7 +1,7 @@
 {
   "name": "VMFramework.PlayMode.Tests",
   "rootNamespace": "VMFramework.Tests",
-  "references": ["VMFramework", "VMCore"],
+  "references": ["VMFramework", "VMCore", "UniTask"],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,
