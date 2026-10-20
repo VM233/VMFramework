@@ -6,7 +6,7 @@ namespace VMFramework.Procedure
 {
     public sealed class InitializationWorkSlice
     {
-        public const double BudgetSeconds = .004;
+        public const double BudgetSeconds = .010;
         private long started = Stopwatch.GetTimestamp();
 
         public async UniTask YieldIfBudgetExpired(CancellationToken cancellationToken)

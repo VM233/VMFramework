@@ -19,7 +19,7 @@ adds constant work and retains no timing history or native resource.
 ## Cooperative runtime validation
 
 Runtime registration, validation and unique panel creation consume an
-InitializationWorkSlice with a4ms continuous-work budget. Budget expiry awaits an
+InitializationWorkSlice with a10ms continuous-work budget. Budget expiry awaits an
 actual next PlayerLoop frame on the existing action token; cancellation and source
 retirement remain owned by InitializerManager. This is a scheduling boundary,
 with no delay/minimum presentation duration and no worker-thread Unity API calls.

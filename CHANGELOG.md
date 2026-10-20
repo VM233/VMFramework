@@ -4,6 +4,16 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.42] - 2026-10-20
+
+### Changed
+
+- Cooperative startup work uses a10ms continuous-work allowance. The original
+  4ms prototype kept the loading book responsive but stretched the measured
+  fixed-content loading interval to26–43 seconds in Editor. The revised allowance
+  reserves part of a60Hz frame for UI while reducing needless next-frame waits;
+  every complete-interval100ms frame/paint acceptance gate remains unchanged.
+
 ## [9.1.41] - 2026-10-20
 
 ### Added
