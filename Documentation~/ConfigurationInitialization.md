@@ -23,7 +23,12 @@ InitializationWorkSlice with a10ms continuous-work budget. Budget expiry awaits 
 actual next PlayerLoop frame on the existing action token; cancellation and source
 retirement remain owned by InitializerManager. This is a scheduling boundary,
 with no delay/minimum presentation duration and no worker-thread Unity API calls.
-An indivisible native operation cannot be preempted by this budget.
+An indivisible native operation cannot be preempted by this budget. All work-slice
+handles share one clock/credit for the current Time.frameCount; a late-created
+handle cannot reset that credit. Subsystem registration retires the clock before
+a new Play lifetime, including native no-domain-reload entry. Each runtime caller
+checks credit before its next indivisible unit. Awaiters that resume after another
+source consumed the new frame continue waiting on their actual cancellation token.
 
 IAsyncCheckableConfig declares that a configuration owns a cancellable incremental
 runtime check. The runtime initializer awaits that source instead of calling the

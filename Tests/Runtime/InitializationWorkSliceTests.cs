@@ -17,6 +17,22 @@ namespace VMFramework.Tests
     public sealed class InitializationWorkSliceTests
     {
         [UnityTest]
+        public IEnumerator NewSiblingCannotResetConsumedFrameCredit()
+        {
+            return UniTask.ToCoroutine(async () =>
+            {
+                _ = new InitializationWorkSlice();
+                ConsumeOneSlice();
+                var sibling = new InitializationWorkSlice();
+                int frame = Time.frameCount;
+                var actual = sibling.YieldIfBudgetExpired(CancellationToken.None);
+                Assert.That(actual.Status, Is.EqualTo(UniTaskStatus.Pending));
+                await actual;
+                Assert.That(Time.frameCount, Is.GreaterThan(frame));
+            });
+        }
+
+        [UnityTest]
         public IEnumerator CooperativeDiscoveryPreservesTheActualTypeDomain()
         {
             return UniTask.ToCoroutine(async () =>

@@ -29,9 +29,8 @@ namespace VMFramework.GameLogicArchitecture
 
             foreach (var gamePrefab in gamePrefabs)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                GamePrefabManager.RegisterGamePrefab(gamePrefab);
                 await slice.YieldIfBudgetExpired(cancellationToken);
+                GamePrefabManager.RegisterGamePrefab(gamePrefab);
             }
 
             GamePrefabReferenceValidator.Validate(
@@ -47,10 +46,9 @@ namespace VMFramework.GameLogicArchitecture
             
             foreach (var gamePrefab in GamePrefabManager.GetAllGamePrefabs())
             {
-                cancellationToken.ThrowIfCancellationRequested();
+                await slice.YieldIfBudgetExpired(cancellationToken);
                 await ConfigurationValidation.CheckAsync(gamePrefab, cancellationToken);
                 checkPipeline.ProcessTarget(gamePrefab);
-                await slice.YieldIfBudgetExpired(cancellationToken);
             }
         }
     }

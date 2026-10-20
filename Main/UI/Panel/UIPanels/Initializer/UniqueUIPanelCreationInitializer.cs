@@ -26,8 +26,8 @@ namespace VMFramework.UI
             {
                 if (config.IsUnique)
                 {
-                    UIPanelManager.Instance.CreatePanel(config.id);
                     await slice.YieldIfBudgetExpired(cancellationToken);
+                    UIPanelManager.Instance.CreatePanel(config.id);
                 }
             }
         }

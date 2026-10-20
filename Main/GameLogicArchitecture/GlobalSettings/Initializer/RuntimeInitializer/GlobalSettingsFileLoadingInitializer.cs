@@ -43,8 +43,8 @@ namespace VMFramework.GameLogicArchitecture
             var slice = new InitializationWorkSlice();
             foreach (var setting in globalSettings)
             {
-                await ConfigurationValidation.CheckAsync(setting.GlobalSettingFile, cancellationToken);
                 await slice.YieldIfBudgetExpired(cancellationToken);
+                await ConfigurationValidation.CheckAsync(setting.GlobalSettingFile, cancellationToken);
             }
         }
     }

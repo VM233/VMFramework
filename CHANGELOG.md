@@ -4,6 +4,18 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.43] - 2026-10-20
+
+### Fixed
+
+- InitializationWorkSlice owns one shared credit for the actual PlayerLoop frame.
+  New sibling handles and resumed awaiters cannot reset consumed time. Subsystem
+  registration retires the clock for a fresh Play lifetime. Runtime consumers
+  acquire frame credit before each indivisible unit, preventing concurrent
+  initialization actions from multiplying the continuous-work allowance.
+- Added a native sibling test whose late-created handle must await the next real
+  frame after another handle consumed the frame credit.
+
 ## [9.1.42] - 2026-10-20
 
 ### Changed

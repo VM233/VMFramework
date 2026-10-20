@@ -18,11 +18,10 @@ namespace VMFramework.Procedure
             var slice = new InitializationWorkSlice();
             foreach (var assembly in assemblies)
             {
-                cancellationToken.ThrowIfCancellationRequested();
+                await slice.YieldIfBudgetExpired(cancellationToken);
                 using (new ProfilerMarker($"Discover initialization: {contract.FullName} / {assembly.GetName().Name}").Auto())
                     foreach (var type in contract.GetDerivedClasses(assembly, includingSelf, false))
                         if (!type.IsAbstract && !type.IsInterface) result.Add(type);
-                await slice.YieldIfBudgetExpired(cancellationToken);
             }
             return result;
         }

@@ -30,8 +30,8 @@ namespace VMFramework.Configuration
             var slice = new InitializationWorkSlice();
             foreach (var config in configs)
             {
-                await CheckAsync(config, cancellationToken);
                 await slice.YieldIfBudgetExpired(cancellationToken);
+                await CheckAsync(config, cancellationToken);
             }
         }
     }
