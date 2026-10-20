@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.40] - 2026-10-20
+
+### Fixed
+
+- Initialization PlayMode fixtures explicitly bind NUnit Assert alongside the
+  framework reflection extension namespace, removing an ambiguous assertion type.
+
 ## [9.1.39] - 2026-10-20
 
 ### Fixed

@@ -10,6 +10,7 @@ using UnityEngine.TestTools;
 using VMFramework.Procedure;
 using VMFramework.Configuration;
 using VMFramework.Core;
+using Assert = NUnit.Framework.Assert;
 
 namespace VMFramework.Tests
 {
