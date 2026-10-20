@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.45] - 2026-10-20
+
+### Changed
+
+- GamePrefab progress measures the validation batch only, starting before
+  check-processor discovery. Registration remains an uncounted prerequisite;
+  consumers never see its completed count reused as unfinished validation.
+
 ## [9.1.44] - 2026-10-20
 
 ### Added

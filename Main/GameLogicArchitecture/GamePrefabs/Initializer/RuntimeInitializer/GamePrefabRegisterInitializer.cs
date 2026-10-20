@@ -27,13 +27,11 @@ namespace VMFramework.GameLogicArchitecture
             var gamePrefabs = await GamePrefabCollectorManager.Collect(cancellationToken);
 
             var slice = new InitializationWorkSlice();
-            Progress = new InitializationProgress(0, gamePrefabs.Count);
 
             foreach (var gamePrefab in gamePrefabs)
             {
                 await slice.YieldIfBudgetExpired(cancellationToken);
                 GamePrefabManager.RegisterGamePrefab(gamePrefab);
-                Progress = new InitializationProgress(Progress.Completed + 1, Progress.Total);
             }
 
             GamePrefabReferenceValidator.Validate(
@@ -43,10 +41,10 @@ namespace VMFramework.GameLogicArchitecture
         private async UniTask OnInitComplete(CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            Progress = new InitializationProgress(0, GamePrefabManager.GetGamePrefabsCount());
             var checkPipeline = new ActionProcessorPipeline<object, ICheckProcessor>();
             await checkPipeline.AutoCollectAsync(cancellationToken);
             var slice = new InitializationWorkSlice();
-            Progress = new InitializationProgress(0, GamePrefabManager.GetGamePrefabsCount());
             
             foreach (var gamePrefab in GamePrefabManager.GetAllGamePrefabs())
             {
