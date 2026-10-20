@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.41] - 2026-10-20
+
+### Added
+
+- Native CPU scopes identify each cold discovery assembly and configuration
+  validation prefix without spanning asynchronous waits or frame boundaries.
+
 ## [9.1.40] - 2026-10-20
 
 ### Fixed

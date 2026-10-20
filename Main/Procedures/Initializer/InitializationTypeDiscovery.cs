@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Unity.Profiling;
 using VMFramework.Core;
 
 namespace VMFramework.Procedure
@@ -18,8 +19,9 @@ namespace VMFramework.Procedure
             foreach (var assembly in assemblies)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                foreach (var type in contract.GetDerivedClasses(assembly, includingSelf, false))
-                    if (!type.IsAbstract && !type.IsInterface) result.Add(type);
+                using (new ProfilerMarker($"Discover initialization: {contract.FullName} / {assembly.GetName().Name}").Auto())
+                    foreach (var type in contract.GetDerivedClasses(assembly, includingSelf, false))
+                        if (!type.IsAbstract && !type.IsInterface) result.Add(type);
                 await slice.YieldIfBudgetExpired(cancellationToken);
             }
             return result;

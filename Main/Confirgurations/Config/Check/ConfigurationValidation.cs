@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Unity.Profiling;
 using VMFramework.Procedure;
 
 namespace VMFramework.Configuration
@@ -10,9 +11,17 @@ namespace VMFramework.Configuration
         public static async UniTask CheckAsync(ICheckableConfig config, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            var marker = new ProfilerMarker($"Validate config: {config.GetType().FullName}");
             if (config is IAsyncCheckableConfig asynchronous)
-                await asynchronous.CheckSettingsAsync(cancellationToken);
-            else config.CheckSettings();
+            {
+                UniTask actual;
+                using (marker.Auto()) actual = asynchronous.CheckSettingsAsync(cancellationToken);
+                await actual;
+            }
+            else
+            {
+                using (marker.Auto()) config.CheckSettings();
+            }
             cancellationToken.ThrowIfCancellationRequested();
         }
 
