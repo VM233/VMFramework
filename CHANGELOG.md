@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.47] - 2026-10-20
+
+### Changed
+
+- InitializationActionStatus and InitializationActionExecution have their own
+  source files, preserving their existing names, state transitions and API
+  while satisfying the one-top-level-type source contract.
+
 ## [9.1.46] - 2026-10-20
 
 ### Changed
