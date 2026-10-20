@@ -16,7 +16,7 @@ namespace VMFramework.GameLogicArchitecture
         void IInitializer.GetInitializationActions(ICollection<InitializationAction> actions)
         {
             actions.Add(new(InitializationOrder.PostInit, OnPostInit, this));
-            actions.Add(new(InitializationOrder.InitComplete, OnInitComplete, this));
+            actions.Add(new(InitializationOrder.InitComplete, OnInitComplete, this, progressSource: this));
         }
 
         private async UniTask OnPostInit(CancellationToken cancellationToken)

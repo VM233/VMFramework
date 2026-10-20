@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.46] - 2026-10-20
+
+### Changed
+
+- Counted work belongs to an explicit InitializationAction.progressSource.
+  Validation alone publishes the GamePrefab work batch; other actions of the
+  same initializer cannot expose a previous batch during a later invocation.
+
 ## [9.1.45] - 2026-10-20
 
 ### Changed

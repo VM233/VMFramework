@@ -10,8 +10,8 @@ The validation placement does not add a registry, polling loop or another loadin
 ## Initialization CPU observation
 
 IProcedureManager.Initialization exposes the active read-only initialization
-manager. A running action's initializer may implement IInitializationProgressSource;
-its immutable Progress reports actual completed/total units for that source's
+manager. A running action may declare an IInitializationProgressSource through
+InitializationAction.progressSource. Its immutable Progress reports actual completed/total units for that source's
 current batch. GamePrefab validation publishes its frozen registry count before
 processor discovery and advances only after each item's complete check succeeds.
 Registration is a prerequisite and does not publish a second counted batch.
