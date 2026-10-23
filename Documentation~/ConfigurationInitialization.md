@@ -68,6 +68,15 @@ frames; file-specific checks remain that implementer's responsibility.
 
 ## Action admission and atomic batches
 
+ProcedureManager publishes six fixed native profiler markers for request run,
+synchronous loading start, state entry/exit and entry/exit publication. These
+measure the real transition producer rather than inferring it from menu drawing.
+Every scope is synchronous; none crosses an await or changes state/event atomicity.
+The marker metadata is constant (six handles, below4KiB); scopes add constant
+work at the existing transition boundaries, with no domain traversal, allocation
+per sample, frame delay, retained history or asynchronous lifetime. This diagnostic
+admission is pass; cold first-entry responsiveness remains a separate acceptance.
+
 Cold startup witness DD-CONT-30 records434.921ms in native frame6090 while the initializer manager admits multiple synchronous sources in one frame. The shared10ms work credit must also gate each accepted action across every captured order. Same-order asynchronous sources remain concurrent; accepted sources must join even when caller/timeout cancellation interrupts admission. Pending sources that were never invoked stay Pending.
 
 Static Cost Ledger for this repair: freeze this consumer at at most2048 registered definitions (actual1045),256 managers,256 general settings and64 contributed action hooks per owner plus64 standalone hooks. This conservative source-audited envelope gives at most163904 already-captured actions, with the original ordered grouping, execution products and task references (under64MiB total metadata allowance). No new domain cap or content truncation is introduced. New admission performs one constant work-credit check per existing invocation; no extra candidate traversal or expensive operation is added. Only one pending admission frame await and one constant slice are added per active manager, below4KiB incremental live state. The original accepted-source list and linked cancellation lifetime remain authoritative.

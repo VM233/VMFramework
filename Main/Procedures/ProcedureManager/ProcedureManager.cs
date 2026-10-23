@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
+using Unity.Profiling;
 using UnityEngine;
 using VMFramework.Core;
 using VMFramework.Core.FSM;
@@ -15,6 +16,12 @@ namespace VMFramework.Procedure
     [ManagerCreationProvider(ManagerType.ProcedureCore)]
     public sealed class ProcedureManager : ManagerBehaviour<IProcedureManager>, IProcedureManager
     {
+        private static readonly ProfilerMarker requestMarker = new("VMFramework.Procedure.Request.Run");
+        private static readonly ProfilerMarker loadingMarker = new("VMFramework.Procedure.Loading.Start");
+        private static readonly ProfilerMarker enterStateMarker = new("VMFramework.Procedure.State.Enter");
+        private static readonly ProfilerMarker exitStateMarker = new("VMFramework.Procedure.State.Exit");
+        private static readonly ProfilerMarker enterPublicationMarker = new("VMFramework.Procedure.Entry.Publish");
+        private static readonly ProfilerMarker exitPublicationMarker = new("VMFramework.Procedure.Exit.Publish");
         [ShowInInspector] private IMultiFSM<string, ProcedureManager> fsm;
         [ShowInInspector] private List<IManagerBehaviour> managerBehaviours = new();
         private readonly Dictionary<string, IProcedure> procedures = new();
@@ -120,6 +127,7 @@ namespace VMFramework.Procedure
         }
         private void RunProcedureTransition(ProcedureTransitionRequest request)
         {
+            using var sample = requestMarker.Auto();
             activeRequest = request;
             _ = request.RunAsync(token => ExecuteTransition(request, token), () => activeRequest = null, lifetime.Token);
         }
@@ -139,8 +147,11 @@ namespace VMFramework.Procedure
                     if (!fsm.CanExitState(request.FromID))
                         throw new InvalidOperationException($"Procedure '{request.FromID}' cannot exit after loading.");
                     phase = ProcedureTransitionPhase.ExitingSourceState;
-                    if (!fsm.ExitState(request.FromID))
-                        throw new InvalidOperationException($"Procedure '{request.FromID}' did not exit its actual current state.");
+                    using (exitStateMarker.Auto())
+                    {
+                        if (!fsm.ExitState(request.FromID))
+                            throw new InvalidOperationException($"Procedure '{request.FromID}' did not exit its actual current state.");
+                    }
                     phase = ProcedureTransitionPhase.PublishingSourceExit;
                     PublishProcedureExit(request.FromID);
                 }
@@ -155,10 +166,13 @@ namespace VMFramework.Procedure
                     if (!fsm.CanEnterState(request.ToID))
                         throw new InvalidOperationException($"Procedure '{request.ToID}' cannot enter after loading.");
                     phase = ProcedureTransitionPhase.EnteringTargetState;
-                    if (!fsm.EnterState(request.ToID))
-                        throw new InvalidOperationException($"Procedure '{request.ToID}' did not adopt its target state.");
+                    using (enterStateMarker.Auto())
+                    {
+                        if (!fsm.EnterState(request.ToID))
+                            throw new InvalidOperationException($"Procedure '{request.ToID}' did not adopt its target state.");
+                    }
                     phase = ProcedureTransitionPhase.PublishingTargetEntry;
-                    OnEnterProcedureEvent?.Invoke(request.ToID);
+                    using (enterPublicationMarker.Auto()) OnEnterProcedureEvent?.Invoke(request.ToID);
                 }
             }
             catch (Exception primary)
@@ -184,6 +198,7 @@ namespace VMFramework.Procedure
         }
         private void PublishProcedureExit(string procedureID)
         {
+            using var sample = exitPublicationMarker.Auto();
             var callbacks = OnExitProcedureEvent;
             if (callbacks == null) return;
             var failures = new List<Exception>();
@@ -391,6 +406,7 @@ namespace VMFramework.Procedure
         private UniTask StartLoading(string procedureID, ProcedureLoadingType loadingType,
             CancellationToken cancellationToken)
         {
+            using var sample = loadingMarker.Auto();
             var initializers = GetGameInitializers(procedureID, loadingType);
             return StartLoading(initializers, cancellationToken);
         }

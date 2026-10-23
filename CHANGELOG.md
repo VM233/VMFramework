@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.54] - 2026-10-24
+
+### Added
+
+- Native procedure transition samples separate request admission, synchronous
+  loading invocation, state entry/exit and entry/exit publication. Scopes end
+  before asynchronous waits and preserve the original transition lifecycle.
+
 ## [9.1.53] - 2026-10-24
 
 ### Fixed
