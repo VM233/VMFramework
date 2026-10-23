@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.57] - 2026-10-24
+
+### Fixed
+
+- UI Toolkit panel creation preserves the prefab-copied visual-tree identity.
+  The native rebuilding setter now runs only when the configured tree actually
+  differs, so creating an unchanged closed document does not clone its UXML.
+
 ## [9.1.56] - 2026-10-24
 
 ### Fixed

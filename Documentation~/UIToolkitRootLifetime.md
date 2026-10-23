@@ -20,8 +20,9 @@ accepted layout operation before releasing callbacks, pointer endpoints or
 consumer resources; independent release failures retain their stage and owner.
 
 Closing uses the configured close policy. `DisableDocument` disables the
-document; `VisualElementDisplayNone` keeps it enabled and hides its existing
-root. Reopening publishes the retained root without creating a second document.
+document and releases its native root; reopening creates and publishes a new
+root through that same document. `VisualElementDisplayNone` keeps the document
+enabled and hides its existing root; reopening publishes that retained root.
 Live Reload can replace a closed retained root, with the same close policy.
 Native destruction publishes item liveness before its physical pool retirement.
 
@@ -102,3 +103,5 @@ Live Reload, retained document identity, pointer transfer and cancellation cases
 Exercise actual production consumers for layout adoption, input ownership,
 locale changes and release failures. Compilation alone does not establish those
 runtime behaviors.
+
+Native view adoption preserves identity. UIDocument.visualTreeAsset is a rebuilding setter, including an identical assignment and a disabled component in Unity6000.6. UIToolkitPanel.OnCreate must compare the actual configured tree with the prefab-copied document tree and invoke that setter only for a real identity change. An unchanged closed DisableDocument panel stays without a cloned native root until its actual first open. A genuinely different configured provider still adopts its requested tree through the native setter. This adds one Unity object reference comparison and one existing asset reference per creation, no domain loop, cache, native resource, delay or alternate rendering route; pass for constant cost. A current-source closed-document census, real open/layout/close/reopen, source/target failure retirement and first-entry timing remain required. An avoided unused clone is not a frame-responsiveness acceptance by itself.

@@ -58,7 +58,8 @@ namespace VMFramework.UI
                 uiDocument.panelSettings = UIToolkitPanelConfig.PanelSettings;
             }
 
-            uiDocument.visualTreeAsset = UIToolkitPanelConfig.VisualTree;
+            var visualTree = UIToolkitPanelConfig.VisualTree;
+            if (uiDocument.visualTreeAsset != visualTree) uiDocument.visualTreeAsset = visualTree;
 
             UIDocument = uiDocument;
             ApplyClosedDocumentState();
