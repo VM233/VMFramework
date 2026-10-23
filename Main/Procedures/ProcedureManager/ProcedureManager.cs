@@ -187,7 +187,7 @@ namespace VMFramework.Procedure
                     await RetireProcedureAsync(request.FromID, false,
                         phase != ProcedureTransitionPhase.PublishingSourceExit, failures);
                 if (request.FromID != null && !fsm.HasCurrentState(request.FromID) &&
-                    targetStarted && retirement == null && !token.IsCancellationRequested)
+                    phase != ProcedureTransitionPhase.Admitted && retirement == null && !token.IsCancellationRequested)
                     await RestoreSourceAsync(request.FromID, token, failures);
                 if (primary is OperationCanceledException cancellation && failures.Count == 0 &&
                     token.IsCancellationRequested && cancellation.CancellationToken == token)

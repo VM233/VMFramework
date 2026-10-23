@@ -4,6 +4,15 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.56] - 2026-10-24
+
+### Fixed
+
+- A started source transition now restores its withdrawn original source after
+  exit-loading, native exit or exit-publication failure. Previously only failures
+  after target loading restored the source. Admission failures and owner
+  cancellation/retirement retain their existing ownership semantics.
+
 ## [9.1.55] - 2026-10-24
 
 ### Fixed
