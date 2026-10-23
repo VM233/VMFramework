@@ -122,38 +122,7 @@ namespace VMFramework.Procedure
                         currentOrderExecutions.Add(new InitializationActionExecution(actionInfo));
                     }
 
-                    using var orderCancellation = CancellationTokenSource.CreateLinkedTokenSource(
-                        initializationCancellation.Token);
-                    Exception firstActionException = null;
-                    var cancellationFailures = new List<Exception>();
-
-                    void OnActionFailed(Exception exception)
-                    {
-                        if (Interlocked.CompareExchange(ref firstActionException, exception, null) == null)
-                        {
-                            try { orderCancellation.Cancel(); }
-                            catch (Exception failure)
-                            { lock (cancellationFailures) cancellationFailures.Add(failure); }
-                        }
-                    }
-
-                    var actionTasks = new List<UniTask>(currentOrderExecutions.Count);
-                    foreach (var execution in currentOrderExecutions)
-                    {
-                        LogActionStart(execution.InitializationAction);
-                        actionTasks.Add(ExecuteAction(execution, orderCancellation.Token,
-                            initializationCancellation.Token, OnActionFailed));
-                    }
-
-                    await UniTask.WhenAll(actionTasks);
-
-                    if (firstActionException != null)
-                    {
-                        if (cancellationFailures.Count > 0)
-                            throw new AggregateException("Initializer action and sibling cancellation callbacks failed.",
-                                new[] { firstActionException }.Concat(cancellationFailures));
-                        ExceptionDispatchInfo.Capture(firstActionException).Throw();
-                    }
+                    await ExecuteOrder(initializationCancellation.Token, cancellationToken);
 
                     cancellationToken.ThrowIfCancellationRequested();
                     initializationCancellation.Token.ThrowIfCancellationRequested();
@@ -178,6 +147,52 @@ namespace VMFramework.Procedure
             finally
             {
                 IsInitializing = false;
+            }
+        }
+
+        private async UniTask ExecuteOrder(CancellationToken initializationToken, CancellationToken callerToken)
+        {
+            using var orderCancellation = CancellationTokenSource.CreateLinkedTokenSource(initializationToken);
+            Exception firstActionException = null, admissionFailure = null;
+            var cancellationFailures = new List<Exception>();
+            void OnActionFailed(Exception exception)
+            {
+                if (Interlocked.CompareExchange(ref firstActionException, exception, null) == null)
+                {
+                    try { orderCancellation.Cancel(); }
+                    catch (Exception failure)
+                    { lock (cancellationFailures) cancellationFailures.Add(failure); }
+                }
+            }
+            var actionTasks = new List<UniTask>(currentOrderExecutions.Count);
+            var slice = new InitializationWorkSlice();
+            try
+            {
+                foreach (var execution in currentOrderExecutions)
+                {
+                    await slice.YieldIfBudgetExpired(initializationToken);
+                    LogActionStart(execution.InitializationAction);
+                    actionTasks.Add(ExecuteAction(execution, orderCancellation.Token, initializationToken, OnActionFailed));
+                }
+            }
+            catch (Exception failure)
+            {
+                admissionFailure = failure;
+                try { orderCancellation.Cancel(); }
+                catch (Exception cancellationFailure)
+                { lock (cancellationFailures) cancellationFailures.Add(cancellationFailure); }
+            }
+            await UniTask.WhenAll(actionTasks);
+            var primary = firstActionException ?? admissionFailure;
+            if (primary != null)
+            {
+                if (cancellationFailures.Count > 0)
+                    throw new AggregateException("Initializer source or admission and cancellation callbacks failed.",
+                        new[] { primary }.Concat(cancellationFailures));
+                if (firstActionException == null && admissionFailure is OperationCanceledException canceled &&
+                    canceled.CancellationToken == initializationToken && initializationToken.IsCancellationRequested)
+                    callerToken.ThrowIfCancellationRequested();
+                ExceptionDispatchInfo.Capture(primary).Throw();
             }
         }
 

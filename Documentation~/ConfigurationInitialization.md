@@ -65,3 +65,13 @@ explicit preceding initialization order, so subscriptions cannot observe a
 partially discovered receiver set. Global-setting files may explicitly implement
 IAsyncCheckableConfig to distribute their actual general-setting checks across
 frames; file-specific checks remain that implementer's responsibility.
+
+## Action admission and atomic batches
+
+Cold startup witness DD-CONT-30 records434.921ms in native frame6090 while the initializer manager admits multiple synchronous sources in one frame. The shared10ms work credit must also gate each accepted action across every captured order. Same-order asynchronous sources remain concurrent; accepted sources must join even when caller/timeout cancellation interrupts admission. Pending sources that were never invoked stay Pending.
+
+Static Cost Ledger for this repair: freeze this consumer at at most2048 registered definitions (actual1045),256 managers,256 general settings and64 contributed action hooks per owner plus64 standalone hooks. This conservative source-audited envelope gives at most163904 already-captured actions, with the original ordered grouping, execution products and task references (under64MiB total metadata allowance). No new domain cap or content truncation is introduced. New admission performs one constant work-credit check per existing invocation; no extra candidate traversal or expensive operation is added. Only one pending admission frame await and one constant slice are added per active manager, below4KiB incremental live state. The original accepted-source list and linked cancellation lifetime remain authoritative.
+
+GameEvent registration remains one pass over at most2048 registered event definitions. Sprite preload remains one pass over at most2048 sprite presets and32 integer-enum flag positions: at most65536 original sprite requests and the same number of added constant credit checks. Each source keeps one slice and one frame await, below4KiB incremental live state. No second registry, native object, pool or output cache is introduced. The shared slice observes actual PlayerLoop frame identity in Play and actual EditorApplication.update identity in Edit; the Editor epoch callback has one static owner and paired reload/quit retirement. No timer, target frame rate, initialization deadline or accepted semantics changes.
+
+Pass for unchanged finite iteration products and constant incremental state on this frozen consumer. The10ms credit bounds admission between indivisible units; it does not claim that a native call or first managed invocation can be preempted. Cold first-Play native frame acceptance, Editor progress and exact failure/cancellation lifecycle cases remain required before claiming responsiveness or integration passes.

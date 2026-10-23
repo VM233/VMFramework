@@ -11,6 +11,10 @@ namespace VMFramework.Tests
 {
     public sealed class InitializerManagerTests
     {
+        [UnitySetUp]
+        public IEnumerator AdmitActualFrameCredit() => UniTask.ToCoroutine(async () =>
+            await new InitializationWorkSlice().YieldIfBudgetExpired(CancellationToken.None));
+
         private sealed class TestInitializer : IInitializer
         {
             private readonly (int order, InitActionHandler action)[] actionDefinitions;
@@ -326,6 +330,116 @@ namespace VMFramework.Tests
                 Assert.That(manager.LastException, Is.SameAs(failure));
                 Assert.That(manager.IsInitializing, Is.False);
             });
+        }
+
+        [UnityTest]
+        public IEnumerator ConsumedCreditSeparatesRealActionInvocations()
+        {
+            return UniTask.ToCoroutine(async () =>
+            {
+                int nativeTick = 0, firstTick = -1, secondTick = -1;
+                void Tick() => nativeTick++;
+                UnityEditor.EditorApplication.update += Tick;
+                try
+                {
+                    var manager = CreateManager((0, _ =>
+                    {
+                        firstTick = nativeTick;
+                        ConsumeFrameCredit();
+                        return UniTask.CompletedTask;
+                    }), (0, _ =>
+                    {
+                        secondTick = nativeTick;
+                        return UniTask.CompletedTask;
+                    }));
+                    await manager.Initialize();
+                    Assert.That(firstTick, Is.GreaterThanOrEqualTo(0));
+                    Assert.That(secondTick, Is.GreaterThan(firstTick));
+                    Assert.That(manager.IsInitialized, Is.True);
+                    Assert.That(manager.CurrentOrderExecutions,
+                        Has.All.Property(nameof(InitializationActionExecution.Status)).EqualTo(InitializationActionStatus.Succeeded));
+                }
+                finally { UnityEditor.EditorApplication.update -= Tick; }
+            });
+        }
+
+        [UnityTest]
+        public IEnumerator AdmissionCancellationJoinsAcceptedSourceBeforeTerminal()
+        {
+            return UniTask.ToCoroutine(async () =>
+            {
+                using var cancellation = new CancellationTokenSource();
+                var release = new UniTaskCompletionSource();
+                var started = new UniTaskCompletionSource();
+                bool laterRan = false;
+                var manager = CreateManager((0, async _ =>
+                {
+                    ConsumeFrameCredit();
+                    started.TrySetResult();
+                    await release.Task;
+                }), (0, _ =>
+                {
+                    laterRan = true;
+                    return UniTask.CompletedTask;
+                }));
+                var actual = manager.Initialize(cancellation.Token).AsTask();
+                await started.Task;
+                cancellation.Cancel();
+                try
+                {
+                    Assert.That(actual.IsCompleted, Is.False);
+                    Assert.That(manager.IsInitializing, Is.True);
+                    Assert.That(laterRan, Is.False);
+                    Assert.That(manager.CurrentOrderExecutions[1].Status, Is.EqualTo(InitializationActionStatus.Pending));
+                }
+                finally { release.TrySetResult(); }
+                OperationCanceledException failure = null;
+                try { await actual; } catch (OperationCanceledException error) { failure = error; }
+                Assert.That(failure, Is.Not.Null);
+                Assert.That(failure.CancellationToken, Is.EqualTo(cancellation.Token));
+                Assert.That(manager.LastException, Is.SameAs(failure));
+                Assert.That(manager.IsInitializing, Is.False);
+                Assert.That(manager.CurrentOrderExecutions[0].Status, Is.EqualTo(InitializationActionStatus.Canceled));
+                Assert.That(laterRan, Is.False);
+            });
+        }
+
+        [UnityTest]
+        public IEnumerator SourceFailureDuringAdmissionRemainsTheActualFailure()
+        {
+            return UniTask.ToCoroutine(async () =>
+            {
+                var release = new UniTaskCompletionSource();
+                var started = new UniTaskCompletionSource();
+                var primary = new InvalidOperationException("Actual source failed during sibling admission.");
+                bool laterRan = false;
+                var manager = CreateManager((0, async _ =>
+                {
+                    ConsumeFrameCredit();
+                    started.TrySetResult();
+                    await release.Task;
+                }), (0, _ =>
+                {
+                    laterRan = true;
+                    return UniTask.CompletedTask;
+                }));
+                var actual = manager.Initialize().AsTask();
+                await started.Task;
+                release.TrySetException(primary);
+                Exception failure = null;
+                try { await actual; } catch (Exception error) { failure = error; }
+                Assert.That(failure, Is.SameAs(primary));
+                Assert.That(manager.LastException, Is.SameAs(primary));
+                Assert.That(laterRan, Is.False);
+                Assert.That(manager.CurrentOrderExecutions[0].Status, Is.EqualTo(InitializationActionStatus.Failed));
+                Assert.That(manager.CurrentOrderExecutions[1].Status, Is.EqualTo(InitializationActionStatus.Canceled));
+            });
+        }
+
+        private static void ConsumeFrameCredit()
+        {
+            var timer = System.Diagnostics.Stopwatch.StartNew();
+            while (timer.Elapsed.TotalSeconds <= InitializationWorkSlice.BudgetSeconds * 2) Thread.SpinWait(32);
         }
 
         private static InitializerManager CreateManager(

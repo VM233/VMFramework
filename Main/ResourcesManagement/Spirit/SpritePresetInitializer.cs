@@ -19,15 +19,17 @@ namespace VMFramework.ResourcesManagement
             actions.Add(new(InitializationOrder.Init, OnInit, this));
         }
 
-        private static UniTask OnInit(CancellationToken cancellationToken)
+        private static async UniTask OnInit(CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             int count = 0;
+            var slice = new InitializationWorkSlice();
             
             foreach (var spritePreset in GamePrefabManager.GetAllActiveGamePrefabs<SpritePreset>())
             {
                 foreach (var flipType in spritePreset.preloadFlipType.GetFlags())
                 {
+                    await slice.YieldIfBudgetExpired(cancellationToken);
                     SpriteManager.GetSprite(spritePreset.id, flipType);
                     
                     count++;
@@ -39,7 +41,6 @@ namespace VMFramework.ResourcesManagement
                 UnityEngine.Debug.Log($"Preloaded {count} sprites' flip types.");
             }
 
-            return UniTask.CompletedTask;
         }
     }
 }

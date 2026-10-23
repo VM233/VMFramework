@@ -4,6 +4,22 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.52] - 2026-10-24
+
+### Fixed
+
+- Initialization action admission shares the existing frame work credit across
+  orders without serializing asynchronous siblings. Cancellation during admission
+  joins every accepted source before publishing a terminal result.
+- Event registration and sprite preload check that same credit between actual
+  units. Edit Mode uses actual Editor update epochs and retires its clock hooks
+  before assembly reload or quitting.
+
+### Added
+
+- Actual Editor-frame admission, cancellation-while-admitting and source-failure
+  lifecycle regressions alongside the existing ordering and timeout controls.
+
 ## [9.1.51] - 2026-10-20
 
 ### Fixed

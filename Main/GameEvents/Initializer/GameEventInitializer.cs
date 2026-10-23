@@ -17,16 +17,16 @@ namespace VMFramework.GameEvents
             actions.Add(new(InitializationOrder.PostInit, OnInit, this));
         }
 
-        private static UniTask OnInit(CancellationToken cancellationToken)
+        private static async UniTask OnInit(CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
+            var slice = new InitializationWorkSlice();
             foreach (var gameEventConfig in GamePrefabManager.GetAllActiveGamePrefabs<IGameEventConfig>())
             {
+                await slice.YieldIfBudgetExpired(cancellationToken);
                 GameEventManager.Instance.Register(gameEventConfig.id);
             }
-
-            return UniTask.CompletedTask;
         }
     }
 }
