@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.53] - 2026-10-24
+
+### Fixed
+
+- Initializer regression setup owns a compiler-generated iterator while joining
+  its actual initial-credit task. This supports Unity Test Framework's setup
+  program-counter lifecycle and cancels the owned wait on setup retirement.
+
 ## [9.1.52] - 2026-10-24
 
 ### Fixed

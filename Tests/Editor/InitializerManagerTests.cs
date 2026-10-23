@@ -12,8 +12,17 @@ namespace VMFramework.Tests
     public sealed class InitializerManagerTests
     {
         [UnitySetUp]
-        public IEnumerator AdmitActualFrameCredit() => UniTask.ToCoroutine(async () =>
-            await new InitializationWorkSlice().YieldIfBudgetExpired(CancellationToken.None));
+        public IEnumerator AdmitActualFrameCredit()
+        {
+            using var cancellation = new CancellationTokenSource();
+            var actual = new InitializationWorkSlice().YieldIfBudgetExpired(cancellation.Token).AsTask();
+            try
+            {
+                while (!actual.IsCompleted) yield return null;
+                actual.GetAwaiter().GetResult();
+            }
+            finally { cancellation.Cancel(); }
+        }
 
         private sealed class TestInitializer : IInitializer
         {
