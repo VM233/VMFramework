@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using VMFramework.Core;
-using VMFramework.Core.Pools;
 using VMFramework.GameLogicArchitecture;
 using VMFramework.Procedure;
 using VMFramework.Tools;
@@ -137,7 +136,11 @@ namespace VMFramework.UI
                 panel.OnPostCloseInternal();
             }
             panel.OnOpenInternal(source);
-            var set = openedPanels.GetOrCreateFromFactory(panel.id, HashSetPoolFactory<IUIPanel>.CreateFromDefaultPool);
+            if (!openedPanels.TryGetValue(panel.id, out var set))
+            {
+                set = new HashSet<IUIPanel>();
+                openedPanels.Add(panel.id, set);
+            }
             set.Add(panel);
             return true;
             }

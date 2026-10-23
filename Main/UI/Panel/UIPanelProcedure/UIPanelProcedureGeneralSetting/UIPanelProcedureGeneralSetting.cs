@@ -79,15 +79,13 @@ namespace VMFramework.UI
                     if (UIPanelManager.Instance.TryGetOpenedPanels(uiPanelID, out var uiPanels))
                     {
                         var openedUIPanels = ListPool<IUIPanel>.Default.Get();
-                        openedUIPanels.Clear();
-                        openedUIPanels.AddRange(uiPanels);
-
-                        foreach (var uiPanelController in openedUIPanels)
+                        try
                         {
-                            uiPanelController.Close();
+                            openedUIPanels.Clear();
+                            openedUIPanels.AddRange(uiPanels);
+                            foreach (var uiPanelController in openedUIPanels) uiPanelController.Close();
                         }
-
-                        openedUIPanels.ReturnToDefaultPool();
+                        finally { openedUIPanels.ReturnToDefaultPool(); }
                     }
                 }
             }
@@ -120,15 +118,13 @@ namespace VMFramework.UI
                     if (UIPanelManager.Instance.TryGetOpenedPanels(uiPanelID, out var uiPanels))
                     {
                         var openedUIPanels = ListPool<IUIPanel>.Default.Get();
-                        openedUIPanels.Clear();
-                        openedUIPanels.AddRange(uiPanels);
-
-                        foreach (var uiPanelController in openedUIPanels)
+                        try
                         {
-                            uiPanelController.Close();
+                            openedUIPanels.Clear();
+                            openedUIPanels.AddRange(uiPanels);
+                            foreach (var uiPanelController in openedUIPanels) uiPanelController.Close();
                         }
-
-                        openedUIPanels.ReturnToDefaultPool();
+                        finally { openedUIPanels.ReturnToDefaultPool(); }
                     }
                 }
             }

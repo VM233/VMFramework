@@ -4,6 +4,15 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.55] - 2026-10-24
+
+### Fixed
+
+- Panel-manager open membership sets now belong directly to their retaining
+  manager instead of being borrowed indefinitely from a global pool.
+- Procedure close snapshots return their exact borrowed list when panel close
+  throws, while preserving the actual source failure.
+
 ## [9.1.54] - 2026-10-24
 
 ### Added
