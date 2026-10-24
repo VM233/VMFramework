@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using Sirenix.OdinInspector;
 using VMFramework.Core;
 using VMFramework.Procedure;
@@ -12,7 +11,7 @@ namespace VMFramework.UI
         private static TooltipGeneralSetting Setting => UISetting.TooltipGeneralSetting;
 
         [ShowInInspector]
-        private readonly Dictionary<string, Dictionary<IUIPanel, ITooltip>> tooltipsLookup = new();
+        private readonly Dictionary<string, List<(IUIPanel Panel, ITooltip Tooltip)>> tooltipsLookup = new();
         private UIPanelManager panelOwner;
 
         protected override void OnBeforeInitStart()
@@ -41,8 +40,8 @@ namespace VMFramework.UI
             if (panel.Modifiers.TryGetTarget(out ITooltip tooltip))
             {
                 var tooltips =
-                    tooltipsLookup.GetOrCreateFromFactory(panel.id, () => new Dictionary<IUIPanel, ITooltip>());
-                tooltips.Add(panel, tooltip);
+                    tooltipsLookup.GetOrCreateFromFactory(panel.id, () => new List<(IUIPanel, ITooltip)>());
+                tooltips.Add((panel, tooltip));
             }
         }
 
@@ -50,7 +49,12 @@ namespace VMFramework.UI
         {
             if (tooltipsLookup.TryGetValue(panel.id, out var tooltips))
             {
-                tooltips.Remove(panel);
+                for (var index = 0; index < tooltips.Count; index++)
+                {
+                    if (!ReferenceEquals(tooltips[index].Panel, panel)) continue;
+                    tooltips.RemoveAt(index);
+                    break;
+                }
                 if (tooltips.Count == 0) tooltipsLookup.Remove(panel.id);
             }
         }
@@ -77,7 +81,7 @@ namespace VMFramework.UI
                 return false;
             }
 
-            var tooltip = tooltips.Values.First();
+            var tooltip = tooltips[0].Tooltip;
 
             tooltip.Open(target, source, info);
 
@@ -94,9 +98,9 @@ namespace VMFramework.UI
 
             foreach (var tooltips in tooltipsLookup.Values)
             {
-                foreach (var tooltip in tooltips.Values)
+                foreach (var entry in tooltips)
                 {
-                    tooltip.Close(target);
+                    entry.Tooltip.Close(target);
                 }
             }
         }
@@ -124,9 +128,9 @@ namespace VMFramework.UI
                 return;
             }
 
-            foreach (var tooltip in tooltips.Values)
+            foreach (var entry in tooltips)
             {
-                tooltip.Close(target);
+                entry.Tooltip.Close(target);
             }
         }
     }

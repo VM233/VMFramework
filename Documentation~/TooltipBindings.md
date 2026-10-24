@@ -11,5 +11,6 @@ live registrations. The tooltip manager retains its originating panel manager fo
 paired event subscription retirement; it does not resolve a replacement singleton.
 
 The registry stores one entry per live tooltip panel and one group per distinct
-tooltip ID. Registration and retirement are expected O(1); CloseAll visits the
-existing live entries once. No destroyed panel or empty pooled list is retained.
+tooltip ID, retaining registration order for the default open selection. Registration
+is amortized O(1); retirement visits only that ID's entries, and CloseAll visits all
+live entries once. No destroyed panel or empty pooled list is retained.

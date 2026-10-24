@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.64] - 2026-10-25
+
+### Fixed
+
+- Preserve the original first-registered live tooltip selection when a retired
+  panel is replaced within a tooltip group.
+
 ## [9.1.63] - 2026-10-25
 
 ### Fixed
