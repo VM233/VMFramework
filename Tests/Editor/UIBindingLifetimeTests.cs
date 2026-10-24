@@ -164,6 +164,44 @@ namespace VMFramework.Editor.Tests
 
         [TestCase(false)]
         [TestCase(true)]
+        public void TooltipPanelRetirement_RemovesRegistrationAfterModifiersAreCleared(bool clearFirst)
+        {
+            var tooltipManager = host.AddComponent<TooltipManager>();
+            typeof(TooltipManager).GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(tooltipManager, null);
+            typeof(TooltipManager).GetMethod("OnBeforeInitStart", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(tooltipManager, null);
+            var panelHost = new GameObject("Tooltip Retirement Test");
+            var panel = panelHost.AddComponent<UIPanel>();
+            typeof(ControllerGameItem).GetProperty("GamePrefab", BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(panel, new UIPanelConfig { id = "retiring_tooltip_ui", isUnique = true });
+            var tooltip = panelHost.AddComponent<Tooltip>();
+            ((ICollection<IPanelModifier>)panel.Modifiers).Add(tooltip);
+            tooltip.Initialize(panel, null);
+            typeof(UIPanelManager).GetMethod("Register", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(panels, new object[] { panel });
+            try
+            {
+                if (clearFirst) ((IPoolItem)panel).OnClear();
+                typeof(UIPanel).GetMethod("OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(panel, null);
+                Assert.That(panel.Modifiers, Is.Empty);
+                var target = new object();
+                Assert.DoesNotThrow(() => tooltipManager.CloseAll(target));
+                Assert.DoesNotThrow(() => tooltipManager.Close("retiring_tooltip_ui", target));
+                Assert.That(tooltipManager.Open("retiring_tooltip_ui", target, null), Is.False);
+            }
+            finally
+            {
+                Object.DestroyImmediate(panelHost);
+                typeof(TooltipManager).GetMethod("OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(tooltipManager, null);
+                Object.DestroyImmediate(tooltipManager);
+            }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
         public void PanelRetirement_AfterEventRecycling_ReleasesExternalSubscriptionsExactlyOnce(bool clearFirst)
         {
             var source = new LifetimeEventSource();

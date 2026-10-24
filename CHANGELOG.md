@@ -4,6 +4,16 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.63] - 2026-10-25
+
+### Fixed
+
+- Tooltip registrations retain their actual panel identity and unregister after
+  modifier deinitialization without consulting the now-empty modifier collection.
+  Remove empty groups and retire subscriptions on their original panel manager.
+- Cover native panel destruction and pooled retirement before later tooltip
+  operations, preventing stale tooltip callbacks during Profile teardown.
+
 ## [9.1.62] - 2026-10-24
 
 ### Fixed

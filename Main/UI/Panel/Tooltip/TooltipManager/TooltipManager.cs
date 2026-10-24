@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Sirenix.OdinInspector;
 using VMFramework.Core;
-using VMFramework.Core.Pools;
 using VMFramework.Procedure;
 
 namespace VMFramework.UI
@@ -13,14 +12,28 @@ namespace VMFramework.UI
         private static TooltipGeneralSetting Setting => UISetting.TooltipGeneralSetting;
 
         [ShowInInspector]
-        private readonly Dictionary<string, List<ITooltip>> tooltipsLookup = new();
+        private readonly Dictionary<string, Dictionary<IUIPanel, ITooltip>> tooltipsLookup = new();
+        private UIPanelManager panelOwner;
 
         protected override void OnBeforeInitStart()
         {
             base.OnBeforeInitStart();
 
-            UIPanelManager.Instance.OnPanelCreatedEvent += OnPanelCreated;
-            UIPanelManager.Instance.OnPanelDestructedEvent += OnPanelDestructed;
+            panelOwner = UIPanelManager.Instance;
+            panelOwner.OnPanelCreatedEvent += OnPanelCreated;
+            panelOwner.OnPanelDestructedEvent += OnPanelDestructed;
+        }
+
+        protected override void OnDestroy()
+        {
+            if (!ReferenceEquals(panelOwner, null))
+            {
+                panelOwner.OnPanelCreatedEvent -= OnPanelCreated;
+                panelOwner.OnPanelDestructedEvent -= OnPanelDestructed;
+                panelOwner = null;
+            }
+            tooltipsLookup.Clear();
+            base.OnDestroy();
         }
 
         protected virtual void OnPanelCreated(IUIPanel panel)
@@ -28,8 +41,8 @@ namespace VMFramework.UI
             if (panel.Modifiers.TryGetTarget(out ITooltip tooltip))
             {
                 var tooltips =
-                    tooltipsLookup.GetOrCreateFromFactory(panel.id, ListPoolFactory<ITooltip>.CreateFromDefaultPool);
-                tooltips.Add(tooltip);
+                    tooltipsLookup.GetOrCreateFromFactory(panel.id, () => new Dictionary<IUIPanel, ITooltip>());
+                tooltips.Add(panel, tooltip);
             }
         }
 
@@ -37,10 +50,8 @@ namespace VMFramework.UI
         {
             if (tooltipsLookup.TryGetValue(panel.id, out var tooltips))
             {
-                if (panel.Modifiers.TryGetTarget(out ITooltip tooltip))
-                {
-                    tooltips.Remove(tooltip);
-                }
+                tooltips.Remove(panel);
+                if (tooltips.Count == 0) tooltipsLookup.Remove(panel.id);
             }
         }
 
@@ -66,7 +77,7 @@ namespace VMFramework.UI
                 return false;
             }
 
-            var tooltip = tooltips[0];
+            var tooltip = tooltips.Values.First();
 
             tooltip.Open(target, source, info);
 
@@ -83,7 +94,7 @@ namespace VMFramework.UI
 
             foreach (var tooltips in tooltipsLookup.Values)
             {
-                foreach (var tooltip in tooltips)
+                foreach (var tooltip in tooltips.Values)
                 {
                     tooltip.Close(target);
                 }
@@ -113,7 +124,7 @@ namespace VMFramework.UI
                 return;
             }
 
-            foreach (var tooltip in tooltips)
+            foreach (var tooltip in tooltips.Values)
             {
                 tooltip.Close(target);
             }
