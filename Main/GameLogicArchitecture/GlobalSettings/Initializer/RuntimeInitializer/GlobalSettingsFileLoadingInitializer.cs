@@ -29,6 +29,7 @@ namespace VMFramework.GameLogicArchitecture
             var tasks = new List<UniTask>();
             
             globalSettings.Clear();
+            await GlobalSettingFileManager.PrepareLoadersAsync(cancellationToken);
             
             foreach (var globalSetting in GlobalSettingCollector.Collect())
             {

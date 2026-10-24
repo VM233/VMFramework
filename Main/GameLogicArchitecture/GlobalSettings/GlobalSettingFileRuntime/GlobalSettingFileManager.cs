@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using Unity.Profiling;
 using UnityEngine;
 using VMFramework.Core;
+using VMFramework.Procedure;
 
 namespace VMFramework.GameLogicArchitecture
 {
@@ -23,7 +25,7 @@ namespace VMFramework.GameLogicArchitecture
         public static IReadOnlyDictionary<Type, GlobalSettingFileConfigAttribute> TypeConfigs =>
             typeInfos.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.configAttribute);
 
-        private static readonly Dictionary<Type, IGlobalSettingFileLoader> loaders = new();
+        private static Dictionary<Type, IGlobalSettingFileLoader> loaders = new();
         
         static GlobalSettingFileManager()
         {
@@ -47,20 +49,21 @@ namespace VMFramework.GameLogicArchitecture
             }
         }
 
-        private static void CollectLoaders()
+        public static async UniTask PrepareLoadersAsync(CancellationToken cancellationToken)
         {
-            using var profile = LoaderDiscoveryMarker.Auto();
-            foreach (var loaderType in typeof(IGlobalSettingFileLoader).GetDerivedClasses(false, false)
-                         .ExcludeAbstractAndInterface())
-            {
-                if (loaders.ContainsKey(loaderType))
-                {
-                    continue;
-                }
-                
-                var loader = (IGlobalSettingFileLoader)Activator.CreateInstance(loaderType);
-                loaders.Add(loaderType, loader);
-            }
+            cancellationToken.ThrowIfCancellationRequested();
+            UniTask<IReadOnlyList<Type>> discovery;
+            using (LoaderDiscoveryMarker.Auto())
+                discovery = InitializationTypeDiscovery.FindAsync(typeof(IGlobalSettingFileLoader), false, cancellationToken);
+            var types = await discovery;
+            cancellationToken.ThrowIfCancellationRequested();
+            var prepared = new Dictionary<Type, IGlobalSettingFileLoader>(loaders);
+            using (LoaderDiscoveryMarker.Auto())
+                foreach (var type in types)
+                    if (!prepared.ContainsKey(type))
+                        prepared.Add(type, (IGlobalSettingFileLoader)Activator.CreateInstance(type));
+            cancellationToken.ThrowIfCancellationRequested();
+            loaders = prepared;
         }
 
         public static async UniTask<TGlobalSetting> LoadGlobalSettingFile<TGlobalSetting>()
@@ -71,7 +74,6 @@ namespace VMFramework.GameLogicArchitecture
                 return default;
             }
             
-            CollectLoaders();
 
             var validLoader = SelectLoader(typeof(TGlobalSetting));
             UniTask<IGlobalSettingFile> loading;

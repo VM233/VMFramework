@@ -4,6 +4,17 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.59] - 2026-10-24
+
+### Fixed
+
+- Prepare setting-file loaders through the existing cancellable incremental
+  type-discovery source before admitting file loads. Publish the complete
+  loader catalog once and reuse existing actual instances.
+- Retain the prior published catalog on cancellation or constructor failure.
+  Cover successful reuse, pre-cancellation, cancellation before publication
+  and exact constructor failure through focused native Editor fixtures.
+
 ## [9.1.58] - 2026-10-24
 
 ### Added
