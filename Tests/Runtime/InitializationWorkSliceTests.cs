@@ -104,7 +104,11 @@ namespace VMFramework.Tests
             var container = ManagerCreatorContainers.ManagerContainer;
             var containers = ManagerCreatorContainers.ManagerTypeContainers.ToArray();
             using var cancellation = new CancellationTokenSource();
-            if (cancelPendingSource) ConsumeOneSlice();
+            if (cancelPendingSource)
+            {
+                _ = new InitializationWorkSlice();
+                ConsumeOneSlice();
+            }
             else cancellation.Cancel();
             var source = ManagerCreator.CreateManagersAsync(cancellation.Token);
             if (cancelPendingSource)

@@ -4,6 +4,15 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.62] - 2026-10-24
+
+### Fixed
+
+- The pending-manager cancellation fixture initializes the actual current-frame
+  work credit before consuming it. Preserve its original pending/token/publication
+  assertions and avoid accidentally creating an unauthored graph in the test scene.
+- Runtime manager preparation is unchanged from9.1.61.
+
 ## [9.1.61] - 2026-10-24
 
 ### Fixed
