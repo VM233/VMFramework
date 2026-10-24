@@ -76,6 +76,55 @@ namespace VMFramework.Tests
             });
         }
 
+        [UnityTest]
+        public IEnumerator CompleteManagerDiscoveryPreservesActualOrderAndTypeKinds()
+            => UniTask.ToCoroutine(async () =>
+            {
+                var expected = typeof(IManagerBehaviour).GetDerivedClasses(true, false).ToArray();
+                var actual = await InitializationTypeDiscovery.FindAllAsync(typeof(IManagerBehaviour), true,
+                    CancellationToken.None);
+                Assert.That(actual, Is.EqualTo(expected));
+                Assert.That(actual.Count, Is.GreaterThan(0));
+            });
+
+        [UnityTest]
+        public IEnumerator AlreadyCanceledManagerPreparationPreservesPublication()
+            => UniTask.ToCoroutine(() => AssertManagerPreparationCancellation(false));
+
+        [UnityTest]
+        public IEnumerator PendingManagerPreparationCancellationPreservesPublication()
+            => UniTask.ToCoroutine(() => AssertManagerPreparationCancellation(true));
+
+        private static async UniTask AssertManagerPreparationCancellation(bool cancelPendingSource)
+        {
+            var managers = ManagerCreator.Managers.ToArray();
+            var concreteTypes = ManagerCreator.ManagerTypes.ToArray();
+            var abstractTypes = ManagerCreator.AbstractManagerTypes.ToArray();
+            var interfaceTypes = ManagerCreator.InterfaceManagerTypes.ToArray();
+            var container = ManagerCreatorContainers.ManagerContainer;
+            var containers = ManagerCreatorContainers.ManagerTypeContainers.ToArray();
+            using var cancellation = new CancellationTokenSource();
+            if (cancelPendingSource) ConsumeOneSlice();
+            else cancellation.Cancel();
+            var source = ManagerCreator.CreateManagersAsync(cancellation.Token);
+            if (cancelPendingSource)
+            {
+                Assert.That(source.Status, Is.EqualTo(UniTaskStatus.Pending));
+                cancellation.Cancel();
+            }
+            OperationCanceledException failure = null;
+            try { await source; }
+            catch (OperationCanceledException actual) { failure = actual; }
+            Assert.That(failure, Is.Not.Null);
+            Assert.That(failure.CancellationToken, Is.EqualTo(cancellation.Token));
+            Assert.That(ManagerCreator.Managers, Is.EqualTo(managers));
+            Assert.That(ManagerCreator.ManagerTypes, Is.EqualTo(concreteTypes));
+            Assert.That(ManagerCreator.AbstractManagerTypes, Is.EqualTo(abstractTypes));
+            Assert.That(ManagerCreator.InterfaceManagerTypes, Is.EqualTo(interfaceTypes));
+            Assert.That(ManagerCreatorContainers.ManagerContainer, Is.SameAs(container));
+            Assert.That(ManagerCreatorContainers.ManagerTypeContainers.ToArray(), Is.EqualTo(containers));
+        }
+
         private static void ConsumeOneSlice()
         {
             var timer = Stopwatch.StartNew();

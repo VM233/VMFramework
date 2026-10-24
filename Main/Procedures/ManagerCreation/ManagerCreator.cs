@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -40,7 +42,28 @@ namespace VMFramework.Procedure
 
         public static IReadOnlyList<IManagerBehaviour> Managers => managers;
 
+        public static async UniTask CreateManagersAsync(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            UniTask<IReadOnlyList<Type>> discovery;
+            using (DiscoveryMarker.Auto())
+                discovery = InitializationTypeDiscovery.FindAllAsync(typeof(IManagerBehaviour), true, cancellationToken);
+            var managerClassTypes = await discovery;
+            cancellationToken.ThrowIfCancellationRequested();
+            CreateManagers(managerClassTypes);
+        }
+
+#if UNITY_EDITOR
         public static void CreateManagers()
+        {
+            Type[] managerClassTypes;
+            using (DiscoveryMarker.Auto())
+                managerClassTypes = typeof(IManagerBehaviour).GetDerivedClasses(true, false).ToArray();
+            CreateManagers(managerClassTypes);
+        }
+#endif
+
+        private static void CreateManagers(IReadOnlyList<Type> managerClassTypes)
         {
             using (SetupMarker.Auto())
             {
@@ -68,71 +91,62 @@ namespace VMFramework.Procedure
             var validManagerClassTypes = new Dictionary<Type, ManagerCreationProviderAttribute>();
             var invalidManagerClassTypes = new Dictionary<Type, ManagerCreationProviderAttribute>();
 
-            using (var managerClasses = typeof(IManagerBehaviour).GetDerivedClasses(true, false).GetEnumerator())
+            foreach (var managerClassType in managerClassTypes)
             {
-                while (true)
+                using (SelectionMarker.Auto())
                 {
-                    Type managerClassType;
-                    using (DiscoveryMarker.Auto())
+                    if (managerClassType.TryGetAttribute<ManagerCreationProviderAttribute>(true,
+                            out var providerAttribute) == false)
                     {
-                        if (!managerClasses.MoveNext()) break;
-                        managerClassType = managerClasses.Current;
+                        continue;
                     }
-                    using (SelectionMarker.Auto())
+
+                    if (managerClassType.IsAbstract)
                     {
-                        if (managerClassType.TryGetAttribute<ManagerCreationProviderAttribute>(true,
-                                out var providerAttribute) == false)
+                        abstractManagerTypes.Add(managerClassType);
+                        continue;
+                    }
+
+                    if (managerClassType.IsInterface)
+                    {
+                        interfaceManagerTypes.Add(managerClassType);
+                        continue;
+                    }
+
+                    if (managerClassType.IsDerivedFrom<Component>(false, false) == false)
+                    {
+                        UnityEngine.Debug.LogWarning($"{managerClassType} is not derived from {nameof(Component)}");
+                        continue;
+                    }
+
+                    var isParentOrChild = false;
+
+                    foreach (var (validManagerType, validProviderAttribute) in validManagerClassTypes.ToList())
+                    {
+                        if (managerClassType.IsSubclassOf(validManagerType))
                         {
-                            continue;
-                        }
-
-                        if (managerClassType.IsAbstract)
-                        {
-                            abstractManagerTypes.Add(managerClassType);
-                            continue;
-                        }
-
-                        if (managerClassType.IsInterface)
-                        {
-                            interfaceManagerTypes.Add(managerClassType);
-                            continue;
-                        }
-
-                        if (managerClassType.IsDerivedFrom<Component>(false, false) == false)
-                        {
-                            UnityEngine.Debug.LogWarning($"{managerClassType} is not derived from {nameof(Component)}");
-                            continue;
-                        }
-
-                        var isParentOrChild = false;
-
-                        foreach (var (validManagerType, validProviderAttribute) in validManagerClassTypes.ToList())
-                        {
-                            if (managerClassType.IsSubclassOf(validManagerType))
-                            {
-                                validManagerClassTypes.Remove(validManagerType);
-                                invalidManagerClassTypes.Add(validManagerType, validProviderAttribute);
-                                validManagerClassTypes.Add(managerClassType, providerAttribute);
-
-                                isParentOrChild = true;
-                                break;
-                            }
-
-                            if (validManagerType.IsSubclassOf(managerClassType))
-                            {
-                                invalidManagerClassTypes.Add(managerClassType, providerAttribute);
-
-                                isParentOrChild = true;
-                                break;
-                            }
-                        }
-
-                        if (isParentOrChild == false)
-                        {
+                            validManagerClassTypes.Remove(validManagerType);
+                            invalidManagerClassTypes.Add(validManagerType, validProviderAttribute);
                             validManagerClassTypes.Add(managerClassType, providerAttribute);
+
+                            isParentOrChild = true;
+                            break;
                         }
 
+                        if (validManagerType.IsSubclassOf(managerClassType))
+                        {
+                            invalidManagerClassTypes.Add(managerClassType, providerAttribute);
+
+                            isParentOrChild = true;
+                            break;
+                        }
                     }
+
+                    if (isParentOrChild == false)
+                    {
+                        validManagerClassTypes.Add(managerClassType, providerAttribute);
+                    }
+
                 }
             }
 

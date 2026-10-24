@@ -4,6 +4,16 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.61] - 2026-10-24
+
+### Fixed
+
+- Runtime and Editor initialization join cancellable assembly-budgeted manager
+  metadata discovery before any physical manager mutation. Preserve complete
+  type order, abstract/interface products and atomic singleton adoption.
+- Keep the explicit Editor authoring command on the same adoption owner. Cover
+  complete discovery order and cancellation before/pending preparation.
+
 ## [9.1.60] - 2026-10-24
 
 ### Added

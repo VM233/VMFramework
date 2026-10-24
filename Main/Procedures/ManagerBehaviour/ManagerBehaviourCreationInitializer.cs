@@ -20,9 +20,7 @@ namespace VMFramework.Procedure
 
         private static UniTask OnBeforeInitStart(CancellationToken cancellationToken)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            ManagerCreator.CreateManagers();
-            return UniTask.CompletedTask;
+            return ManagerCreator.CreateManagersAsync(cancellationToken);
         }
     }
 }
