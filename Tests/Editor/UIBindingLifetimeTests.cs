@@ -164,7 +164,7 @@ namespace VMFramework.Editor.Tests
 
         [TestCase(false)]
         [TestCase(true)]
-        public void TooltipPanelRetirement_RemovesRegistrationAfterModifiersAreCleared(bool clearFirst)
+        public void TooltipPanelRetirement_RemovesRegistrationAfterModifiersAreCleared(bool retireManagerFirst)
         {
             var tooltipManager = host.AddComponent<TooltipManager>();
             typeof(TooltipManager).GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic)
@@ -182,7 +182,9 @@ namespace VMFramework.Editor.Tests
                 .Invoke(panels, new object[] { panel });
             try
             {
-                if (clearFirst) ((IPoolItem)panel).OnClear();
+                if (retireManagerFirst)
+                    typeof(TooltipManager).GetMethod("OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic)
+                        .Invoke(tooltipManager, null);
                 typeof(UIPanel).GetMethod("OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic)
                     .Invoke(panel, null);
                 Assert.That(panel.Modifiers, Is.Empty);

@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.65] - 2026-10-25
+
+### Fixed
+
+- Exercise both tooltip-manager/panel native retirement orders in Edit Mode.
+  Do not call the Play Mode-only deferred destruction path from an Editor fixture.
+
 ## [9.1.64] - 2026-10-25
 
 ### Fixed
