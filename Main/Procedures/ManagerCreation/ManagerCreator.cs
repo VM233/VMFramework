@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.EventSystems;
 #if ENABLE_INPUT_SYSTEM
@@ -12,6 +13,17 @@ namespace VMFramework.Procedure
 {
     public static class ManagerCreator
     {
+        public const string SetupMarkerName = "VMFramework.ManagerCreation.Setup";
+        public const string DiscoveryMarkerName = "VMFramework.ManagerCreation.Discover";
+        public const string SelectionMarkerName = "VMFramework.ManagerCreation.Select";
+        public const string RetirementMarkerName = "VMFramework.ManagerCreation.Retire";
+        public const string AdoptionMarkerName = "VMFramework.ManagerCreation.Adopt";
+        private static readonly ProfilerMarker SetupMarker = new(SetupMarkerName);
+        private static readonly ProfilerMarker DiscoveryMarker = new(DiscoveryMarkerName);
+        private static readonly ProfilerMarker SelectionMarker = new(SelectionMarkerName);
+        private static readonly ProfilerMarker RetirementMarker = new(RetirementMarkerName);
+        private static readonly ProfilerMarker AdoptionMarker = new(AdoptionMarkerName);
+
         private static readonly HashSet<Type> abstractManagerTypes = new();
 
         private static readonly HashSet<Type> interfaceManagerTypes = new();
@@ -30,19 +42,22 @@ namespace VMFramework.Procedure
 
         public static void CreateManagers()
         {
-            ManagerCreatorContainers.Init();
-
-            var eventCoreContainer =
-                ManagerCreatorContainers.GetOrCreateManagerTypeContainer(ManagerType.EventCore.ToString());
-
-            eventCoreContainer.GetOrAddComponent<EventSystem>();
-            if (eventCoreContainer.TryGetComponent(out BaseInputModule _) == false)
+            using (SetupMarker.Auto())
             {
+                ManagerCreatorContainers.Init();
+
+                var eventCoreContainer =
+                    ManagerCreatorContainers.GetOrCreateManagerTypeContainer(ManagerType.EventCore.ToString());
+
+                eventCoreContainer.GetOrAddComponent<EventSystem>();
+                if (eventCoreContainer.TryGetComponent(out BaseInputModule _) == false)
+                {
 #if ENABLE_INPUT_SYSTEM
-                eventCoreContainer.AddComponent<InputSystemUIInputModule>();
+                    eventCoreContainer.AddComponent<InputSystemUIInputModule>();
 #else
-                eventCoreContainer.AddComponent<StandaloneInputModule>();
+                    eventCoreContainer.AddComponent<StandaloneInputModule>();
 #endif
+                }
             }
 
             abstractManagerTypes.Clear();
@@ -53,88 +68,107 @@ namespace VMFramework.Procedure
             var validManagerClassTypes = new Dictionary<Type, ManagerCreationProviderAttribute>();
             var invalidManagerClassTypes = new Dictionary<Type, ManagerCreationProviderAttribute>();
 
-            foreach (var managerClassType in typeof(IManagerBehaviour).GetDerivedClasses(true, false))
+            using (var managerClasses = typeof(IManagerBehaviour).GetDerivedClasses(true, false).GetEnumerator())
             {
-                if (managerClassType.TryGetAttribute<ManagerCreationProviderAttribute>(true,
-                        out var providerAttribute) == false)
+                while (true)
                 {
-                    continue;
-                }
-
-                if (managerClassType.IsAbstract)
-                {
-                    abstractManagerTypes.Add(managerClassType);
-                    continue;
-                }
-
-                if (managerClassType.IsInterface)
-                {
-                    interfaceManagerTypes.Add(managerClassType);
-                    continue;
-                }
-
-                if (managerClassType.IsDerivedFrom<Component>(false, false) == false)
-                {
-                    UnityEngine.Debug.LogWarning($"{managerClassType} is not derived from {nameof(Component)}");
-                    continue;
-                }
-
-                var isParentOrChild = false;
-
-                foreach (var (validManagerType, validProviderAttribute) in validManagerClassTypes.ToList())
-                {
-                    if (managerClassType.IsSubclassOf(validManagerType))
+                    Type managerClassType;
+                    using (DiscoveryMarker.Auto())
                     {
-                        validManagerClassTypes.Remove(validManagerType);
-                        invalidManagerClassTypes.Add(validManagerType, validProviderAttribute);
-                        validManagerClassTypes.Add(managerClassType, providerAttribute);
-
-                        isParentOrChild = true;
-                        break;
+                        if (!managerClasses.MoveNext()) break;
+                        managerClassType = managerClasses.Current;
                     }
-
-                    if (validManagerType.IsSubclassOf(managerClassType))
+                    using (SelectionMarker.Auto())
                     {
-                        invalidManagerClassTypes.Add(managerClassType, providerAttribute);
+                        if (managerClassType.TryGetAttribute<ManagerCreationProviderAttribute>(true,
+                                out var providerAttribute) == false)
+                        {
+                            continue;
+                        }
 
-                        isParentOrChild = true;
-                        break;
+                        if (managerClassType.IsAbstract)
+                        {
+                            abstractManagerTypes.Add(managerClassType);
+                            continue;
+                        }
+
+                        if (managerClassType.IsInterface)
+                        {
+                            interfaceManagerTypes.Add(managerClassType);
+                            continue;
+                        }
+
+                        if (managerClassType.IsDerivedFrom<Component>(false, false) == false)
+                        {
+                            UnityEngine.Debug.LogWarning($"{managerClassType} is not derived from {nameof(Component)}");
+                            continue;
+                        }
+
+                        var isParentOrChild = false;
+
+                        foreach (var (validManagerType, validProviderAttribute) in validManagerClassTypes.ToList())
+                        {
+                            if (managerClassType.IsSubclassOf(validManagerType))
+                            {
+                                validManagerClassTypes.Remove(validManagerType);
+                                invalidManagerClassTypes.Add(validManagerType, validProviderAttribute);
+                                validManagerClassTypes.Add(managerClassType, providerAttribute);
+
+                                isParentOrChild = true;
+                                break;
+                            }
+
+                            if (validManagerType.IsSubclassOf(managerClassType))
+                            {
+                                invalidManagerClassTypes.Add(managerClassType, providerAttribute);
+
+                                isParentOrChild = true;
+                                break;
+                            }
+                        }
+
+                        if (isParentOrChild == false)
+                        {
+                            validManagerClassTypes.Add(managerClassType, providerAttribute);
+                        }
+
                     }
-                }
-
-                if (isParentOrChild == false)
-                {
-                    validManagerClassTypes.Add(managerClassType, providerAttribute);
                 }
             }
 
-            foreach (var (managerClassType, providerAttribute) in invalidManagerClassTypes)
+            using (RetirementMarker.Auto())
             {
-                var managerTypeName = providerAttribute.ManagerTypeName;
+                foreach (var (managerClassType, providerAttribute) in invalidManagerClassTypes)
+                {
+                    var managerTypeName = providerAttribute.ManagerTypeName;
 
-                var container = ManagerCreatorContainers.GetOrCreateManagerTypeContainer(managerTypeName);
+                    var container = ManagerCreatorContainers.GetOrCreateManagerTypeContainer(managerTypeName);
 
-                container.RemoveFirstComponentImmediate(managerClassType);
+                    container.RemoveFirstComponentImmediate(managerClassType);
+                }
             }
 
-            foreach (var (managerClassType, providerAttribute) in validManagerClassTypes)
+            using (AdoptionMarker.Auto())
             {
-                var managerTypeName = providerAttribute.ManagerTypeName;
-
-                var container = ManagerCreatorContainers.GetOrCreateManagerTypeContainer(managerTypeName);
-
-                var component = container.GetOrAddComponent(managerClassType);
-
-                if (component is not IManagerBehaviour managerBehaviour)
+                foreach (var (managerClassType, providerAttribute) in validManagerClassTypes)
                 {
-                    throw new Exception($"{managerClassType} does not implement {nameof(IManagerBehaviour)}");
-                }
+                    var managerTypeName = providerAttribute.ManagerTypeName;
 
-                managers.Add(managerBehaviour);
+                    var container = ManagerCreatorContainers.GetOrCreateManagerTypeContainer(managerTypeName);
 
-                foreach (var otherContainer in ManagerCreatorContainers.GetOtherManagerTypeContainers(managerTypeName))
-                {
-                    otherContainer.RemoveAllComponentsImmediate(managerClassType);
+                    var component = container.GetOrAddComponent(managerClassType);
+
+                    if (component is not IManagerBehaviour managerBehaviour)
+                    {
+                        throw new Exception($"{managerClassType} does not implement {nameof(IManagerBehaviour)}");
+                    }
+
+                    managers.Add(managerBehaviour);
+
+                    foreach (var otherContainer in ManagerCreatorContainers.GetOtherManagerTypeContainers(managerTypeName))
+                    {
+                        otherContainer.RemoveAllComponentsImmediate(managerClassType);
+                    }
                 }
             }
 

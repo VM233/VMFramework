@@ -4,6 +4,16 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.60] - 2026-10-24
+
+### Added
+
+- Native manager-creation stages distinguish actual setup, discovery iterator
+  advancement, provider selection, invalid-base retirement and component adoption.
+  Preserve candidate order, iterator retirement and physical singleton behavior.
+- Document the13.262ms/91.705ms first-entry witnesses without attributing their
+  difference to JIT or another unmeasured owner.
+
 ## [9.1.59] - 2026-10-24
 
 ### Fixed
