@@ -4,6 +4,16 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.58] - 2026-10-24
+
+### Added
+
+- Native synchronous global-setting load stages distinguish actual dispatch,
+  file/loader discovery, loader selection and the selected loader call. Scopes
+  end before awaits and preserve the existing tasks, order and failure policy.
+- Document the native cold-loading witness and constant observation cost;
+  these stages do not claim a responsiveness or Player performance pass.
+
 ## [9.1.57] - 2026-10-24
 
 ### Fixed

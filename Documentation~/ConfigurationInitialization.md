@@ -56,7 +56,8 @@ and creates every unique config once. Each active action adds one constant-size
 slice and at most one pending frame wait; no history, worker queue or cache is
 introduced. Content-specific incremental checks own their bounded atomic steps.
 
-Cold runtime type discovery freezes the current AppDomain assembly array and
+Incremental runtime discovery used by registration and event-receiver owners
+freezes the current AppDomain assembly array and
 checks each assembly once using ReflectionUtility's existing type cache. It keeps
 the original type order, inclusion and instantiability rules. There is one
 constant-size work slice and one result list bounded by the captured type domain.
@@ -86,3 +87,11 @@ GameEvent registration remains one pass over at most2048 registered event defini
 Pass for unchanged finite iteration products and constant incremental state on this frozen consumer. The10ms credit bounds admission between indivisible units; it does not claim that a native call or first managed invocation can be preempted. Cold first-Play native frame acceptance, Editor progress and exact failure/cancellation lifecycle cases remain required before claiming responsiveness or integration passes.
 
 The UnitySetUp initial-credit fixture must be a compiler-generated iterator that joins its actual budget task while yielding native Editor frames. Unity Test Framework resets that setup iterator program counter between cases; returning UniTask custom IEnumerator directly is outside that lifecycle contract. Setup owns and cancels its pending task lifetime on retirement. This repair adds one iterator/task/cancellation source per sequential case (eleven cases, below8KiB total metadata), with the same credit acquisition and original assertions. No production scheduling, input, timeout or acceptance changes.
+
+## Synchronous global-setting load stages
+
+Native C25 first-entry evidence attributes512.707ms to GlobalSettingsFileLoadingInitializer.OnInitStart, with495.584ms opaque self time. That identifies the real synchronous loading owner; it does not establish JIT, reflection, Addressables or a particular loader as its cause. The global-setting file and loader discoveries are distinct synchronous paths and must not be assumed to share the incremental registration discovery described above.
+
+The initializer now marks each synchronous LoadGlobalSettingFile dispatch. GlobalSettingFileManager separately marks file-type discovery, loader discovery, loader selection and the synchronous call that begins the actual selected loader. No scope crosses an await. Their public marker-name constants define the observation contract; nested inclusive times overlap and must not be summed. A first managed invocation before a scope begins remains visible in its parent, so missing child cost is evidence rather than a JIT claim. The same original tasks, inclusion/order, chosen loader, errors and final adoption remain authoritative.
+
+Static Cost Ledger before executable writes: five constant domain-lifetime native marker handles (<4KiB metadata), one value-type scope per existing synchronous boundary. There is no added traversal, reflection, serialization, file/native asset operation, cache, thread, timer, wait, load request or retained sample history. For the frozen conservative envelope of256 global settings, dispatch/loader-discovery/selection/load-begin contribute at most1024 scopes plus one file-type discovery scope, at their existing invocations. Additional allocation per scope is zero after marker initialization. PASS for unchanged producer workloads and constant observation state. Native source/cancel retirement and current first-Play timing are separate required integration checks; these markers alone are not a responsiveness repair.

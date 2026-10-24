@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Unity.Profiling;
 using UnityEngine.Scripting;
 using VMFramework.Configuration;
 using VMFramework.Procedure;
@@ -12,6 +13,8 @@ namespace VMFramework.GameLogicArchitecture
     [Preserve]
     public sealed class GlobalSettingsFileLoadingInitializer : IGameInitializer
     {
+        public const string LoadDispatchMarkerName = "VMFramework.GlobalSettings.Load.Dispatch";
+        private static readonly ProfilerMarker LoadDispatchMarker = new(LoadDispatchMarkerName);
         private static readonly List<IGlobalSetting> globalSettings = new();
 
         void IInitializer.GetInitializationActions(ICollection<InitializationAction> actions)
@@ -29,7 +32,8 @@ namespace VMFramework.GameLogicArchitecture
             
             foreach (var globalSetting in GlobalSettingCollector.Collect())
             {
-                tasks.Add(globalSetting.LoadGlobalSettingFile());
+                using (LoadDispatchMarker.Auto())
+                    tasks.Add(globalSetting.LoadGlobalSettingFile());
                 globalSettings.Add(globalSetting);
             }
             
