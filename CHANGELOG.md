@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.67] - 2026-10-26
+
+### Fixed
+
+- Explicitly execute native panel retirement in the standalone Edit Mode
+  presented-rental fixture, where an unawakened MonoBehaviour receives no
+  automatic OnDestroy callback. Retain the production lifecycle assertions.
+
 ## [9.1.66] - 2026-10-26
 
 ### Fixed

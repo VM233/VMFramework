@@ -286,6 +286,8 @@ namespace VMFramework.Editor.Tests
             panels.GetPresentedPanels(presented);
             Assert.That(presented, Is.EquivalentTo(new[] { rentals[1], rentals[2] }),
                 "Native input must cover every presented rental until post-close, not only unique panels.");
+            typeof(UIPanel).GetMethod("OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(rentals[1], null);
             Object.DestroyImmediate(rentals[1].gameObject);
             presented.Clear();
             panels.GetPresentedPanels(presented);
