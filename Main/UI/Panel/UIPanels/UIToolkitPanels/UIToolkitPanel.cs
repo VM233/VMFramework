@@ -125,6 +125,8 @@ namespace VMFramework.UI
             LayoutCompletion = null;
             layoutRetirementFailure = null;
 
+            // The document is a viewport carrier. Authored children own hit areas.
+            RootVisualElement.pickingMode = PickingMode.Ignore;
             RootVisualElement.DisplayFlex();
 
             RootVisualElement.style.visibility = Visibility.Hidden;

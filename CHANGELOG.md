@@ -4,6 +4,16 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.66] - 2026-10-26
+
+### Fixed
+
+- Publish the complete presented panel set, including nonunique rentals and
+  closing animations, for native window input consumers. Closed registrations
+  do not remain in that query.
+- Keep the UIDocument viewport root non-pickable; authored descendants continue
+  to own interactive areas. Reconstructed roots adopt the same contract.
+
 ## [9.1.65] - 2026-10-25
 
 ### Fixed

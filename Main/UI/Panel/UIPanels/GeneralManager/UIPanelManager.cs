@@ -277,6 +277,16 @@ namespace VMFramework.UI
 
         #region Opened Panels
 
+        /// <summary>Append every presented rental, including its closing animation.</summary>
+        public void GetPresentedPanels<TPanel>(ICollection<TPanel> panels) where TPanel : IUIPanel
+        {
+            foreach (var set in openedPanels.Values)
+                foreach (var panel in set)
+                    if (panel is TPanel typedPanel) panels.Add(typedPanel);
+            foreach (var panel in closingPanels)
+                if (panel is TPanel typedPanel) panels.Add(typedPanel);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetOpenedPanels(string id, out IReadOnlyCollection<IUIPanel> panels)
         {

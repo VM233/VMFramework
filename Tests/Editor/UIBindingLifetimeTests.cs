@@ -265,6 +265,34 @@ namespace VMFramework.Editor.Tests
         }
 
         [Test]
+        public void PresentedPanels_IncludeNonuniqueAndClosingRentalsButExcludeClosedRegistrations()
+        {
+            var rentals = new List<UIPanel>();
+            for (var i = 0; i < 3; i++)
+            {
+                var owner = new GameObject("Presented Panel Test");
+                owner.transform.SetParent(host.transform);
+                var panel = owner.AddComponent<UIPanel>();
+                typeof(ControllerGameItem).GetProperty("GamePrefab", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .SetValue(panel, new UIPanelConfig { id = i == 0 ? "closed_unique" : "shared_rental", isUnique = i == 0 });
+                typeof(UIPanelManager).GetMethod("Register", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(panels, new object[] { panel });
+                rentals.Add(panel);
+            }
+            panels.Open(rentals[1], null);
+            panels.Open(rentals[2], null);
+            panels.Close(rentals[1]);
+            var presented = new List<IUIPanel>();
+            panels.GetPresentedPanels(presented);
+            Assert.That(presented, Is.EquivalentTo(new[] { rentals[1], rentals[2] }),
+                "Native input must cover every presented rental until post-close, not only unique panels.");
+            Object.DestroyImmediate(rentals[1].gameObject);
+            presented.Clear();
+            panels.GetPresentedPanels(presented);
+            Assert.That(presented, Is.EquivalentTo(new[] { rentals[2] }));
+        }
+
+        [Test]
         public void ToolkitRoot_ReconstructionRebindsTheLiveRootAndRetiresOldPointerCallbacks()
         {
             var panel = CreateToolkitPanel(UIToolkitPanelCloseMode.DisableDocument, out var settings, out var tree);
@@ -272,6 +300,8 @@ namespace VMFramework.Editor.Tests
             VisualElement target = null;
             panel.OnRootVisualElementReady += (owner, root) =>
             {
+                Assert.That(root.pickingMode, Is.EqualTo(PickingMode.Ignore),
+                    "A document viewport must not turn empty desktop pixels into a hit area.");
                 Assert.That(root, Is.SameAs(owner.UIDocument.rootVisualElement));
                 Assert.That(owner.RootVisualElement, Is.SameAs(root));
                 target = new VisualElement();

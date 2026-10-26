@@ -5,6 +5,21 @@ root: native Live Reload, closing and destruction retire the published root and
 its consumers. `GenerateVisualElement` creates a detached authoring preview and
 does not publish a runtime root.
 
+The UIDocument root carries the viewport and always uses `PickingMode.Ignore`.
+Authored descendants own their hit areas. A full-screen modal backdrop must be
+an authored pickable element; a document wrapper must not intercept the desktop.
+`UIPanelManager.GetPresentedPanels` appends the actual opened and closing rentals,
+including nonunique instances. Callers supply and clear their collection. Native
+input consumers may query each distinct `RootVisualElement.panel` once, using
+`IPanel.Pick` and its mouse capture instead of a parallel rectangle registry.
+
+The query is linear in registered open/closing rentals and adds no cache or
+resource lifetime. The consuming project's frozen panel count owns its frame
+budget. Current integration: ten unique panels sharing one native panel, at most
+ten appended references and one native pick per frame; see the consumer's
+window-interaction static cost ledger. Source regression uses three rentals and
+two transitions, with no scene or Editor-window creation.
+
 `OnRootVisualElementReady` publishes the actual root before layout starts. At
 that event the new `LayoutCompletion` has not yet been assigned. Consumers bind
 the published root and wait for `OnLayoutChangeEvent` before reading its actual
