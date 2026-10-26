@@ -21,6 +21,8 @@ namespace VMFramework.GameEvents
         {
             cancellationToken.ThrowIfCancellationRequested();
 
+            GameEventManager.Instance.AdoptDependencies(CoreSetting.GameEventGeneralSetting.directDependencies);
+
             var slice = new InitializationWorkSlice();
             foreach (var gameEventConfig in GamePrefabManager.GetAllActiveGamePrefabs<IGameEventConfig>())
             {

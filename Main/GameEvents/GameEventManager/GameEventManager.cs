@@ -23,6 +23,13 @@ namespace VMFramework.GameEvents
         [ShowInInspector]
         private readonly Dictionary<string, (IGameEvent Event, IGameItemManager RentalOwner)> allGameEvents = new();
 
+        private IReadOnlyDictionary<string, HashSet<string>> directDependencies;
+
+        internal void AdoptDependencies(IReadOnlyDictionary<string, HashSet<string>> dependencies)
+        {
+            directDependencies = dependencies ?? throw new ArgumentNullException(nameof(dependencies));
+        }
+
         protected override void Awake()
         {
             base.Awake();
@@ -62,6 +69,7 @@ namespace VMFramework.GameEvents
                 OnGameEventRegistered = null;
                 OnGameEventUnregistered = null;
                 allGameEvents.Clear();
+                directDependencies = null;
             }
         }
 
@@ -145,7 +153,7 @@ namespace VMFramework.GameEvents
                 return;
             }
 
-            if (CoreSetting.GameEventGeneralSetting.directDependencies.TryGetValue(gameEvent.id,
+            if (directDependencies.TryGetValue(gameEvent.id,
                     out var dependencies) == false)
             {
                 return;

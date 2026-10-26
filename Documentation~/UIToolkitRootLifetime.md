@@ -113,6 +113,16 @@ actual root children and subscribed consumers, with no additional content axis.
 Consumer-specific counts and native rendering budgets belong to the consuming
 project's frozen authoring graph and cost ledger.
 
+GameEventInitializer passes the compiled direct-dependency dictionary to the
+actual GameEventManager before registration. The manager retains that same
+managed product until its event subscriptions retire. Token callbacks never
+look up the global settings provider, which may already be destroyed when a
+still-open panel releases tokens at application exit. This adds one reference,
+no copied graph or new traversal. The focused lifetime fixture freezes two
+borrowed events, one edge and one panel across close/deinitialize and both
+manager retirement orders, after destroying the settings provider. Native
+Player shutdown with an open input-disabling panel remains a separate check.
+
 Use the package Editor test assembly for focused root creation, close/reopen,
 Live Reload, retained document identity, pointer transfer and cancellation cases.
 Exercise actual production consumers for layout adoption, input ownership,

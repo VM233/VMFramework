@@ -4,6 +4,16 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.69] - 2026-10-26
+
+### Fixed
+
+- Adopt the compiled event dependency product before event registration and
+  retain it until subscriptions retire. Panel token release can propagate after
+  the global settings provider has been destroyed during native shutdown.
+- Exercise panel close and deinitialization with both event-manager retirement
+  orders after the settings provider retires.
+
 ## [9.1.68] - 2026-10-26
 
 ### Documentation
