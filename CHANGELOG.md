@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.68] - 2026-10-26
+
+### Documentation
+
+- Keep native panel-count budgets in the consuming project and account for
+  distinct sorting groups from the default PanelSettings factory.
+
 ## [9.1.67] - 2026-10-26
 
 ### Fixed

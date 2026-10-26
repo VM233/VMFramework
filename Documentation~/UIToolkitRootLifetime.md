@@ -15,9 +15,9 @@ input consumers may query each distinct `RootVisualElement.panel` once, using
 
 The query is linear in registered open/closing rentals and adds no cache or
 resource lifetime. The consuming project's frozen panel count owns its frame
-budget. Current integration: ten unique panels sharing one native panel, at most
-ten appended references and one native pick per frame; see the consumer's
-window-interaction static cost ledger. Source regression uses three rentals and
+budget. Distinct sorting groups can resolve to separate native panels even when
+all configurations use the default PanelSettings factory; freeze actual resolved
+groups in the consumer's static cost ledger. Source regression uses three rentals and
 two transitions, with no scene or Editor-window creation.
 
 `OnRootVisualElementReady` publishes the actual root before layout starts. At
