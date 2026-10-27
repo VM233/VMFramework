@@ -226,10 +226,19 @@ namespace VMFramework.Editor.Tests
                 Assert.That(modifier.Received, Is.EqualTo(1));
                 events.Unregister(gameEvent);
                 gameEvent.Reset();
-                if (clearFirst) ((IPoolItem)panel).OnClear();
-                typeof(UIPanel).GetMethod("OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic)
-                    .Invoke(panel, null);
-                Object.DestroyImmediate(panelHost);
+                if (clearFirst)
+                {
+                    ((IPoolItem)panel).OnClear();
+                    Assert.That(panelHost == null, Is.True,
+                        "Edit Mode pool clear must destroy the native panel immediately.");
+                }
+                else
+                {
+                    // An unawakened Edit Mode component receives no native OnDestroy callback.
+                    typeof(UIPanel).GetMethod("OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic)
+                        .Invoke(panel, null);
+                    Object.DestroyImmediate(panelHost);
+                }
                 source.Publish();
                 Assert.That(modifier.Received, Is.EqualTo(1));
                 Assert.That(modifier.Deinitializations, Is.EqualTo(1));

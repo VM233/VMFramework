@@ -106,7 +106,11 @@ namespace VMFramework.UI
             failures.Attempt("modifiers.deinitialize", DeinitializeModifiers);
             failures.Attempt("panel.unregister", ReleaseRegistration);
             PublishDestruct(ref failures);
-            failures.Attempt("native-panel.destroy", () => UnityEngine.Object.Destroy(gameObject));
+            failures.Attempt("native-panel.destroy", () =>
+            {
+                if (UnityEngine.Application.isPlaying) UnityEngine.Object.Destroy(gameObject);
+                else UnityEngine.Object.DestroyImmediate(gameObject);
+            });
             failures.ThrowIfFailed();
         }
 

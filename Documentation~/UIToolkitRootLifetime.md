@@ -40,6 +40,10 @@ root through that same document. `VisualElementDisplayNone` keeps the document
 enabled and hides its existing root; reopening publishes that retained root.
 Live Reload can replace a closed retained root, with the same close policy.
 Native destruction publishes item liveness before its physical pool retirement.
+Pool clear destroys the native panel immediately in Edit Mode and schedules its
+destruction in Play Mode. Both paths release the same rental resources before
+native destruction. Selecting Unity's destruction API adds one constant-time
+play-state branch, with no retained state or traversal.
 
 `UIPanelManager` publishes a rental after acquisition succeeds. A failed
 creation retires its actually acquired prefix, and never publishes an unfinished

@@ -4,6 +4,14 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.70] - 2026-10-28
+
+### Fixed
+
+- Clear pooled panels with immediate native destruction in Edit Mode and deferred
+  destruction in Play Mode. Verify physical Edit Mode retirement together with
+  exactly-once external subscription release.
+
 ## [9.1.69] - 2026-10-26
 
 ### Fixed
