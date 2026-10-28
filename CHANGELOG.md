@@ -4,6 +4,15 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.71] - 2026-10-29
+
+### Fixed
+
+- Cancel and join asynchronous Editor initialization at the native Player-build
+  boundary, then schedule the ordinary initializer after the build retires.
+  Failed builds use the same scheduler. Keep the existing timeout and prevent
+  concurrent authoring work during build or prior-initializer retirement.
+
 ## [9.1.70] - 2026-10-28
 
 ### Fixed

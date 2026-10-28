@@ -103,3 +103,22 @@ C26 first-entry native frame121 isolates344.005ms/4.2MB in synchronous DiscoverL
 PrepareLoadersAsync receives the actual InitStart cancellation token. It joins type discovery, builds a local complete loader dictionary while reusing existing actual loader instances, checks that token before publication and replaces the catalog once. Cancellation and constructor failure preserve the prior published dictionary. File loads consume that published product; the sole normal runtime initializer awaits preparation before admitting any of them. File metadata and TypeConfigs authoring keep their existing owner. Loader discovery markers cover synchronous dispatch/instance construction; actual per-assembly discovery keeps its own existing markers. No profiler scope crosses an await.
 
 Static Cost Ledger before executable writes: C26 freezes five global settings and one production loader implementation; the focused fixture adds one plain test implementation. Existing type-domain work is one captured AppDomain assembly array and its same assembly-local cached queries through the already-admitted InitializationTypeDiscovery owner, replacing five synchronous discovery requests; no new type/assembly search axis or reflection cache. The existing source performs one work-credit check per original assembly and owns at most one pending frame wait. Instance adoption traverses the returned implementation list once and copies the actual retained loader dictionary once (L=1 production/L=2 fixture, <=4 references across prior/new dictionaries plus the one new test instance). One additional immutable-list reference, one local dictionary and the original action token are retained until adoption, below4KiB in this frozen input. Existing order, selected loader, original file tasks and native asset-call counts are preserved; preparation precedes all five file requests. Focused four-case fixtures run sequentially and restore their exact dictionary/constructor callback in finally/teardown; no asset, file, view, gameplay source or native loader call is created by the fixture. PASS for the unchanged discovery domain and bounded added publication work. Assembly-local reflection remains an indivisible operation, so the100ms native first-Play gate remains separate and cannot be inferred from this scheduling change.
+
+
+## Native Editor build boundary
+
+The Editor initializer and the native Player build must not own authoring work
+concurrently. One early IPreprocessBuildWithReport callback cancels the current
+Editor initialization token and queues the existing initialization scheduler.
+The scheduler admits only stable Edit Mode outside BuildPipeline.isBuildingPlayer
+and after the prior task has retired. Success and failed builds use the same
+next Editor update; no postprocess-only cleanup or extended timeout is required.
+The ordinary two-minute initialization deadline remains unchanged.
+
+Static Cost Ledger: one existing cancellation source and one deduplicated update
+delegate; one O(1) build-boundary invocation and one ordinary initializer run after
+native build retirement. No new scan, cache, native object or window is introduced.
+The focused test adds one test-only initializer with one token-owned pending task,
+then cancels through the real prebuild callback and joins both old/new native
+initialization lifetimes. All fixture state retires in finally. PASS: constant
+incremental ownership, existing discovery budget and unchanged native build count.

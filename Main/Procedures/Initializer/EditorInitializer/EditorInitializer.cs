@@ -43,11 +43,6 @@ namespace VMFramework.Procedure.Editor
 
         internal static void ScheduleInitialize()
         {
-            if (initializerManager is { IsInitializing: true })
-            {
-                return;
-            }
-
             EditorApplication.update -= RunScheduledInitialization;
             EditorApplication.update += RunScheduledInitialization;
         }
@@ -55,7 +50,8 @@ namespace VMFramework.Procedure.Editor
         private static void RunScheduledInitialization()
         {
             if (Application.isPlaying || EditorApplication.isCompiling || EditorApplication.isUpdating ||
-                EditorApplication.isPlayingOrWillChangePlaymode)
+                EditorApplication.isPlayingOrWillChangePlaymode || BuildPipeline.isBuildingPlayer ||
+                initializerManager is { IsInitializing: true })
             {
                 return;
             }
@@ -67,7 +63,13 @@ namespace VMFramework.Procedure.Editor
         [MenuItem(UnityMenuItemNames.EDITOR_INITIALIZATION + "Editor Initialize")]
         private static void InitializeFromMenu()
         {
-            StartInitialization();
+            ScheduleInitialize();
+        }
+
+        internal static void SuspendForBuild()
+        {
+            CancelInitialization();
+            ScheduleInitialize();
         }
 
         private static void StartInitialization()
