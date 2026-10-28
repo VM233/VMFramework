@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.72] - 2026-10-29
+
+### Fixed
+
+- Keep the build-boundary pending fixture initializer in its own source file,
+  satisfying the one-top-level-type policy without changing production behavior.
+
 ## [9.1.71] - 2026-10-29
 
 ### Fixed
