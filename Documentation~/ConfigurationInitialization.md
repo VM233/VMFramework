@@ -108,7 +108,8 @@ Static Cost Ledger before executable writes: C26 freezes five global settings an
 ## Native Editor build boundary
 
 The Editor initializer and the native Player build must not own authoring work
-concurrently. One early IPreprocessBuildWithReport callback cancels the current
+concurrently. One earliest-order BuildPlayerProcessor callback, before Addressables preparation,
+cancels the current
 Editor initialization token and queues the existing initialization scheduler.
 The scheduler admits only stable Edit Mode outside BuildPipeline.isBuildingPlayer
 and after the prior task has retired. Success and failed builds use the same

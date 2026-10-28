@@ -4,6 +4,15 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.73] - 2026-10-29
+
+### Fixed
+
+- Retire Editor initialization in the earliest BuildPlayerProcessor preparation
+  callback, before Addressables preparation and Player script work. A later
+  preprocess-report callback cannot cover a long Addressables preparation phase.
+  Verify the actual early callback and its ordering in the focused lifecycle test.
+
 ## [9.1.72] - 2026-10-29
 
 ### Fixed

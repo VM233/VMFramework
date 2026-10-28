@@ -37,9 +37,11 @@ namespace VMFramework.Tests
                 var token = cancellation.Token;
                 var boundaryType = Owner.Assembly.GetType(
                     "VMFramework.Procedure.Editor.EditorInitializationBuildBoundary", true);
-                var boundary = (IPreprocessBuildWithReport)Activator.CreateInstance(boundaryType, true);
+                var boundary = (BuildPlayerProcessor)Activator.CreateInstance(boundaryType, true);
                 BuildBoundaryPendingInitializer.Enabled = false;
-                boundary.OnPreprocessBuild(null);
+                Assert.That(boundary.callbackOrder, Is.LessThan(1),
+                    "Editor initialization must retire before Addressables preparation.");
+                boundary.PrepareForBuild(null);
                 Assert.That(token.IsCancellationRequested, Is.True);
                 yield return Until(() => !prior.IsInitializing);
                 Assert.That(prior.LastException, Is.InstanceOf<OperationCanceledException>());

@@ -1,14 +1,13 @@
 #if UNITY_EDITOR
 using UnityEditor.Build;
-using UnityEditor.Build.Reporting;
 
 namespace VMFramework.Procedure.Editor
 {
-    internal sealed class EditorInitializationBuildBoundary : IPreprocessBuildWithReport
+    internal sealed class EditorInitializationBuildBoundary : BuildPlayerProcessor
     {
-        public int callbackOrder => int.MinValue;
+        public override int callbackOrder => int.MinValue;
 
-        public void OnPreprocessBuild(BuildReport report)
+        public override void PrepareForBuild(BuildPlayerContext context)
         {
             EditorInitializer.SuspendForBuild();
         }
