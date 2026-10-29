@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.ExceptionServices;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
@@ -92,7 +93,7 @@ namespace VMFramework.Localization
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static string GetGeneralString(this LocalizedString localizedString)
+        public static string GetGeneralString(this LocalizedString localizedString, IList<object> arguments = null)
         {
             if (localizedString == null)
             {
@@ -102,7 +103,7 @@ namespace VMFramework.Localization
 #if UNITY_EDITOR
             if (Application.isPlaying == false)
             {
-                return localizedString.GetLocalizedStringInEditor();
+                return localizedString.GetLocalizedStringInEditor(arguments);
             }
 #endif
             if (localizedString.TableReference.ReferenceType == TableReference.Type.Empty)
@@ -110,7 +111,7 @@ namespace VMFramework.Localization
                 return null;
             }
             
-            return localizedString.GetLocalizedString();
+            return localizedString.GetLocalizedString(arguments ?? localizedString.Arguments);
         }
     }
 }

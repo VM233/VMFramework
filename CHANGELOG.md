@@ -4,6 +4,18 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.74] - 2026-10-30
+
+### Fixed
+
+- Keep static Editor localization on native Editor tables with explicit Locale,
+  typed local variables and positional arguments. Avoid runtime Locale preload,
+  table loading and shared entry-cache mutation. GetGeneralString retains its
+  existing Editor/runtime phase boundary and now forwards positional arguments.
+- Verify the original implicit selected-Locale entry point is rejected by the
+  same native initialization probe that accepts Editor formatting in both
+  consumer Locales, including changing values and missing-selector failures.
+
 ## [9.1.73] - 2026-10-29
 
 ### Fixed

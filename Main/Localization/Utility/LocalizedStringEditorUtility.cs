@@ -2,9 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using UnityEditor;
 using UnityEditor.Localization;
 using UnityEngine.Localization;
+using UnityEngine.Localization.Pseudo;
 using UnityEngine.Localization.Settings;
+using UnityEngine.Localization.SmartFormat.Core.Formatting;
+using UnityEngine.Localization.SmartFormat.PersistentVariables;
 using UnityEngine.Localization.Tables;
 using VMFramework.Core;
 using VMFramework.Core.Editor;
@@ -14,9 +18,9 @@ namespace VMFramework.Localization
 {
     public static class LocalizedStringEditorUtility
     {
-        public static string GetLocalizedStringInEditor(this LocalizedString localizedString)
+        public static string GetLocalizedStringInEditor(this LocalizedString localizedString,
+            IList<object> arguments = null)
         {
-            StringTable table;
             var tableReference = localizedString.TableReference;
 
             if (tableReference.ReferenceType == TableReference.Type.Empty)
@@ -24,45 +28,42 @@ namespace VMFramework.Localization
                 return null;
             }
 
-            if (LocalizationSettings.ProjectLocale == null)
+            var locale = localizedString.LocaleOverride;
+            if (locale == null)
             {
-                var collection = LocalizationEditorSettings.GetStringTableCollection(tableReference);
+                // ProjectLocale's runtime getter preloads Locales. Read the authoring field instead.
+                using var settings = new SerializedObject(LocalizationEditorSettings.ActiveLocalizationSettings);
+                var code = settings.FindProperty("m_ProjectLocaleIdentifier").FindPropertyRelative("m_Code").stringValue;
+                locale = LocalizationEditorSettings.GetLocale(new LocaleIdentifier(code));
+            }
+            var collection = LocalizationEditorSettings.GetStringTableCollection(tableReference);
+            var table = locale == null ? null : collection?.GetTable(locale.Identifier) as StringTable;
+            return table?.GetEntryFromReference(localizedString.TableEntryReference)
+                ?.GetLocalizedStringInEditor(locale, localizedString, arguments ?? localizedString.Arguments);
+        }
 
-                if (collection == null)
+        public static string GetLocalizedStringInEditor(this StringTableEntry entry, Locale locale,
+            IVariableGroup localVariables = null, IList<object> arguments = null)
+        {
+            string text;
+            if (entry.IsSmart && !string.IsNullOrEmpty(entry.Value))
+            {
+                var formatter = LocalizationSettings.StringDatabase.SmartFormatter;
+                var cache = new FormatCache
                 {
-                    table = null;
-                }
-                else
-                {
-                    table = collection.StringTables.First();
-                }
+                    Format = formatter.Parser.ParseFormat(entry.Value, formatter.GetNotEmptyFormatterExtensionNames()),
+                    Table = entry.Table,
+                    LocalVariables = localVariables
+                };
+                try { text = formatter.FormatWithCache(ref cache, entry.Value, locale.Formatter, arguments); }
+                finally { cache.Format.ReleaseToPool(); }
             }
             else
             {
-                table = LocalizationSettings.StringDatabase.GetTable(tableReference,
-                    LocalizationSettings.ProjectLocale);
+                text = arguments == null || arguments.Count == 0 ? entry.Value :
+                    string.Format(locale.Formatter, entry.Value, arguments as object[] ?? arguments.ToArray());
             }
-
-            if (table == null)
-            {
-                return null;
-            }
-
-            StringTableEntry entry = null;
-            var key = localizedString.TableEntryReference.Key;
-
-            if (string.IsNullOrEmpty(key) == false)
-            {
-                entry = table.GetEntry(key);
-            }
-
-            if (entry == null)
-            {
-                var keyID = localizedString.TableEntryReference.KeyId;
-                entry = table.GetEntry(keyID);
-            }
-
-            return entry?.GetLocalizedString();
+            return locale is PseudoLocale pseudo && !string.IsNullOrEmpty(text) ? pseudo.GetPseudoString(text) : text;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
