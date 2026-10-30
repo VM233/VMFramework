@@ -1,3 +1,5 @@
+using System.IO;
+using UnityEditor;
 using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
@@ -18,6 +20,29 @@ namespace VMFramework.Editor.Tests
 {
     public sealed class UIBindingLifetimeTests
     {
+        private VisualTreeAsset fixtureTree;
+        private string fixturePath;
+
+        [OneTimeSetUp]
+        public void ImportNativeVisualTreeFixture()
+        {
+            // Unity6.4 live asset tracking requires an imported tree, not an uninitialized in-memory asset.
+            fixturePath = AssetDatabase.GenerateUniqueAssetPath("Assets/VMFramework.UIBindingLifetimeFixture.uxml");
+            File.WriteAllText(fixturePath, "<ui:UXML xmlns:ui=\"UnityEngine.UIElements\"><ui:VisualElement name=\"LifetimeFixtureAnchor\" /></ui:UXML>");
+            AssetDatabase.ImportAsset(fixturePath, ImportAssetOptions.ForceSynchronousImport);
+            fixtureTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(fixturePath);
+            Assert.That(fixtureTree, Is.Not.Null);
+        }
+
+        [OneTimeTearDown]
+        public void ReleaseNativeVisualTreeFixture()
+        {
+            fixtureTree = null;
+            if (!string.IsNullOrEmpty(fixturePath))
+                Assert.That(AssetDatabase.DeleteAsset(fixturePath), Is.True);
+            fixturePath = null;
+        }
+
         private GameObject host;
         private BindVisualElementsManager bindings;
         private UIPanelManager panels;
@@ -392,7 +417,6 @@ namespace VMFramework.Editor.Tests
             {
                 InvokeToolkitLifecycle(panel, "OnDisable");
                 Object.DestroyImmediate(settings);
-                Object.DestroyImmediate(tree);
             }
         }
 
@@ -423,7 +447,6 @@ namespace VMFramework.Editor.Tests
             {
                 InvokeToolkitLifecycle(panel, "OnDisable");
                 Object.DestroyImmediate(settings);
-                Object.DestroyImmediate(tree);
             }
         }
 
@@ -455,7 +478,6 @@ namespace VMFramework.Editor.Tests
             {
                 InvokeToolkitLifecycle(panel, "OnDisable");
                 Object.DestroyImmediate(settings);
-                Object.DestroyImmediate(tree);
             }
         }
 
@@ -478,7 +500,6 @@ namespace VMFramework.Editor.Tests
             {
                 InvokeToolkitLifecycle(panel, "OnDisable");
                 Object.DestroyImmediate(settings);
-                Object.DestroyImmediate(tree);
             }
         }
 
@@ -529,7 +550,6 @@ namespace VMFramework.Editor.Tests
             {
                 InvokeToolkitLifecycle(panel, "OnDisable");
                 Object.DestroyImmediate(settings);
-                Object.DestroyImmediate(tree);
             }
         }
 
@@ -612,7 +632,6 @@ namespace VMFramework.Editor.Tests
                 if (modifier.IsInitialized) modifier.Deinitialize();
                 InvokeToolkitLifecycle(panel, "OnDisable");
                 Object.DestroyImmediate(settings);
-                Object.DestroyImmediate(tree);
             }
         }
 
@@ -752,7 +771,6 @@ namespace VMFramework.Editor.Tests
                     Object.DestroyImmediate(filters);
                 }
                 Object.DestroyImmediate(settings);
-                Object.DestroyImmediate(tree);
             }
         }
 
@@ -849,7 +867,6 @@ namespace VMFramework.Editor.Tests
                 InvokeToolkitLifecycle(panel, "OnDisable");
                 if (!ReferenceEquals(source, null) && source != null) RetireRefreshSource(source);
                 Object.DestroyImmediate(settings);
-                Object.DestroyImmediate(tree);
             }
         }
 
@@ -949,7 +966,6 @@ namespace VMFramework.Editor.Tests
                 typeof(TracingUIManager).GetMethod("OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic)
                     .Invoke(manager, null);
                 Object.DestroyImmediate(settings);
-                Object.DestroyImmediate(tree);
             }
         }
 
@@ -963,7 +979,7 @@ namespace VMFramework.Editor.Tests
             var document = panel.GetComponent<UIDocument>();
             document.enabled = false;
             settings = ScriptableObject.CreateInstance<PanelSettings>();
-            tree = ScriptableObject.CreateInstance<VisualTreeAsset>();
+            tree = fixtureTree;
             document.panelSettings = settings;
             document.visualTreeAsset = tree;
             typeof(ControllerGameItem).GetProperty("GamePrefab", BindingFlags.Instance | BindingFlags.NonPublic)

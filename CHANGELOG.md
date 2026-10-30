@@ -4,6 +4,12 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.79] - 2026-10-31
+
+### Fixed
+
+- Give the native UI binding lifetime fixture one imported UXML asset with paired fixture-owned cleanup. In-memory uninitialized VisualTreeAsset instances caused Unity6.4 live asset tracker exceptions and interrupted coroutine cleanup; all presentation, retirement, slot and tracing assertions remain enabled.
+
 ## [9.1.78] - 2026-10-31
 
 ### Fixed
