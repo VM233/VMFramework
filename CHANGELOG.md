@@ -4,6 +4,12 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.82] - 2026-10-31
+
+### Fixed
+
+- Optional IconLabel visibility now responds to its authored always-display flag in either UXML attribute order, including absent icons; retain a single visibility owner and cover both flag transitions.
+
 ## [9.1.81] - 2026-10-31
 
 ### Added

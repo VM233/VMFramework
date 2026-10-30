@@ -54,6 +54,11 @@ namespace VMFramework.Editor.Tests
             var row = fixtureTree.Instantiate().Q<IconLabelElement>("AuthoredIconLabel");
             Assert.That(row.Text, Is.EqualTo("Health +5"));
             Assert.That(row.Label.text, Is.EqualTo(row.Text));
+            Assert.That(row.Icon.style.display.value, Is.EqualTo(DisplayStyle.None));
+            row.IconAlwaysDisplay = true;
+            Assert.That(row.Icon.style.display.value, Is.EqualTo(DisplayStyle.Flex));
+            row.IconAlwaysDisplay = false;
+            Assert.That(row.Icon.style.display.value, Is.EqualTo(DisplayStyle.None));
             var texture = new Texture2D(2, 2);
             var sprite = Sprite.Create(texture, new Rect(0, 0, 2, 2), Vector2.zero);
             try

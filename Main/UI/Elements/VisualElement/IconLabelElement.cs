@@ -14,7 +14,17 @@ namespace VMFramework.UI
 
         [ShowInInspector]
         [UxmlAttribute]
-        public bool IconAlwaysDisplay { get; set; } = false;
+        public bool IconAlwaysDisplay
+        {
+            get => iconAlwaysDisplay;
+            set
+            {
+                iconAlwaysDisplay = value;
+                RefreshIconVisibility();
+            }
+        }
+
+        private bool iconAlwaysDisplay;
 
         public VisualElement Icon { get; }
         public Label Label { get; }
@@ -56,20 +66,12 @@ namespace VMFramework.UI
 
         public void SetIcon(Sprite icon)
         {
-            if (IconAlwaysDisplay == false)
-            {
-                if (icon == null)
-                {
-                    Icon.style.display = DisplayStyle.None;
-                }
-                else
-                {
-                    Icon.style.display = DisplayStyle.Flex;
-                }
-            }
-
             Icon.style.backgroundImage = new StyleBackground(icon);
+            RefreshIconVisibility();
         }
+
+        private void RefreshIconVisibility() => Icon.style.display =
+            iconAlwaysDisplay || IconSprite != null ? DisplayStyle.Flex : DisplayStyle.None;
 
         public void SetContent(string content)
         {
