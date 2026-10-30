@@ -19,6 +19,20 @@ namespace VMFramework.UI
         public VisualElement Icon { get; }
         public Label Label { get; }
 
+        [UxmlAttribute]
+        public string Text
+        {
+            get => Label.text;
+            set => SetContent(value);
+        }
+
+        [UxmlAttribute]
+        public Sprite IconSprite
+        {
+            get => Icon.style.backgroundImage.value.sprite;
+            set => SetIcon(value);
+        }
+
         public IconLabelElement() : base()
         {
             AddToClassList(CLASS_NAME);
@@ -37,6 +51,7 @@ namespace VMFramework.UI
             };
             Label.AddToClassList(CONTENT_CLASS_NAME);
             hierarchy.Add(Label);
+            SetIcon(null);
         }
 
         public void SetIcon(Sprite icon)

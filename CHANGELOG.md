@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.81] - 2026-10-31
+
+### Added
+
+- Author IconLabelElement text and optional Sprite through native UXML attributes; preserve the same content/icon children and hide absent icons before presentation.
+- Cover imported UXML content and Sprite assignment/removal in the native UI fixture. Constant two-child construction and attribute access add no scans, subscriptions or retained resources.
+
 ## [9.1.80] - 2026-10-31
 
 ### Fixed

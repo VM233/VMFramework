@@ -28,7 +28,7 @@ namespace VMFramework.Editor.Tests
         {
             // Unity6.4 live asset tracking requires an imported tree, not an uninitialized in-memory asset.
             fixturePath = AssetDatabase.GenerateUniqueAssetPath("Assets/VMFramework.UIBindingLifetimeFixture.uxml");
-            File.WriteAllText(fixturePath, "<ui:UXML xmlns:ui=\"UnityEngine.UIElements\"><ui:VisualElement name=\"LifetimeFixtureAnchor\" /></ui:UXML>");
+            File.WriteAllText(fixturePath, "<ui:UXML xmlns:ui=\"UnityEngine.UIElements\" xmlns:vmf=\"VMFramework.UI\"><ui:VisualElement name=\"LifetimeFixtureAnchor\" /><vmf:IconLabelElement name=\"AuthoredIconLabel\" text=\"Health +5\" /></ui:UXML>");
             AssetDatabase.ImportAsset(fixturePath, ImportAssetOptions.ForceSynchronousImport);
             fixtureTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(fixturePath);
             Assert.That(fixtureTree, Is.Not.Null);
@@ -47,6 +47,30 @@ namespace VMFramework.Editor.Tests
         private BindVisualElementsManager bindings;
         private UIPanelManager panels;
         private GameEventManager events;
+
+        [Test]
+        public void IconLabelRetainsAuthoredContentAndClearsAnOptionalIcon()
+        {
+            var row = fixtureTree.Instantiate().Q<IconLabelElement>("AuthoredIconLabel");
+            Assert.That(row.Text, Is.EqualTo("Health +5"));
+            Assert.That(row.Label.text, Is.EqualTo(row.Text));
+            var texture = new Texture2D(2, 2);
+            var sprite = Sprite.Create(texture, new Rect(0, 0, 2, 2), Vector2.zero);
+            try
+            {
+                row.IconSprite = sprite;
+                Assert.That(row.IconSprite, Is.SameAs(sprite));
+                Assert.That(row.Icon.style.display.value, Is.EqualTo(DisplayStyle.Flex));
+                row.IconSprite = null;
+                Assert.That(row.Icon.style.display.value, Is.EqualTo(DisplayStyle.None));
+                Assert.That(row.Text, Is.EqualTo("Health +5"));
+            }
+            finally
+            {
+                Object.DestroyImmediate(sprite);
+                Object.DestroyImmediate(texture);
+            }
+        }
 
         [SetUp]
         public void SetUp()
