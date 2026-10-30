@@ -2,6 +2,7 @@
 
 namespace VMFramework.Procedure
 {
+    [UnityEngine.Scripting.RequireAttributeUsages]
     [AttributeUsage(AttributeTargets.Class)]
     public class ManagerCreationProviderAttribute : Attribute
     {

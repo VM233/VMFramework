@@ -21,6 +21,7 @@ namespace VMFramework.GameLogicArchitecture
     /// </code>>
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+    [UnityEngine.Scripting.RequireAttributeUsages]
     public class GamePrefabTypeAutoRegisterAttribute : Attribute
     {
         public readonly string ID;

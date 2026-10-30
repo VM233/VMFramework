@@ -3,6 +3,7 @@ using Cysharp.Threading.Tasks;
 
 namespace VMFramework.GameLogicArchitecture
 {
+    [UnityEngine.Scripting.RequireImplementors]
     public interface IGlobalSettingFileLoader
     {
         public GlobalSettingFileLoaderTargetConfig CanLoad(Type globalSettingType);

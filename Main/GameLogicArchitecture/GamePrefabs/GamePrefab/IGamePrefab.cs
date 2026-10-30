@@ -5,6 +5,7 @@ using VMFramework.Procedure;
 
 namespace VMFramework.GameLogicArchitecture
 {
+    [UnityEngine.Scripting.RequireImplementors]
     public partial interface IGamePrefab : IIDOwner<string>, INameOwner, IInitializer, ICheckableConfig, IGameTagsOwner
     {
         public const string NULL_ID = "null";

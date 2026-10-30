@@ -9,6 +9,7 @@ namespace VMFramework.GameLogicArchitecture
     /// 需要提供GamePrefab的类型，并且提供的类型必须实现<see cref="IGamePrefab"/>接口。
     /// 如果需要在自动注册时提供Callback，可以实现<see cref="IGamePrefabAutoRegisterProvider"/>接口。
     /// </summary>
+    [UnityEngine.Scripting.RequireAttributeUsages]
     [AttributeUsage(AttributeTargets.Field)]
     public class GamePrefabIDAutoRegisterAttribute : Attribute
     {

@@ -4,6 +4,18 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.75] - 2026-10-30
+
+### Fixed
+
+- Declare native UnityLinker dependencies on reflection-discovered runtime
+  procedures, initializers, managers, global-setting files/loaders, prefab
+  collectors, prefab types, item event receivers and check processors.
+  RequireImplementors retains the implementation identities and constructors;
+  RequireAttributeUsages retains their actual registration metadata. High
+  stripping no longer loses the start procedure and leaves startup without its
+  initialization manager. No complete assembly preservation is introduced.
+
 ## [9.1.74] - 2026-10-30
 
 ### Fixed
