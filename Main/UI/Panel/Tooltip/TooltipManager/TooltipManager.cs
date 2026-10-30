@@ -13,11 +13,13 @@ namespace VMFramework.UI
         [ShowInInspector]
         private readonly Dictionary<string, List<(IUIPanel Panel, ITooltip Tooltip)>> tooltipsLookup = new();
         private UIPanelManager panelOwner;
+        private string defaultTooltipID;
 
         protected override void OnBeforeInitStart()
         {
             base.OnBeforeInitStart();
 
+            defaultTooltipID = Setting == null ? null : Setting.defaultTooltipID;
             panelOwner = UIPanelManager.Instance;
             panelOwner.OnPanelCreatedEvent += OnPanelCreated;
             panelOwner.OnPanelDestructedEvent += OnPanelDestructed;
@@ -61,7 +63,7 @@ namespace VMFramework.UI
 
         public virtual bool Open(object target, IUIPanel source, TooltipOpenInfo info = default)
         {
-            return Open(Setting.DefaultTooltipID, target, source, info);
+            return Open(TooltipGeneralSetting.RequireDefaultTooltipID(defaultTooltipID), target, source, info);
         }
 
         public virtual bool Open(string tooltipID, object target, IUIPanel source, TooltipOpenInfo info = default)
@@ -107,7 +109,7 @@ namespace VMFramework.UI
 
         public virtual void CloseDefault(object target)
         {
-            Close(Setting.DefaultTooltipID, target);
+            Close(TooltipGeneralSetting.RequireDefaultTooltipID(defaultTooltipID), target);
         }
 
         public virtual void Close(string tooltipID, object target)

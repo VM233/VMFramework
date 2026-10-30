@@ -4,6 +4,12 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.83] - 2026-10-31
+
+### Fixed
+
+- Capture the authored default Tooltip ID in the Tooltip manager's initialization lifetime, so native mouse-leave callbacks during Player shutdown do not resolve an already retired UISetting. Preserve validation on default operations and explicit-only configurations. The existing two retirement-order regressions now exercise CloseDefault without a global setting owner.
+
 ## [9.1.82] - 2026-10-31
 
 ### Fixed

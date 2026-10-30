@@ -25,8 +25,10 @@ namespace VMFramework.UI
         [GamePrefabID(typeof(IUIPanelConfig))]
         [JsonProperty]
         public string defaultTooltipID;
-        public string DefaultTooltipID => string.IsNullOrWhiteSpace(defaultTooltipID)
+        public string DefaultTooltipID => RequireDefaultTooltipID(defaultTooltipID);
+
+        internal static string RequireDefaultTooltipID(string tooltipID) => string.IsNullOrWhiteSpace(tooltipID)
             ? throw new System.InvalidOperationException("Default tooltip operations require an authored defaultTooltipID; explicit tooltip operations do not.")
-            : defaultTooltipID;
+            : tooltipID;
     }
 }

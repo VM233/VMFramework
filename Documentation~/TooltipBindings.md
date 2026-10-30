@@ -2,7 +2,7 @@
 
 `TooltipGeneralSetting.defaultTooltipID` binds the default tooltip operations. Projects using only explicit tooltip IDs or a separate inspection presentation leave it empty. An unused default binding is valid configuration and does not produce an initialization warning.
 
-`TooltipManager.Open(target, source, info)` and `CloseDefault(target)` consume `DefaultTooltipID` and throw a configuration exception when it is unset. Configure the actual tooltip panel before using those operations. Explicit `Open(tooltipID, ...)` and `Close(tooltipID, ...)` retain their own target and panel contracts.
+`TooltipManager` captures the authored default ID during initialization. `Open(target, source, info)` and `CloseDefault(target)` validate that captured binding and throw a configuration exception when it is unset. Configure the actual tooltip panel before manager initialization. The scalar binding belongs to that manager lifetime: native document teardown can close a Tooltip after the global setting owner retires. Explicit `Open(tooltipID, ...)` and `Close(tooltipID, ...)` retain their own target and panel contracts. This adds one string reference, no traversal or subscription, and retains no setting asset.
 
 Tooltip registration belongs to a concrete panel instance. Retirement removes that
 identity even after the panel has deinitialized and cleared its modifiers. An empty

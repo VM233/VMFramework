@@ -259,6 +259,9 @@ namespace VMFramework.Editor.Tests
                 .Invoke(tooltipManager, null);
             typeof(TooltipManager).GetMethod("OnBeforeInitStart", BindingFlags.Instance | BindingFlags.NonPublic)
                 .Invoke(tooltipManager, null);
+            // The isolated fixture has no global UISetting; adopt its authored binding before retirement.
+            typeof(TooltipManager).GetField("defaultTooltipID", BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(tooltipManager, "retiring_tooltip_ui");
             var panelHost = new GameObject("Tooltip Retirement Test");
             var panel = panelHost.AddComponent<UIPanel>();
             typeof(ControllerGameItem).GetProperty("GamePrefab", BindingFlags.Instance | BindingFlags.NonPublic)
@@ -278,6 +281,8 @@ namespace VMFramework.Editor.Tests
                 Assert.That(panel.Modifiers, Is.Empty);
                 var target = new object();
                 Assert.DoesNotThrow(() => tooltipManager.CloseAll(target));
+                Assert.DoesNotThrow(() => tooltipManager.CloseDefault(target),
+                    "Mouse leave during native document teardown must not resolve a retired UISetting.");
                 Assert.DoesNotThrow(() => tooltipManager.Close("retiring_tooltip_ui", target));
                 Assert.That(tooltipManager.Open("retiring_tooltip_ui", target, null), Is.False);
             }
