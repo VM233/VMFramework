@@ -316,9 +316,11 @@ namespace VMFramework.Editor.Tests
                 if (retireManagerFirst)
                     typeof(UIPanelManager).GetMethod("OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic)
                         .Invoke(panels, null);
-                Assert.DoesNotThrow(() => Object.DestroyImmediate(sourceHost));
+                // EditMode-created components do not receive the Play lifetime's native OnDestroy message.
+                var destroy = typeof(UIPanel).GetMethod("OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.DoesNotThrow(() => destroy.Invoke(source, null));
                 Assert.That(child.IsOpened, Is.False);
-                Assert.DoesNotThrow(() => Object.DestroyImmediate(childHost));
+                Assert.DoesNotThrow(() => destroy.Invoke(child, null));
             }
             finally
             {

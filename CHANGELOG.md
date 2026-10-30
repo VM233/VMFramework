@@ -4,6 +4,12 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.85] - 2026-10-31
+
+### Fixed
+
+- Invoke the native panel retirement boundary explicitly in the EditMode-only source/child fixture, matching the existing retirement fixtures. EditMode-created components do not receive the Player lifetime's OnDestroy message on DestroyImmediate; keep both destruction-order assertions enabled. Runtime behavior is unchanged from9.1.84.
+
 ## [9.1.84] - 2026-10-31
 
 ### Fixed
