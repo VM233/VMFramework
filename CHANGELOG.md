@@ -4,6 +4,15 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.77] - 2026-10-30
+
+### Fixed
+
+- Complete the same native constructor-retention contract for IGameItem, whose
+  instances are created through IGamePrefab.GenerateGameItem and its reflected
+  GameItemType. Item construction and reflection-discovered startup entry points
+  use the same precise linker dependency declaration.
+
 ## [9.1.76] - 2026-10-30
 
 ### Fixed

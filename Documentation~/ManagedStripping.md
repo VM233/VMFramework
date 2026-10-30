@@ -1,6 +1,8 @@
 # Managed stripping and reflection discovery
 
 Framework discovery interfaces carry Unity's `RequireImplementors` annotation.
+The IGameItem factory contract carries it too: GenerateGameItem uses the
+configured GameItemType through Activator rather than a statically visible new.
 The linker retains their concrete implementation identities and instance
 constructors while continuing to strip unused members. Registration attributes
 carry `RequireAttributeUsages`, so High stripping retains the start procedure,
