@@ -7,6 +7,11 @@ carry `RequireAttributeUsages`, so High stripping retains the start procedure,
 initializer registration, default transitions, global-setting loader selection
 and prefab auto-registration metadata consumed by their runtime owners.
 
+ProcedureManager publishes one initialization owner at construction. Collection
+resets this owner through its normal Set contract before publishing new groups;
+it does not replace the progress interface or discard active initialization.
+An original discovery exception remains the primary failure.
+
 This is a dependency declaration on the existing producer contracts. There is no
 parallel runtime registry, extra assembly scan, generated project link file or
 whole-assembly preservation. Custom processor interfaces supplied as a new

@@ -4,6 +4,16 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.76] - 2026-10-30
+
+### Fixed
+
+- Publish ProcedureManager's initialization owner at construction and reset that
+  same owner when collecting initializers. Early progress readers retain a valid
+  interface even if procedure discovery fails; the original discovery exception
+  remains visible instead of producing secondary interface access exceptions.
+  Collection cannot replace an initializer owner whose work is still active.
+
 ## [9.1.75] - 2026-10-30
 
 ### Fixed

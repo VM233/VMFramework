@@ -326,12 +326,12 @@ namespace VMFramework.Procedure
             gameInitializers = new();
 
         [ShowInInspector]
-        private InitializerManager initializerManager;
+        private readonly InitializerManager initializerManager = new();
 
         public void CollectGameInitializers()
         {
+            initializerManager.Set(Array.Empty<IInitializer>());
             gameInitializers.Clear();
-            initializerManager = new();
 
             foreach (var derivedClass in typeof(IGameInitializer).GetDerivedInstantiableClasses(false))
             {
