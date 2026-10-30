@@ -17,12 +17,12 @@ namespace VMFramework.UI
 
         public bool Open(object target, IUIPanel source, TooltipOpenInfo info)
         {
-            if (Panel.BindObjectsManager.ContainsObject(bindObjectsName, target))
+            if (Panel.IsOpened && Panel.BindObjectsManager.ContainsObject(bindObjectsName, target))
             {
                 return false;
             }
 
-            if (Panel.BindObjectsManager.GetObjects(bindObjectsName).Count > 0)
+            if (Panel.IsOpened && Panel.BindObjectsManager.GetObjects(bindObjectsName).Count > 0)
             {
                 if (info.priority < CurrentOpenInfo.priority)
                 {
@@ -30,6 +30,8 @@ namespace VMFramework.UI
                 }
             }
 
+            // Closed/closing bindings belong to the retiring presentation. Panel.Open completes their
+            // post-close release before the new target is bound, even when that target is the same object.
             CurrentOpenInfo = info;
 
             Panel.Open(source);

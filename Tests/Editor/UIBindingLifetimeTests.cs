@@ -164,6 +164,40 @@ namespace VMFramework.Editor.Tests
 
         [TestCase(false)]
         [TestCase(true)]
+        public void ClosingTooltipCanReopenWithTheSameOrLowerPriorityTarget(bool sameTarget)
+        {
+            var panelHost = new GameObject("Closing Tooltip Reopen Test");
+            panelHost.transform.SetParent(host.transform);
+            var panel = panelHost.AddComponent<UIPanel>();
+            var objects = panelHost.AddComponent<BindObjectsManager>();
+            var tooltip = panelHost.AddComponent<Tooltip>();
+            tooltip.bindObjectsName = "Item";
+            typeof(ControllerGameItem).GetProperty("GamePrefab", BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(panel, new UIPanelConfig { id = "reopening_tooltip_ui", isUnique = true });
+            typeof(UIPanel).GetMethod("OnCreate", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(panel, null);
+            typeof(UIPanelManager).GetMethod("Register", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(panels, new object[] { panel });
+            var first = new object();
+            var next = sameTarget ? first : new object();
+            try
+            {
+                Assert.That(tooltip.Open(first, null, new TooltipOpenInfo { priority = 10 }), Is.True);
+                Assert.That(tooltip.Open(next, null, new TooltipOpenInfo { priority = 0 }), Is.False,
+                    "An open presentation still owns duplicate/priority admission.");
+                Assert.That(tooltip.Close(first), Is.True);
+                Assert.That(panel.IsOpened, Is.False);
+                Assert.That(objects.ContainsObject("Item", first), Is.True,
+                    "The counterexample requires bindings retained until post-close.");
+                Assert.That(tooltip.Open(next, null, new TooltipOpenInfo { priority = 0 }), Is.True);
+                Assert.That(panel.IsOpened, Is.True);
+                Assert.That(objects.GetObjects("Item"), Has.Count.EqualTo(1));
+                Assert.That(objects.ContainsObject("Item", next), Is.True);
+            }
+            finally { Object.DestroyImmediate(panelHost); }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
         public void TooltipPanelRetirement_RemovesRegistrationAfterModifiersAreCleared(bool retireManagerFirst)
         {
             var tooltipManager = host.AddComponent<TooltipManager>();

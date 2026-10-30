@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.78] - 2026-10-31
+
+### Fixed
+
+- Admit Tooltip opens against the current open presentation only. A closing Tooltip completes native post-close binding release before reopening the same object or a new lower-priority target; stale retiring bindings no longer suppress a valid reopen.
+- Cover same-object/lower-priority close-and-reopen counterexamples in the complete UI binding and native root lifetime fixture.
+
 ## [9.1.77] - 2026-10-30
 
 ### Fixed
