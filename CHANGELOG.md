@@ -4,6 +4,12 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.80] - 2026-10-31
+
+### Fixed
+
+- Normalize the Tooltip source terminator to the package C# policy (exactly one newline). Runtime statements and the passing37-case native UI lifetime fixture are unchanged.
+
 ## [9.1.79] - 2026-10-31
 
 ### Fixed
