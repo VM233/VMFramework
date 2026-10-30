@@ -4,6 +4,12 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.84] - 2026-10-31
+
+### Fixed
+
+- Source-panel close callbacks use the child's original registration owner instead of resolving the panel-manager singleton during native shutdown. Cover source-first and manager-first destruction with live parent/child registrations; no new state or subscription is introduced.
+
 ## [9.1.83] - 2026-10-31
 
 ### Fixed

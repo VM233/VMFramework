@@ -297,6 +297,38 @@ namespace VMFramework.Editor.Tests
 
         [TestCase(false)]
         [TestCase(true)]
+        public void SourcePanelRetirement_ClosesItsChildThroughTheOriginalRegistrationOwner(bool retireManagerFirst)
+        {
+            var sourceHost = new GameObject("Source Retirement Test");
+            var childHost = new GameObject("Child Retirement Test");
+            var source = sourceHost.AddComponent<UIPanel>();
+            var child = childHost.AddComponent<UIPanel>();
+            try
+            {
+                var prefab = typeof(ControllerGameItem).GetProperty("GamePrefab", BindingFlags.Instance | BindingFlags.NonPublic);
+                prefab.SetValue(source, new UIPanelConfig { id = "source_lifetime_ui", isUnique = true });
+                prefab.SetValue(child, new UIPanelConfig { id = "child_lifetime_ui", isUnique = true });
+                var register = typeof(UIPanelManager).GetMethod("Register", BindingFlags.Instance | BindingFlags.NonPublic);
+                register.Invoke(panels, new object[] { source });
+                register.Invoke(panels, new object[] { child });
+                Assert.That(panels.TryOpen(source, null), Is.True);
+                Assert.That(panels.TryOpen(child, source), Is.True);
+                if (retireManagerFirst)
+                    typeof(UIPanelManager).GetMethod("OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic)
+                        .Invoke(panels, null);
+                Assert.DoesNotThrow(() => Object.DestroyImmediate(sourceHost));
+                Assert.That(child.IsOpened, Is.False);
+                Assert.DoesNotThrow(() => Object.DestroyImmediate(childHost));
+            }
+            finally
+            {
+                if (sourceHost != null) Object.DestroyImmediate(sourceHost);
+                if (childHost != null) Object.DestroyImmediate(childHost);
+            }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
         public void PanelRetirement_AfterEventRecycling_ReleasesExternalSubscriptionsExactlyOnce(bool clearFirst)
         {
             var source = new LifetimeEventSource();

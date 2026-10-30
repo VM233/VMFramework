@@ -345,7 +345,8 @@ namespace VMFramework.UI
         
         protected virtual void OnSourcePanelClose(IUIPanel panel)
         {
-            this.Close();
+            var owner = registration;
+            if (!ReferenceEquals(owner, null)) owner.Close(this);
         }
         
         public void SetEnabled(bool enableState)
