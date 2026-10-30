@@ -4,6 +4,12 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.86] - 2026-10-31
+
+### Fixed
+
+- Route public panel Close/TryClose through the existing registration owner. Tooltip mouse-leave cleanup can close an admitted panel after the manager singleton retires; source-panel callbacks reuse this same close path. Cover both public close forms with a retired manager and live Tooltip binding. Constant-time ownership lookup adds no state or resource.
+
 ## [9.1.85] - 2026-10-31
 
 ### Fixed

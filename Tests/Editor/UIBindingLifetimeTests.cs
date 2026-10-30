@@ -297,6 +297,37 @@ namespace VMFramework.Editor.Tests
 
         [TestCase(false)]
         [TestCase(true)]
+        public void TooltipCloseUsesItsRegistrationAfterManagerRetirement(bool useTryClose)
+        {
+            var panelHost = new GameObject("Tooltip Close Owner Test");
+            var panel = panelHost.AddComponent<UIPanel>();
+            panelHost.AddComponent<BindObjectsManager>();
+            var tooltip = panelHost.AddComponent<Tooltip>();
+            tooltip.bindObjectsName = "Item";
+            typeof(ControllerGameItem).GetProperty("GamePrefab", BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(panel, new UIPanelConfig { id = "close_owner_tooltip_ui", isUnique = true });
+            typeof(UIPanel).GetMethod("OnCreate", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(panel, null);
+            typeof(UIPanelManager).GetMethod("Register", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(panels, new object[] { panel });
+            try
+            {
+                var target = new object();
+                Assert.That(tooltip.Open(target, null, default), Is.True);
+                typeof(UIPanelManager).GetMethod("OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(panels, null);
+                Assert.That(useTryClose ? panel.TryClose() : tooltip.Close(target), Is.True);
+                Assert.That(panel.IsOpened, Is.False);
+            }
+            finally
+            {
+                typeof(UIPanel).GetMethod("OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(panel, null);
+                Object.DestroyImmediate(panelHost);
+            }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
         public void SourcePanelRetirement_ClosesItsChildThroughTheOriginalRegistrationOwner(bool retireManagerFirst)
         {
             var sourceHost = new GameObject("Source Retirement Test");

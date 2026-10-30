@@ -5,7 +5,7 @@ root: native Live Reload, closing and destruction retire the published root and
 its consumers. `GenerateVisualElement` creates a detached authoring preview and
 does not publish a runtime root.
 
-Source-panel retirement closes a child through that child's captured registration
+Public Close/TryClose and source-panel retirement close through the panel's captured registration
 owner, even after the public panel-manager singleton has retired. An already
 unregistered child has no remaining close operation. This reuses the existing
 registration and adds no state, subscription, traversal or resource lifetime.

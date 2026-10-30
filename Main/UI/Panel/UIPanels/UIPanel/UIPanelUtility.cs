@@ -19,13 +19,14 @@ namespace VMFramework.UI
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Close(this IUIPanel panel)
         {
-            UIPanelManager.Instance.TryClose(panel);
+            panel.TryClose();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryClose(this IUIPanel panel)
         {
-            return UIPanelManager.Instance.TryClose(panel);
+            var owner = panel.RegistrationOwner;
+            return !ReferenceEquals(owner, null) && owner.TryClose(panel);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
