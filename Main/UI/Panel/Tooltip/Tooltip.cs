@@ -34,6 +34,14 @@ namespace VMFramework.UI
             // post-close release before the new target is bound, even when that target is the same object.
             CurrentOpenInfo = info;
 
+            if (Panel.IsOpened)
+            {
+                if (ReferenceEquals(Panel.SourceUIPanel, source))
+                    Panel.BindObjectsManager.ClearObjects(bindObjectsName);
+                else
+                    Panel.Close();
+            }
+
             Panel.Open(source);
 
             Panel.BindObjectsManager.AddObject(bindObjectsName, target);

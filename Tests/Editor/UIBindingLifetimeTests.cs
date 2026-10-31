@@ -250,6 +250,37 @@ namespace VMFramework.Editor.Tests
             finally { Object.DestroyImmediate(panelHost); }
         }
 
+        [Test]
+        public void OpenTooltipReplacesTheOldBindingBeforeItsMouseLeave()
+        {
+            var panelHost = new GameObject("Tooltip target replacement");
+            panelHost.transform.SetParent(host.transform);
+            var panel = panelHost.AddComponent<UIPanel>();
+            var objects = panelHost.AddComponent<BindObjectsManager>();
+            var tooltip = panelHost.AddComponent<Tooltip>();
+            tooltip.bindObjectsName = "Item";
+            typeof(ControllerGameItem).GetProperty("GamePrefab", BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(panel, new UIPanelConfig { id = "replacement_tooltip_ui", isUnique = true });
+            typeof(UIPanel).GetMethod("OnCreate", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(panel, null);
+            typeof(UIPanelManager).GetMethod("Register", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(panels, new object[] { panel });
+            try
+            {
+                var first = new object();
+                var next = new object();
+                Assert.That(tooltip.Open(first, null, default), Is.True);
+                Assert.That(tooltip.Open(next, null, default), Is.True);
+                Assert.That(objects.GetObjects("Item"), Has.Count.EqualTo(1));
+                Assert.That(objects.ContainsObject("Item", first), Is.False);
+                Assert.That(tooltip.Close(first), Is.False);
+                Assert.That(panel.IsOpened, Is.True);
+                Assert.That(objects.ContainsObject("Item", next), Is.True);
+                Assert.That(tooltip.Open(next, null, default), Is.False);
+                Assert.That(tooltip.Close(next), Is.True);
+            }
+            finally { Object.DestroyImmediate(panelHost); }
+        }
+
         [TestCase(false)]
         [TestCase(true)]
         public void TooltipPanelRetirement_RemovesRegistrationAfterModifiersAreCleared(bool retireManagerFirst)

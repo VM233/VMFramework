@@ -4,6 +4,12 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.1.87] - 2026-10-31
+
+### Fixed
+
+- Retire the previous open Tooltip target before binding its replacement, so a late mouse leave cannot close the new target. Reopen on a changed source panel to preserve source lifetime. Return actual Tooltip admission from TooltipManager.Open and retain a native target-replacement regression.
+
 ## [9.1.86] - 2026-10-31
 
 ### Fixed

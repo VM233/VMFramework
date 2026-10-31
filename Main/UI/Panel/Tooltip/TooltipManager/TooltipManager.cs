@@ -85,9 +85,7 @@ namespace VMFramework.UI
 
             var tooltip = tooltips[0].Tooltip;
 
-            tooltip.Open(target, source, info);
-
-            return true;
+            return tooltip.Open(target, source, info);
         }
 
         public virtual void CloseAll(object target)
