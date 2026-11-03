@@ -4,6 +4,12 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.2.1] - 2026-11-03
+
+### Fixed
+
+- Declare the native particle fixture's VMOdinExtensions assembly dependency and reset its per-case counters. The first native package test admission exposed the missing direct dependency; preserve all five lifecycle cases.
+
 ## [9.2.0] - 2026-11-03
 
 ### Changed

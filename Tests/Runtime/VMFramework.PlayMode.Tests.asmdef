@@ -1,7 +1,12 @@
 {
   "name": "VMFramework.PlayMode.Tests",
   "rootNamespace": "VMFramework.Tests",
-  "references": ["VMFramework", "VMCore", "UniTask"],
+  "references": [
+    "VMFramework",
+    "VMCore",
+    "UniTask",
+    "VMOdinExtensions"
+  ],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,
@@ -10,5 +15,7 @@
   "defineConstraints": [],
   "versionDefines": [],
   "noEngineReferences": false,
-  "optionalUnityReferences": ["TestAssemblies"]
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
 }

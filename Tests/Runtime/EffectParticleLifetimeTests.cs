@@ -25,6 +25,7 @@ namespace VMFramework.Tests
         [SetUp]
         public void CreateNativeRentalOwners()
         {
+            returnCount = stopCount = 0;
             identity = "particle_lifetime_" + Guid.NewGuid().ToString("N");
             Assert.That(GamePrefabManager.RegisterGamePrefab(new EffectConfig { id = identity }), Is.True);
             manager = Native("Particle pool owner").AddComponent<GameItemManager>();
