@@ -101,11 +101,11 @@ namespace VMFramework.Tests
             Assert.That(shortParticles.particleCount, Is.EqualTo(1));
             Assert.That(longParticles.particleCount, Is.EqualTo(1));
             Assert.That(shortParticles.isEmitting || longParticles.isEmitting, Is.False);
-            shortParticles.Simulate(0.2f, false, false, false);
+            AdvanceStopped(shortParticles, 0.2f);
             yield return null;
             Assert.That(effect.IsDestroyed, Is.False, "The root must not outrun its living child.");
             Assert.That(longParticles.particleCount, Is.EqualTo(1));
-            longParticles.Simulate(3, false, false, false);
+            AdvanceStopped(longParticles, 3);
             yield return AwaitReturn();
             Assert.That(returnCount, Is.EqualTo(1));
         }
@@ -125,8 +125,8 @@ namespace VMFramework.Tests
             Assert.That(next.IsDestroyed, Is.False);
             Assert.That(longParticles.particleCount, Is.EqualTo(1));
             next.Stop();
-            shortParticles.Simulate(3, false, false, false);
-            longParticles.Simulate(3, false, false, false);
+            AdvanceStopped(shortParticles, 3);
+            AdvanceStopped(longParticles, 3);
             yield return AwaitReturn();
             Assert.That(returnCount, Is.EqualTo(2));
         }
@@ -139,14 +139,16 @@ namespace VMFramework.Tests
             parent.transform.localScale = new Vector3(-2, 2, 1);
             effect.SetSpawnTransform(Vector3.zero, false, parent.transform);
             Assert.That(effect.transform.IsChildOf(parent.transform), Is.False);
+            Assert.That(effect.transform.lossyScale, Is.EqualTo(Vector3.one),
+                "The default attachment must preserve the previous world scale.");
             parent.SetActive(false);
             yield return null;
             Assert.That(effect.IsStopping, Is.True);
             Assert.That(effect.gameObject.activeInHierarchy, Is.True);
             Assert.That(longParticles.particleCount, Is.EqualTo(1));
             Assert.That(effect.transform.position, Is.EqualTo(new Vector3(3, 4, 0)));
-            shortParticles.Simulate(3, false, false, false);
-            longParticles.Simulate(3, false, false, false);
+            AdvanceStopped(shortParticles, 3);
+            AdvanceStopped(longParticles, 3);
             yield return AwaitReturn();
         }
 
@@ -164,8 +166,8 @@ namespace VMFramework.Tests
             Assert.That(effect.IsStopping, Is.True);
             Assert.That(effect.transform.position, Is.EqualTo(pose));
             Assert.That(longParticles.particleCount, Is.EqualTo(1));
-            shortParticles.Simulate(3, false, false, false);
-            longParticles.Simulate(3, false, false, false);
+            AdvanceStopped(shortParticles, 3);
+            AdvanceStopped(longParticles, 3);
             yield return AwaitReturn();
         }
 
@@ -178,6 +180,50 @@ namespace VMFramework.Tests
             yield return null;
             Assert.That(effect == null, Is.True);
             Assert.That(returnCount, Is.Zero);
+        }
+
+        [UnityTest]
+        public IEnumerator ZeroParticlesInAPausedLoopDoNotProveNativeCompletion()
+        {
+            effect.Stop();
+            shortParticles.Simulate(3, false, false, false);
+            longParticles.Simulate(3, false, false, false);
+            Assert.That(shortParticles.particleCount + longParticles.particleCount, Is.Zero);
+            Assert.That(shortParticles.isPaused && longParticles.isPaused, Is.True);
+            Assert.That(shortParticles.IsAlive(false) && longParticles.IsAlive(false), Is.True);
+            yield return null;
+            yield return null;
+            Assert.That(effect.IsDestroyed, Is.False,
+                "A paused looping system can still produce future particles.");
+            shortParticles.Stop(false, ParticleSystemStopBehavior.StopEmitting);
+            longParticles.Stop(false, ParticleSystemStopBehavior.StopEmitting);
+            yield return AwaitReturn();
+        }
+
+        [UnityTest]
+        public IEnumerator ExplicitAlignmentRetainsLocalIdentityAndTracksItsParent()
+        {
+            var parent = Native("Aligned particle anchor");
+            parent.transform.SetPositionAndRotation(new Vector3(3, 4, 0), Quaternion.Euler(0, 0, 30));
+            parent.transform.localScale = new Vector3(2, 2, 1);
+            effect.SetSpawnTransform(Vector3.zero, false, parent.transform, alignToParent: true);
+            Assert.That(effect.transform.position, Is.EqualTo(parent.transform.position));
+            Assert.That(Quaternion.Angle(effect.transform.rotation, parent.transform.rotation), Is.LessThan(0.001f));
+            Assert.That(effect.transform.lossyScale, Is.EqualTo(parent.transform.lossyScale));
+            parent.transform.position = new Vector3(5, 6, 0);
+            yield return null;
+            Assert.That(effect.transform.position, Is.EqualTo(parent.transform.position));
+            effect.Stop();
+            AdvanceStopped(shortParticles, 3);
+            AdvanceStopped(longParticles, 3);
+            yield return AwaitReturn();
+        }
+
+        private static void AdvanceStopped(ParticleSystem particles, float seconds)
+        {
+            // Simulate ends in Pause, which retains a looping system's future playback.
+            particles.Simulate(seconds, false, false, false);
+            particles.Stop(false, ParticleSystemStopBehavior.StopEmitting);
         }
 
         private IEnumerator AwaitReturn()

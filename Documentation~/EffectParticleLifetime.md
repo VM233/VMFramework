@@ -52,3 +52,8 @@ components from prefabs when adopting this revision; retain the Effect root.
 Spawn preserves the existing world rotation/scale by default. Callers that
 author a local identity pose pass alignToParent explicitly. This distinction
 retains existing VFX binder geometry and sprite attachment semantics.
+
+The native fixture has seven cases. Simulate leaves a looping ParticleSystem
+paused; its zero visible particles are not proof of completion. Explicitly
+restore StopEmitting after deterministic tail advancement, and retain the
+paused-loop witness as a case that must not return until a new native Stop.

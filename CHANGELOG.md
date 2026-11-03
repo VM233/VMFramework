@@ -4,6 +4,12 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.2.3] - 2026-11-03
+
+### Tests
+
+- Restore StopEmitting after fixture Simulate calls: Unity leaves a looping system paused, with IsAlive true even after its visible particles are gone. Preserve that exact failed input as a seventh native-completion counterexample alongside explicit attachment alignment. Production completion continues to use native liveness; no timeout or particle-count shortcut is introduced.
+
 ## [9.2.2] - 2026-11-03
 
 ### Changed
