@@ -263,7 +263,8 @@ namespace VMFramework.Tests
             plain.transform.localScale = originalScale;
             plain.SetSpawnTransform(localPosition, false, parent.transform);
             Assert.That(Quaternion.Angle(plain.transform.rotation, originalRotation), Is.LessThan(.001f));
-            Assert.That(plain.transform.lossyScale, Is.EqualTo(originalScale));
+            Assert.That(Vector3.Distance(plain.transform.lossyScale, originalScale), Is.LessThan(.000001f),
+                "Native matrix decomposition must preserve the authored world scale within float precision.");
             plain.SetSpawnTransform(localPosition, false, parent.transform, alignToParent: true);
             plain.DelayedReturn();
             Assert.That(plain.transform.IsChildOf(parent.transform), Is.False);
@@ -274,7 +275,8 @@ namespace VMFramework.Tests
             Assert.That(Vector3.Distance(plain.transform.position, parent.transform.TransformPoint(localPosition)),
                 Is.LessThan(.001f), "Timed sprite/audio playback must retain the live attachment.");
             Assert.That(Quaternion.Angle(plain.transform.rotation, parent.transform.rotation), Is.LessThan(.001f));
-            Assert.That(plain.transform.lossyScale, Is.EqualTo(parent.transform.lossyScale));
+            Assert.That(Vector3.Distance(plain.transform.lossyScale, parent.transform.lossyScale),
+                Is.LessThan(.000001f));
             Assert.That(plain.IsDestroyed, Is.False);
             plain.Stop();
             Assert.That(plain.IsDestroyed, Is.True, "Explicit Stop must cancel an already timed non-particle playback.");

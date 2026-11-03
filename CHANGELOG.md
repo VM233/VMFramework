@@ -4,6 +4,12 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.2.6] - 2026-11-04
+
+### Tests
+
+- Compare native Transform matrix-decomposed scales within 1e-6 instead of bitwise Vector3 equality. Preserve the 9.2.5 eleven-case replay: source disable/destruction and native particle lifetimes passed; timed playback reached a scale assertion with numerically equal formatted values. Runtime attachment and duration semantics are unchanged.
+
 ## [9.2.5] - 2026-11-04
 
 ### Fixed
