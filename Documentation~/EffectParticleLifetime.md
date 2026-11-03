@@ -48,3 +48,7 @@ graph configuration belongs to the consumer's authored assets.
 The old single-system particle callback and timer-based VFX recyclers, and the
 VFX-only stop subscriber, are replaced by the aggregate owner. Remove their
 components from prefabs when adopting this revision; retain the Effect root.
+
+Spawn preserves the existing world rotation/scale by default. Callers that
+author a local identity pose pass alignToParent explicitly. This distinction
+retains existing VFX binder geometry and sprite attachment semantics.

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using Cysharp.Threading.Tasks;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -26,6 +27,8 @@ namespace VMFramework.Tests
         public void CreateNativeRentalOwners()
         {
             returnCount = stopCount = 0;
+            Assert.That(PlayerLoopHelper.IsInjectedUniTaskPlayerLoop(), Is.True,
+                "The native fixture requires UniTask's production PlayerLoop injection.");
             identity = "particle_lifetime_" + Guid.NewGuid().ToString("N");
             Assert.That(GamePrefabManager.RegisterGamePrefab(new EffectConfig { id = identity }), Is.True);
             manager = Native("Particle pool owner").AddComponent<GameItemManager>();
@@ -180,7 +183,10 @@ namespace VMFramework.Tests
         private IEnumerator AwaitReturn()
         {
             for (int frame = 0; frame < 8 && !effect.IsDestroyed; frame++) yield return null;
-            Assert.That(effect.IsDestroyed, Is.True, "Native completion failed to return the rental.");
+            Assert.That(effect.IsDestroyed, Is.True,
+                $"Native completion failed: injected={PlayerLoopHelper.IsInjectedUniTaskPlayerLoop()}, " +
+                $"root=({shortParticles.particleCount},alive={shortParticles.IsAlive(false)},playing={shortParticles.isPlaying},paused={shortParticles.isPaused},stopped={shortParticles.isStopped}), " +
+                $"child=({longParticles.particleCount},alive={longParticles.IsAlive(false)},playing={longParticles.isPlaying},paused={longParticles.isPaused},stopped={longParticles.isStopped}).");
         }
     }
 }

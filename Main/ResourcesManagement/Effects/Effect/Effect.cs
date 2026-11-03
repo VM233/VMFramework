@@ -43,7 +43,7 @@ namespace VMFramework.Effects
             }
         }
 
-        public void SetSpawnTransform(Vector3 position, bool isWorldSpace, Transform parent)
+        public void SetSpawnTransform(Vector3 position, bool isWorldSpace, Transform parent, bool alignToParent = false)
         {
             attachment?.Dispose();
             attachment = null;
@@ -51,15 +51,18 @@ namespace VMFramework.Effects
             {
                 transform.SetParent(container, false);
                 transform.SetPositionAndRotation(isWorldSpace ? position : parent.TransformPoint(position),
-                    parent.rotation);
-                transform.localScale = parent.lossyScale;
+                    alignToParent ? parent.rotation : Quaternion.identity);
+                transform.localScale = alignToParent ? parent.lossyScale : Vector3.one;
                 attachment = new EffectAttachment(parent, transform, Stop);
             }
             else
             {
-                transform.SetParent(parent != null ? parent : container, false);
-                transform.localRotation = Quaternion.identity;
-                transform.localScale = Vector3.one;
+                transform.SetParent(parent != null ? parent : container, !alignToParent);
+                if (alignToParent)
+                {
+                    transform.localRotation = Quaternion.identity;
+                    transform.localScale = Vector3.one;
+                }
                 if (isWorldSpace) transform.position = position;
                 else transform.localPosition = position;
             }

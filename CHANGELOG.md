@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.2.2] - 2026-11-03
+
+### Changed
+
+- Preserve EffectSpawner's original world rotation/scale when attaching effects, with explicit alignToParent for callers that previously reset local pose. Independent particle attachments do not change authored VFX sizing.
+- Retain failing native completion witnesses with exact child particle/playing/paused/stopped states and assert the fixture's UniTask PlayerLoop precondition. The earlier four non-returning cases remain unqualified pending native replay.
+
 ## [9.2.1] - 2026-11-03
 
 ### Fixed

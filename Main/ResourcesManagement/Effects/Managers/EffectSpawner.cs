@@ -19,11 +19,12 @@ namespace VMFramework.Effects
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public IEffect Spawn(string id, Vector3 position, bool isWorldSpace, Transform parent = null)
+        public IEffect Spawn(string id, Vector3 position, bool isWorldSpace, Transform parent = null,
+            bool alignToParent = false)
         {
             var effect = GameItemManager.Instance.Get<IEffect>(id);
             
-            effect.SetSpawnTransform(position, isWorldSpace, parent);
+            effect.SetSpawnTransform(position, isWorldSpace, parent, alignToParent);
 
             return effect;
         }

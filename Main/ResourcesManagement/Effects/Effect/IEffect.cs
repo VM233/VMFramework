@@ -8,6 +8,6 @@ namespace VMFramework.Effects
     {
         void Stop();
 
-        void SetSpawnTransform(Vector3 position, bool isWorldSpace, Transform parent);
+        void SetSpawnTransform(Vector3 position, bool isWorldSpace, Transform parent, bool alignToParent = false);
     }
 }

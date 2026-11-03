@@ -6,6 +6,7 @@ namespace VMFramework.Effects
     {
         public Transform Container { get; }
 
-        public IEffect Spawn(string id, Vector3 position, bool isWorldSpace, Transform parent = null);
+        public IEffect Spawn(string id, Vector3 position, bool isWorldSpace, Transform parent = null,
+            bool alignToParent = false);
     }
 }
