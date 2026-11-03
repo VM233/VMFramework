@@ -242,23 +242,74 @@ namespace VMFramework.Tests
             yield return AwaitReturn();
         }
 
-        [Test]
-        public void TimedNonParticlePlaybackKeepsItsParentAndExplicitStopCancelsIt()
+        private Effect CreateNonParticleRental()
         {
             plainIdentity = "plain_" + identity;
             GamePrefabManager.RegisterGamePrefab(new EffectConfig { id = plainIdentity });
             typeof(GameItemManager).GetField("createGameItemHandler", Private).SetValue(manager,
                 new Func<string, IGameItem>(_ => Native("Timed non-particle rental").AddComponent<Effect>()));
-            var plain = manager.Get<Effect>(plainIdentity);
+            return manager.Get<Effect>(plainIdentity);
+        }
+
+        [UnityTest]
+        public IEnumerator TimedNonParticlePlaybackKeepsFollowingItsSourceAndExplicitStopCancelsIt()
+        {
+            var plain = CreateNonParticleRental();
             var parent = Native("Timed playback parent");
-            plain.SetSpawnTransform(Vector3.zero, false, parent.transform);
+            var localPosition = new Vector3(.25f, .5f, 0);
+            var originalRotation = Quaternion.Euler(0, 0, 17);
+            var originalScale = new Vector3(.8f, .9f, 1);
+            plain.transform.rotation = originalRotation;
+            plain.transform.localScale = originalScale;
+            plain.SetSpawnTransform(localPosition, false, parent.transform);
+            Assert.That(Quaternion.Angle(plain.transform.rotation, originalRotation), Is.LessThan(.001f));
+            Assert.That(plain.transform.lossyScale, Is.EqualTo(originalScale));
+            plain.SetSpawnTransform(localPosition, false, parent.transform, alignToParent: true);
             plain.DelayedReturn();
-            Assert.That(plain.transform.parent, Is.EqualTo(parent.transform),
-                "Starting the existing duration path must not detach a sprite or audio playback.");
+            Assert.That(plain.transform.IsChildOf(parent.transform), Is.False);
+            parent.transform.SetPositionAndRotation(new Vector3(3, 4, 0), Quaternion.Euler(0, 0, 30));
+            parent.transform.localScale = new Vector3(2, 2, 1);
+            yield return null;
+            yield return null;
+            Assert.That(Vector3.Distance(plain.transform.position, parent.transform.TransformPoint(localPosition)),
+                Is.LessThan(.001f), "Timed sprite/audio playback must retain the live attachment.");
+            Assert.That(Quaternion.Angle(plain.transform.rotation, parent.transform.rotation), Is.LessThan(.001f));
+            Assert.That(plain.transform.lossyScale, Is.EqualTo(parent.transform.lossyScale));
             Assert.That(plain.IsDestroyed, Is.False);
             plain.Stop();
             Assert.That(plain.IsDestroyed, Is.True, "Explicit Stop must cancel an already timed non-particle playback.");
             plain.Stop();
+        }
+
+        [Test]
+        public void NonParticleStopInsideSourceDisableDoesNotReparentDuringNativeActivation()
+        {
+            var plain = CreateNonParticleRental();
+            var source = Native("Non-particle disabled source");
+            source.AddComponent<StopEffectOnDisable>().effect = plain;
+            plain.SetSpawnTransform(Vector3.zero, false, source.transform);
+            source.SetActive(false);
+            Assert.That(plain.IsDestroyed, Is.True);
+            LogAssert.NoUnexpectedReceived();
+        }
+
+        [UnityTest]
+        public IEnumerator NonParticleSourceDestructionRetiresTheIndependentRental()
+        {
+            var plain = CreateNonParticleRental();
+            var source = Native("Non-particle destroyed source");
+            plain.SetSpawnTransform(Vector3.zero, false, source.transform);
+            Object.Destroy(source);
+            yield return null;
+            yield return null;
+            Assert.That(plain != null, Is.True, "The pool must retain its physical rental when the source dies.");
+            Assert.That(plain.IsDestroyed, Is.True);
+        }
+
+        private sealed class StopEffectOnDisable : MonoBehaviour
+        {
+            public IEffect effect;
+            private void OnDisable() => effect.Stop();
         }
 
         private IEnumerator AwaitReturn()

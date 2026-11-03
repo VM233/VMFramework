@@ -47,17 +47,23 @@ namespace VMFramework.Effects
         {
             attachment?.Dispose();
             attachment = null;
-            if (particles.HasSystems && parent != null)
+            if (parent != null)
             {
-                transform.SetParent(container, false);
-                transform.SetPositionAndRotation(isWorldSpace ? position : parent.TransformPoint(position),
-                    alignToParent ? parent.rotation : Quaternion.identity);
-                transform.localScale = alignToParent ? parent.lossyScale : Vector3.one;
+                transform.SetParent(container, true);
+                transform.position = isWorldSpace ? position : parent.TransformPoint(position);
+                if (alignToParent)
+                {
+                    transform.rotation = parent.rotation;
+                    var containerScale = container.lossyScale;
+                    var sourceScale = parent.lossyScale;
+                    transform.localScale = new Vector3(sourceScale.x / containerScale.x,
+                        sourceScale.y / containerScale.y, sourceScale.z / containerScale.z);
+                }
                 attachment = new EffectAttachment(parent, transform, Stop);
             }
             else
             {
-                transform.SetParent(parent != null ? parent : container, !alignToParent);
+                transform.SetParent(container, !alignToParent);
                 if (alignToParent)
                 {
                     transform.localRotation = Quaternion.identity;
@@ -105,9 +111,11 @@ namespace VMFramework.Effects
         {
             if (stopping) return;
             stopping = true;
-            attachment?.Dispose();
-            attachment = null;
-            if (particles.HasSystems) transform.SetParent(container, true);
+            if (particles.HasSystems)
+            {
+                attachment?.Dispose();
+                attachment = null;
+            }
             particles.StopEmission();
             OnDelayedPreReturn?.Invoke(this);
         }

@@ -49,7 +49,7 @@ namespace VMFramework.Effects
             previousRotation = source.rotation;
             previousScale = source.lossyScale;
             if (previousScale.x == 0 || previousScale.y == 0 || previousScale.z == 0)
-                throw new InvalidOperationException("A particle effect attachment requires nonzero source scale.");
+                throw new InvalidOperationException("An effect attachment requires nonzero source scale.");
         }
 
         private void OnSourceReturn(IReturnEventProvider provider)

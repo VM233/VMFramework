@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.2.5] - 2026-11-04
+
+### Fixed
+
+- Keep sprite/audio effects in the independent effect container as well as native particle effects. Logical attachments preserve their authored pose and delayed playback, while returning during source OnDisable or destruction no longer reparents a child inside Unity's activation transaction.
+- Extend native lifetime regression to non-particle source disable, destruction, and continued attachment tracking during timed playback. Explicit Stop still cancels timed playback synchronously; particle tails still finish through native liveness.
+
 ## [9.2.4] - 2026-11-03
 
 ### Fixed

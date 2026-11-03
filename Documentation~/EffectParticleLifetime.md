@@ -8,11 +8,14 @@ together; only an empty aggregate can return. Direct GameItemManager.Return is
 the explicit cancellation boundary, including pool clear and scene teardown.
 Every observation is cancelled on that boundary, before another rental starts.
 
-Native particle effects follow an attachment without becoming children of the
-attachment's GameObject. Parent pool retirement, disable and destruction stop
-emission and release the attachment while retaining the last world pose and
-living particles. Sprite/audio effects retain physical parenting and their
-authored playback completion. Their existing duration timers remain meaningful;
+All effects follow an attachment without becoming children of the source
+GameObject. This keeps native parent activation and destruction independent of
+pool retirement: returning an effect from its owner's OnDisable must never try
+to reparent a child during Unity's hierarchy activation transaction. Parent pool
+retirement, disable and destruction stop emission and release the attachment
+while retaining the last world pose and living particles. Sprite/audio effects
+retain their authored playback completion and continue following their source
+during delayed playback. Their existing duration timers remain meaningful;
 particle return uses native completion instead of a guessed duration.
 
 ## Static Cost Ledger (before executable writes)
@@ -22,7 +25,9 @@ P ParticleSystems, V VisualEffects and S total CPU VFX spawners. These are
 composition counts, not elapsed frames or prior rentals. The current consumer
 has three native effect prefabs, each P=0, V=1, S=1 (one particle system per
 graph). The frozen native fixture permits P<=3, V<=1, S<=1, two rentals and one
-attachment per case. Initialization performs one hierarchy read per component
+attachment per rental. Each non-particle lifecycle case adds at most one source
+GameObject and one OnDisable callback, with no additional traversal axis.
+Initialization performs one hierarchy read per component
 kind and one VFX spawner-name read per VFX. Each completion observation visits
 P+V+S entries, with at most P IsAlive, V HasAnySystemAwake/alive-count and S
 GetSpawnSystemInfo calls. Stop and reset each visit P+V; no cross product,
@@ -58,8 +63,9 @@ paused; its zero visible particles are not proof of completion. Explicitly
 restore StopEmitting after deterministic tail advancement, and retain the
 paused-loop witness as a case that must not return until a new native Stop.
 
-The complete fixture now has nine cases, still at most two rentals and three
-native particle components per case. It also rejects a guessed duration for
-native return and checks that existing non-particle duration playback retains
-its physical parent until completion or explicit Stop. No new traversal axis
-or production allocation is added by these two cases.
+The complete fixture has eleven cases, still at most two rentals and three
+native particle components per case. It rejects a guessed duration for native
+return, verifies non-particle pose tracking throughout delayed playback, and
+checks synchronous Stop inside source OnDisable and native source destruction.
+Non-particle attachments use the same O(1) pose/lifetime owner as particles;
+there is no second timing, deferred-return or shutdown path. Budget PASS.
