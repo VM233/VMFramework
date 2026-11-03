@@ -75,4 +75,5 @@ See [Description generation](Documentation~/DescriptionGeneration.md) for variab
 See [Configuration initialization](Documentation~/ConfigurationInitialization.md) for runtime loading and validation.
 See [Authoring asset changes](Documentation~/AuthoringAssetChanges.md) for registration and menu invalidation.
 See [Procedure transition lifetimes](Documentation~/ProcedureTransitionLifetime.md) for accepted request ownership.
+See [Effect particle lifetimes](Documentation~/EffectParticleLifetime.md) for native completion and attachments.
 The package is licensed under [GPL-3.0-or-later](LICENSE).

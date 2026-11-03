@@ -1,4 +1,4 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using VMFramework.GameLogicArchitecture;
 using VMFramework.Procedure;
@@ -7,7 +7,7 @@ using VMFramework.Tools;
 namespace VMFramework.Effects
 {
     [ManagerCreationProvider(ManagerType.ResourcesCore)]
-    public partial class EffectSpawner : ManagerBehaviour<IEffectSpawner>, IEffectSpawner
+    public class EffectSpawner : ManagerBehaviour<IEffectSpawner>, IEffectSpawner
     {
         public Transform Container {get; private set;}
 
@@ -23,21 +23,16 @@ namespace VMFramework.Effects
         {
             var effect = GameItemManager.Instance.Get<IEffect>(id);
             
-            if (parent != null)
-            {
-                effect.transform.SetParent(parent);
-            }
+            effect.SetSpawnTransform(position, isWorldSpace, parent);
 
-            if (isWorldSpace)
-            {
-                effect.transform.position = position;
-            }
-            else
-            {
-                effect.transform.localPosition = position;
-            }
-            
             return effect;
         }
+#if UNITY_EDITOR
+        [Sirenix.OdinInspector.Button]
+        private void SpawnFromInspector(
+            [VMFramework.OdinExtensions.GamePrefabID(typeof(IEffectConfig))] string id,
+            Vector3 position, bool isWorldSpace, Transform parent = null) =>
+            Spawn(id, position, isWorldSpace, parent);
+#endif
     }
 }

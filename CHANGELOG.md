@@ -4,6 +4,18 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.2.0] - 2026-11-03
+
+### Changed
+
+- Effect owns aggregate native ParticleSystem and VFX playback through each pool rental. Stop emission, retain every child tail, then return only after native completion. Independent attachments survive parent disable/destruction and freeze on owner retirement. Cancel observation and dispose native spawner state on return/destruction.
+- Native particle return replaces guessed duration timers. Retire the superseded single-system/VFX timer recyclers and VFX stop subscriber; remove these components when adopting. IEffect now exposes Stop and SetSpawnTransform. See Documentation~/EffectParticleLifetime.md.
+- Pair delayed-return timers with exact item and native destruction lifetimes, coalesce repeated requests, and release the previous schedule before return publication. Cover cancellation, pool reuse and reentrant replacement.
+
+### Tests
+
+- Add five native PlayMode particle cases and five EditMode delayed-return cases; consumer VFX graphs require offscreen simulation for completion.
+
 ## [9.1.87] - 2026-10-31
 
 ### Fixed
