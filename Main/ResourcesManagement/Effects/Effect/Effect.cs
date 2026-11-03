@@ -84,9 +84,14 @@ namespace VMFramework.Effects
 
         public void Stop()
         {
-            if (stopping) return;
+            if (particles.HasSystems)
+            {
+                DelayedReturn();
+                return;
+            }
+            if (IsDestroyed) return;
             DelayedReturn();
-            if (!particles.HasSystems) returnOwner.Return(this);
+            returnOwner.Return(this);
         }
 
         public bool TryBeginNaturalReturn()
@@ -102,7 +107,7 @@ namespace VMFramework.Effects
             stopping = true;
             attachment?.Dispose();
             attachment = null;
-            transform.SetParent(container, true);
+            if (particles.HasSystems) transform.SetParent(container, true);
             particles.StopEmission();
             OnDelayedPreReturn?.Invoke(this);
         }

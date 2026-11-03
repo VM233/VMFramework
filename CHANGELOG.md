@@ -4,6 +4,13 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.2.4] - 2026-11-03
+
+### Fixed
+
+- Preserve physical parenting throughout existing sprite/audio duration playback. Explicit Stop can cancel that playback after its delayed-stop notification without waiting for its timer. Native particle Stop still delegates exclusively to aggregate completion.
+- Cover native completion with a deliberately unrelated duration and non-particle timed playback parent/cancellation, bringing the frozen lifetime fixture to nine cases.
+
 ## [9.2.3] - 2026-11-03
 
 ### Tests

@@ -20,6 +20,7 @@ namespace VMFramework.Tests
         private Effect effect;
         private ParticleSystem shortParticles, longParticles;
         private string identity;
+        private string plainIdentity;
         private int returnCount, stopCount;
         private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
 
@@ -27,6 +28,7 @@ namespace VMFramework.Tests
         public void CreateNativeRentalOwners()
         {
             returnCount = stopCount = 0;
+            plainIdentity = null;
             Assert.That(PlayerLoopHelper.IsInjectedUniTaskPlayerLoop(), Is.True,
                 "The native fixture requires UniTask's production PlayerLoop injection.");
             identity = "particle_lifetime_" + Guid.NewGuid().ToString("N");
@@ -89,6 +91,7 @@ namespace VMFramework.Tests
                 if (objects[index] != null) Object.DestroyImmediate(objects[index]);
             objects.Clear();
             GamePrefabManager.UnregisterGamePrefab(identity);
+            if (plainIdentity != null) GamePrefabManager.UnregisterGamePrefab(plainIdentity);
             LogAssert.NoUnexpectedReceived();
         }
 
@@ -224,6 +227,38 @@ namespace VMFramework.Tests
             // Simulate ends in Pause, which retains a looping system's future playback.
             particles.Simulate(seconds, false, false, false);
             particles.Stop(false, ParticleSystemStopBehavior.StopEmitting);
+        }
+
+        [UnityTest]
+        public IEnumerator NativeReturnIgnoresAGuessedDurationAndCompletesOnItsOwnParticles()
+        {
+            var delayed = Native("Native stop dispatcher").AddComponent<GameItemDelayedReturner>();
+            delayed.DelayedReturn(effect, 100);
+            Assert.That(effect.IsStopping, Is.True);
+            Assert.That(effect.IsDestroyed, Is.False);
+            Assert.That(longParticles.particleCount, Is.EqualTo(1));
+            AdvanceStopped(shortParticles, 3);
+            AdvanceStopped(longParticles, 3);
+            yield return AwaitReturn();
+        }
+
+        [Test]
+        public void TimedNonParticlePlaybackKeepsItsParentAndExplicitStopCancelsIt()
+        {
+            plainIdentity = "plain_" + identity;
+            GamePrefabManager.RegisterGamePrefab(new EffectConfig { id = plainIdentity });
+            typeof(GameItemManager).GetField("createGameItemHandler", Private).SetValue(manager,
+                new Func<string, IGameItem>(_ => Native("Timed non-particle rental").AddComponent<Effect>()));
+            var plain = manager.Get<Effect>(plainIdentity);
+            var parent = Native("Timed playback parent");
+            plain.SetSpawnTransform(Vector3.zero, false, parent.transform);
+            plain.DelayedReturn();
+            Assert.That(plain.transform.parent, Is.EqualTo(parent.transform),
+                "Starting the existing duration path must not detach a sprite or audio playback.");
+            Assert.That(plain.IsDestroyed, Is.False);
+            plain.Stop();
+            Assert.That(plain.IsDestroyed, Is.True, "Explicit Stop must cancel an already timed non-particle playback.");
+            plain.Stop();
         }
 
         private IEnumerator AwaitReturn()

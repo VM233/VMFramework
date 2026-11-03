@@ -57,3 +57,9 @@ The native fixture has seven cases. Simulate leaves a looping ParticleSystem
 paused; its zero visible particles are not proof of completion. Explicitly
 restore StopEmitting after deterministic tail advancement, and retain the
 paused-loop witness as a case that must not return until a new native Stop.
+
+The complete fixture now has nine cases, still at most two rentals and three
+native particle components per case. It also rejects a guessed duration for
+native return and checks that existing non-particle duration playback retains
+its physical parent until completion or explicit Stop. No new traversal axis
+or production allocation is added by these two cases.
