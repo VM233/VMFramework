@@ -66,19 +66,20 @@ namespace VMFramework.GameLogicArchitecture
             loaders = prepared;
         }
 
-        public static async UniTask<TGlobalSetting> LoadGlobalSettingFile<TGlobalSetting>()
+        public static async UniTask<TGlobalSetting> LoadGlobalSettingFile<TGlobalSetting>(IProgress<float> progress,
+            CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (typeInfos.TryGetValue(typeof(TGlobalSetting), out var info) == false)
             {
-                Debug.LogError($"No global setting file found for type {typeof(TGlobalSetting)}!");
-                return default;
+                throw new InvalidOperationException($"No global setting file found for type {typeof(TGlobalSetting)}!");
             }
             
 
             var validLoader = SelectLoader(typeof(TGlobalSetting));
             UniTask<IGlobalSettingFile> loading;
             using (LoadBeginMarker.Auto())
-                loading = validLoader.LoadGlobalSettingFile(typeof(TGlobalSetting), info.configAttribute);
+                loading = validLoader.LoadGlobalSettingFile(typeof(TGlobalSetting), info.configAttribute, progress, cancellationToken);
             var globalSetting = await loading;
 
             return (TGlobalSetting)globalSetting;

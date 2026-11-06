@@ -12,7 +12,18 @@ The validation placement does not add a registry, polling loop or another loadin
 IProcedureManager.Initialization exposes the active read-only initialization
 manager. A running action may declare an IInitializationProgressSource through
 InitializationAction.progressSource. Its immutable Progress reports actual completed/total units for that source's
-current batch. GamePrefab validation publishes its frozen registry count before
+current batch, or Fraction for native operation progress. Default progress has
+no fraction and no units: the source cannot yet quantify its work. Counted
+progress derives its fraction from the exact completed/total pair. Native-only
+progress has a fraction without pretending that percentages are item counts.
+Global-setting loading freezes the actual settings and aggregates their native
+Addressables PercentComplete readings with equal weights. Discovery remains
+unquantified. File adoption publishes completion only after success and token
+admission. Custom IGlobalSettingFileLoader implementations and IGlobalSetting
+callers must pass the actual IProgress<float> receiver and CancellationToken;
+the loader owns native request failure/cancellation and releases failed handles.
+This is operation progress, not byte-download progress or predicted time.
+GamePrefab validation publishes its frozen registry count before
 processor discovery and advances only after each item's complete check succeeds.
 Registration is a prerequisite and does not publish a second counted batch.
 The pair measures batch work, not whole-application time or a predicted duration.

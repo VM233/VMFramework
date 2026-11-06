@@ -4,6 +4,19 @@ All notable changes to this package are documented here.
 
 ## [Unreleased]
 
+## [9.2.7] - 2026-11-06
+
+### Fixed
+
+- Publish actual Addressables global-setting load fractions through the existing
+  initialization progress source. Unknown preparation has no numeric progress;
+  counted validation retains completed/total units. Native failures propagate
+  and canceled/failed file requests release their handles without publishing
+  successful setting adoption.
+- Global-setting load contracts now require their actual progress receiver and
+  cancellation token. Custom loaders and callers must adopt the same signature;
+  no compatibility overload or alternate loading path is retained.
+
 ## [9.2.6] - 2026-11-04
 
 ### Tests

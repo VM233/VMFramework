@@ -114,7 +114,8 @@ namespace VMFramework.Tests
         {
             public ObservedLoader() { constructed++; constructing?.Invoke(); }
             public GlobalSettingFileLoaderTargetConfig CanLoad(Type globalSettingType) => new(false, 0);
-            public UniTask<IGlobalSettingFile> LoadGlobalSettingFile(Type globalSettingType, GlobalSettingFileConfigAttribute config)
+            public UniTask<IGlobalSettingFile> LoadGlobalSettingFile(Type globalSettingType, GlobalSettingFileConfigAttribute config,
+                IProgress<float> progress, CancellationToken cancellationToken)
                 => throw new InvalidOperationException("Preparation fixtures do not load assets.");
         }
     }

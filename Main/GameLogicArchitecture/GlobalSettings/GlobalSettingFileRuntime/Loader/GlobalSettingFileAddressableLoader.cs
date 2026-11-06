@@ -1,5 +1,6 @@
 ﻿using System;
 using Cysharp.Threading.Tasks;
+using System.Threading;
 using UnityEngine.AddressableAssets;
 
 namespace VMFramework.GameLogicArchitecture
@@ -12,11 +13,19 @@ namespace VMFramework.GameLogicArchitecture
         }
 
         async UniTask<IGlobalSettingFile> IGlobalSettingFileLoader.LoadGlobalSettingFile(Type globalSettingType,
-            GlobalSettingFileConfigAttribute config)
+            GlobalSettingFileConfigAttribute config, IProgress<float> progress, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var handler = Addressables.LoadAssetAsync<IGlobalSettingFile>(config.FileName);
-            await UniTask.WaitUntil(() => handler.IsDone);
-            return handler.Result;
+            try
+            {
+                return await handler.ToUniTask(progress, cancellationToken: cancellationToken);
+            }
+            catch
+            {
+                Addressables.Release(handler);
+                throw;
+            }
         }
     }
 }

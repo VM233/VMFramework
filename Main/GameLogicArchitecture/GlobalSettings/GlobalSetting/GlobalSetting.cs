@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -16,17 +17,13 @@ namespace VMFramework.GameLogicArchitecture
         [ShowInInspector]
         public static TGlobalSettingFile GlobalSettingFile { get; private set; }
 
-        public async UniTask LoadGlobalSettingFile()
+        public async UniTask LoadGlobalSettingFile(IProgress<float> progress, CancellationToken cancellationToken)
         {
-            var file = await GlobalSettingFileManager.LoadGlobalSettingFile<TGlobalSettingFile>();
-
-            if (file == null)
-            {
-                Debug.LogError($"{typeof(TGlobalSettingFile)} Load Failed.");
-                return;
-            }
-            
-            GlobalSettingFile = file;
+            var file = await GlobalSettingFileManager.LoadGlobalSettingFile<TGlobalSettingFile>(progress, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            GlobalSettingFile = file != null ? file :
+                throw new InvalidOperationException($"Global setting loader returned no {typeof(TGlobalSettingFile)}.");
+            progress.Report(1);
         }
 
         public void CheckSettings()
