@@ -127,6 +127,20 @@ and after the prior task has retired. Success and failed builds use the same
 next Editor update; no postprocess-only cleanup or extended timeout is required.
 The ordinary two-minute initialization deadline remains unchanged.
 
+The deadline charges foreground time using Application focus changes in a
+Player and EditorApplication focus changes in Edit Mode. Batch mode retains a
+continuous deadline. Each initialization owns its activity subscription and
+PlayerLoop timer, pausing/resuming the remaining budget without changing the
+limit, replaying work or detaching accepted sources. Dispose retires both after
+the original source has joined. Tests keep an explicit active activity source
+when they are testing timeout rather than operating-system focus.
+
+ProcedureManager.LastTransitionFailure retains the actual terminal transition
+exception after source/target retirement, including its primary initializer
+failure. Loading UI consumes this result instead of relying on an initializer
+snapshot that a subsequent retirement stage can reset. A failed startup must
+not publish an initialized menu or leave its completion pending indefinitely.
+
 Static Cost Ledger: one existing cancellation source and one deduplicated update
 delegate; one O(1) build-boundary invocation and one ordinary initializer run after
 native build retirement. No new scan, cache, native object or window is introduced.

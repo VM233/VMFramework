@@ -1,5 +1,17 @@
 # Changelog
 
+## [9.2.8] - 2026-11-06
+
+### Fixed
+
+- Charge initialization's existing timeout only while the Editor or Player is
+  focused, retaining continuous batch-mode timing. A suspended browser tab no
+  longer consumes its startup deadline. Deadline retirement releases its native
+  activity subscription and PlayerLoop timer; active stalled work still expires.
+- Retain the actual terminal procedure transition failure after loading
+  retirement so startup presentation can observe failure instead of waiting
+  indefinitely for a menu that cannot be entered.
+
 All notable changes to this package are documented here.
 
 ## [Unreleased]

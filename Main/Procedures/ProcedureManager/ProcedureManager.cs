@@ -31,6 +31,7 @@ namespace VMFramework.Procedure
         private TaskCompletionSource<bool> retirement;
         public CancellationToken LifetimeToken => lifetime.Token;
         public ProcedureResourceRetirement RetirementProduct { get; private set; }
+        public ProcedureTransitionException LastTransitionFailure { get; private set; }
         [ShowInInspector] public IReadOnlyList<IProcedure> Procedures => procedures.Values.ToList();
         [ShowInInspector] public IReadOnlyList<string> CurrentProcedureIDs => fsm?.CurrentStates.Keys.ToList();
         public event Action<string> OnEnterProcedureEvent;
@@ -128,6 +129,7 @@ namespace VMFramework.Procedure
         private void RunProcedureTransition(ProcedureTransitionRequest request)
         {
             using var sample = requestMarker.Auto();
+            LastTransitionFailure = null;
             activeRequest = request;
             _ = request.RunAsync(token => ExecuteTransition(request, token), () => activeRequest = null, lifetime.Token);
         }
@@ -192,8 +194,9 @@ namespace VMFramework.Procedure
                 if (primary is OperationCanceledException cancellation && failures.Count == 0 &&
                     token.IsCancellationRequested && cancellation.CancellationToken == token)
                     System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(primary).Throw();
-                throw new ProcedureTransitionException(request.FromID, request.ToID, phase, primary,
+                LastTransitionFailure = new ProcedureTransitionException(request.FromID, request.ToID, phase, primary,
                     failures.AsReadOnly(), fsm.CurrentStates.Keys.ToList().AsReadOnly());
+                throw LastTransitionFailure;
             }
         }
         private void PublishProcedureExit(string procedureID)

@@ -454,7 +454,7 @@ namespace VMFramework.Tests
         private static InitializerManager CreateManager(
             params (int order, InitActionHandler action)[] actionDefinitions)
         {
-            var manager = new InitializerManager
+            var manager = new InitializerManager(limit => new InitializationDeadline(limit, new TestInitializationActivity(true)))
             {
                 InitializationTimeout = TimeSpan.FromSeconds(2),
             };

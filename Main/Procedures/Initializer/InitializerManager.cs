@@ -15,6 +15,14 @@ namespace VMFramework.Procedure
         public static readonly TimeSpan DefaultInitializationTimeout = TimeSpan.FromMinutes(2);
 
         private readonly List<IInitializer> initializers = new();
+        private readonly Func<TimeSpan, InitializationDeadline> createDeadline;
+
+        public InitializerManager() : this(limit => new InitializationDeadline(limit, new UnityInitializationActivity())) { }
+
+        internal InitializerManager(Func<TimeSpan, InitializationDeadline> createDeadline)
+        {
+            this.createDeadline = createDeadline;
+        }
 
         private readonly List<InitializationActionExecution> currentOrderExecutions = new();
 
@@ -90,9 +98,7 @@ namespace VMFramework.Procedure
             CurrentOrder = null;
             currentOrderExecutions.Clear();
 
-            using var timeoutCancellation = new CancellationTokenSource();
-            using var timeoutRegistration = timeoutCancellation.CancelAfterSlim(initializationTimeout,
-                DelayType.Realtime);
+            using var timeoutCancellation = createDeadline(initializationTimeout);
             using var initializationCancellation = CancellationTokenSource.CreateLinkedTokenSource(
                 cancellationToken, timeoutCancellation.Token);
 
