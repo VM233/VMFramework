@@ -345,6 +345,8 @@ namespace VMFramework.UI
         }
 
         protected Locale lastLocale { get; private set; }
+        private VisualElement languageStyleRoot;
+        private StyleSheet languageStyleSheet;
 
         void ILocalizedPanelModifier.OnCurrentLanguageChanged(Locale currentLocale)
         {
@@ -358,26 +360,17 @@ namespace VMFramework.UI
                 return;
             }
 
-            if (lastLocale != null)
-            {
-                var previousLanguageConfig =
-                    UISetting.UIPanelGeneralSetting.GetLanguageConfig(lastLocale.Identifier.Code);
-
-                if (previousLanguageConfig != null)
-                {
-                    RootVisualElement.styleSheets.Remove(previousLanguageConfig.styleSheet);
-                }
-            }
-
             lastLocale = currentLocale;
-
             var currentLanguageConfig =
                 UISetting.UIPanelGeneralSetting.GetLanguageConfig(currentLocale.Identifier.Code);
-
-            if (currentLanguageConfig != null)
-            {
-                RootVisualElement.styleSheets.Add(currentLanguageConfig.styleSheet);
-            }
+            var sheet = currentLanguageConfig?.styleSheet;
+            var root = RootVisualElement;
+            if (ReferenceEquals(languageStyleRoot, root) && languageStyleSheet == sheet) return;
+            if (ReferenceEquals(languageStyleRoot, root) && languageStyleSheet != null)
+                root.styleSheets.Remove(languageStyleSheet);
+            if (sheet != null && !root.styleSheets.Contains(sheet)) root.styleSheets.Add(sheet);
+            languageStyleRoot = root;
+            languageStyleSheet = sheet;
         }
     }
 }

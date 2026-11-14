@@ -1,5 +1,11 @@
 # Changelog
 
+## [9.2.9] - 2026-11-14
+
+### Fixed
+
+- Keep a language stylesheet attached when reopening the same retained UI root in the same language. Apply changed languages and replacement roots normally, avoiding duplicate whole-tree style invalidation.
+
 ## [9.2.8] - 2026-11-06
 
 ### Fixed
