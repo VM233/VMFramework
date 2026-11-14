@@ -37,8 +37,7 @@ namespace VMFramework.Editor.Tests
                 var panel = host.AddComponent<UIToolkitPanel>();
                 var root = new VisualElement();
                 root.styleSheets.Add(sharedStyle);
-                typeof(UIToolkitPanel).GetProperty(nameof(UIToolkitPanel.RootVisualElement))
-                    .SetValue(panel, root);
+                SetRootLease(panel, root);
                 var modifier = (ILocalizedPanelModifier)panel;
 
                 modifier.OnCurrentLanguageChanged(firstLocale);
@@ -105,9 +104,11 @@ namespace VMFramework.Editor.Tests
 
                 var panel = host.AddComponent<UIToolkitPanel>();
                 var root = new VisualElement();
-                typeof(UIToolkitPanel).GetProperty(nameof(UIToolkitPanel.RootVisualElement))
-                    .SetValue(panel, root);
+                SetRootLease(panel, root);
                 manager = host.AddComponent<LocalizedUIPanelManager>();
+                typeof(LocalizedUIPanelManager).GetField("localization", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .SetValue(manager, localization);
+                InvokeLanguageManager(manager, "OnUIPanelCreated", panel);
 
                 InvokeLanguageManager(manager, "OnUIPanelOpen", panel);
                 Assert.That(root.styleSheets.Contains(firstStyle), Is.True,
@@ -118,6 +119,13 @@ namespace VMFramework.Editor.Tests
 
                 if (endMethod == "OnDestroy")
                     InvokeLanguageManager(manager, endMethod);
+                else if (endMethod == "OnUIPanelClose")
+                {
+                    var closed = (IUIPanel.CloseHandler)typeof(UIPanel)
+                        .GetField("OnPostClose", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(panel);
+                    Assert.That(closed, Is.Not.Null, "Creation must acquire the actual panel close endpoint.");
+                    closed(panel);
+                }
                 else
                     InvokeLanguageManager(manager, endMethod, panel);
                 LocalizationSettings.SelectedLocale = firstLocale;
@@ -156,6 +164,12 @@ namespace VMFramework.Editor.Tests
         {
             typeof(LocalizedUIPanelManager).GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic)
                 .Invoke(manager, arguments);
+        }
+
+        private static void SetRootLease(UIToolkitPanel panel, VisualElement root)
+        {
+            var field = typeof(UIToolkitPanel).GetField("runtimeRoot", BindingFlags.Instance | BindingFlags.NonPublic);
+            field.SetValue(panel, System.Activator.CreateInstance(field.FieldType, new object[] { root }));
         }
 
         private static UIPanelLanguageConfig Language(string localeCode, StyleSheet style)

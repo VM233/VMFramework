@@ -1,5 +1,11 @@
 # Changelog
 
+## [9.2.10] - 2026-11-15
+
+### Fixed
+
+- Update locale stylesheet fixtures to supply an actual root lease, register the panel's creation and exercise its captured post-close endpoint. `RootVisualElement` is a read-only view of the published lifetime; locale subscriptions are acquired by creation and released by that panel's close event.
+
 ## [9.2.9] - 2026-11-14
 
 ### Fixed
