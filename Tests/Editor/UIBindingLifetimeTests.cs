@@ -1240,12 +1240,49 @@ namespace VMFramework.Editor.Tests
             }
         }
 
+        public sealed class DocumentPreparationProbe : PanelModifier
+        {
+            public VisualElement PreparedRoot { get; private set; }
+            protected override void OnInitialize()
+            {
+                base.OnInitialize();
+                var panel = (IUIToolkitPanel)Panel;
+                Assert.That(panel.UIDocument, Is.Not.Null,
+                    "The original creation order initializes modifiers before assigning UIDocument.");
+                Assert.That(panel.RootVisualElement, Is.Null, "Static preparation must not open a panel.");
+                PreparedRoot = panel.DocumentRoot;
+                Assert.That(PreparedRoot, Is.Not.Null);
+                Assert.That(PreparedRoot.Q("LifetimeFixtureAnchor"), Is.Not.Null);
+            }
+        }
+
+        [Test]
+        public void ToolkitRoot_PreparesThePhysicalDocumentBeforeModifiersWithoutPublishingBindings()
+        {
+            var panel = CreateToolkitPanel(UIToolkitPanelCloseMode.VisualElementDisplayNone,
+                out var settings, out _, includePreparationProbe: true);
+            try
+            {
+                Assert.That(panel.GetComponent<DocumentPreparationProbe>().PreparedRoot, Is.SameAs(panel.DocumentRoot));
+                Assert.That(panel.RootVisualElement, Is.Null);
+                Assert.That(panel.IsOpened, Is.False);
+                Assert.That(panel.DocumentRoot.style.display.value, Is.EqualTo(DisplayStyle.None));
+            }
+            finally
+            {
+                InvokeToolkitLifecycle(panel, "OnDisable");
+                Object.DestroyImmediate(settings);
+            }
+        }
+
         private UIToolkitPanel CreateToolkitPanel(UIToolkitPanelCloseMode mode,
-            out PanelSettings settings, out VisualTreeAsset tree, bool includeObjects = false)
+            out PanelSettings settings, out VisualTreeAsset tree, bool includeObjects = false,
+            bool includePreparationProbe = false)
         {
             var panelHost = new GameObject("Toolkit Root Lifetime Test");
             panelHost.transform.SetParent(host.transform);
             var panel = panelHost.AddComponent<UIToolkitPanel>();
+            if (includePreparationProbe) panelHost.AddComponent<DocumentPreparationProbe>();
             if (includeObjects) panelHost.AddComponent<BindObjectsManager>();
             var document = panel.GetComponent<UIDocument>();
             document.enabled = false;

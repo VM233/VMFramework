@@ -20,6 +20,8 @@ namespace VMFramework.UI
 
         public UIDocument UIDocument { get; private set; }
 
+        public VisualElement DocumentRoot => UIDocument.rootVisualElement;
+
         protected IUIToolkitPanelConfig UIToolkitPanelConfig => (IUIToolkitPanelConfig)GamePrefab;
 
         private UIToolkitRootReleaseWork runtimeRoot;
@@ -49,8 +51,6 @@ namespace VMFramework.UI
         {
             BindVisualElementsManager = GetComponentInChildren<BindVisualElementsManager>();
 
-            base.OnCreate();
-
             var uiDocument = GetComponent<UIDocument>();
 
             if (autoPanelSettings)
@@ -63,6 +63,9 @@ namespace VMFramework.UI
 
             UIDocument = uiDocument;
             ApplyClosedDocumentState();
+            // Static view references belong to document construction; modifiers may adopt
+            // this physical tree without publishing a live root or binding actor data.
+            base.OnCreate();
         }
 
         protected virtual void OnEnable()
@@ -170,7 +173,8 @@ namespace VMFramework.UI
 
         private async Task CompleteLayoutAsync(CancellationToken token)
         {
-            await UniTask.Yield(token, cancelImmediately: true);
+            // Publish after native UI style/layout, before the native repaint phase.
+            await UniTask.Yield(PlayerLoopTiming.LastPreLateUpdate, token, cancelImmediately: true);
             token.ThrowIfCancellationRequested();
             OnLayoutChange();
             token.ThrowIfCancellationRequested();

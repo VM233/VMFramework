@@ -1,5 +1,12 @@
 # Changelog
 
+## [9.3.0] - 2026-11-15
+
+### Changed
+
+- Configure and expose the owned UIDocument before initializing panel modifiers. DocumentRoot identifies its physical tree, including a retained closed view; RootVisualElement continues to identify only the published open lifetime. Reference-only view preparation can now finish at document construction without opening a page or binding actor data.
+- Publish layout completion in LastPreLateUpdate, after native UIElementsUpdatePanels and before UIElementsRepaintPanels. Preserve the same cancellation, actual Task and joined retirement rather than treating ordinary Update as native layout completion.
+
 ## [9.2.15] - 2026-11-15
 
 ### Changed

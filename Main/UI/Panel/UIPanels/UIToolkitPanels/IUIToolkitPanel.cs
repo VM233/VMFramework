@@ -8,6 +8,9 @@ namespace VMFramework.UI
     public interface IUIToolkitPanel : IUIPanel, IVisualElementGenerator, IBindVisualElementsManagerProvider
     {
         public UIDocument UIDocument { get; }
+
+        /// <summary>The actual native document tree, including a retained, logically closed view.</summary>
+        public VisualElement DocumentRoot { get; }
         
         public VisualElement RootVisualElement { get; }
 

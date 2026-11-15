@@ -1,5 +1,18 @@
 # Runtime UI Toolkit roots
 
+`UIDocument` is assigned and configured before panel modifiers initialize.
+`DocumentRoot` exposes that actual physical tree for reference-only preparation;
+it can exist while the panel is logically closed. Its availability follows the
+native document (DisableDocument can destroy it). `RootVisualElement` retains
+its separate published-open lifetime. Static preparation must not acquire actor,
+hover, press or Tooltip-preview leases. Reconstructing the native tree replaces
+its references; logical closing still retires all live bindings normally.
+
+Layout completion runs in UniTask LastPreLateUpdate, after native
+PreLateUpdate.UIElementsUpdatePanels and before PostLateUpdate repaint. It uses
+the existing cancellable layout Task and joined retirement; a generic Update
+continuation does not establish native layout completion.
+
 Named container-slot mapping resolves the current typed slot set once per pass,
 then applies authored bindings in order. It does not retain an address cache
 across root, hierarchy or container changes. Extra-slot removal and missing-name
