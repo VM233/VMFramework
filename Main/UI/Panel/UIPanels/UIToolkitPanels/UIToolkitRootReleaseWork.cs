@@ -12,11 +12,16 @@ namespace VMFramework.UI
         public CancellationToken Token;
         public Task Layout;
         public UIToolkitPointerEndpoints Pointer;
+        public UIToolkitPresentationGate Presentation;
         public Exception SourceFailure;
         public Action AfterLayout;
         public Action<UIToolkitRootReleaseWork> Retirement;
 
-        public UIToolkitRootReleaseWork(VisualElement root) => Root = root;
+        public UIToolkitRootReleaseWork(VisualElement root, bool ignoreMouseEvents)
+        {
+            Root = root;
+            Presentation = new UIToolkitPresentationGate(root, ignoreMouseEvents);
+        }
 
         public void CancelLayout()
         {

@@ -1,5 +1,16 @@
 # Changelog
 
+## [9.6.0] - 2026-11-16
+
+### Changed
+
+- Own preparing-root opacity and native input in one presentation gate. Native layout and explicit placement holds must complete before admission; cancellation and retirement restore borrowed styles, picking modes and callbacks. Closed-document policies are unchanged.
+- Publish native layout consumers before final presentation, so positioning can release its own hold against real geometry without another inherited visibility flag. `IUIToolkitPanel.HoldPresentation()` is valid during root-ready preparation and returns a paired lease.
+
+### Validation scope
+
+- Gate fixtures cover overlapping placement owners, declared mouse exclusion, binding-created controls and retirement before presentation. Consumer native timing, placement, input and reconstruction remain required; the gate itself does not establish a latency guarantee.
+
 ## [9.5.1] - 2026-11-16
 
 ### Fixed

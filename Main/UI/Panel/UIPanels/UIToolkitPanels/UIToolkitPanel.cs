@@ -33,6 +33,9 @@ namespace VMFramework.UI
 
         public CancellationToken LayoutCancellationToken { get; private set; }
 
+        public IDisposable HoldPresentation() => runtimeRoot?.Presentation.Hold() ??
+            throw new InvalidOperationException($"UIToolkitPanel {id} has no preparing root.");
+
         public event Action<IUIToolkitPanel> OnLayoutChangeEvent;
 
         public event Action<IUIToolkitPanel, VisualElement> OnRootVisualElementReady;
@@ -66,6 +69,7 @@ namespace VMFramework.UI
             // Static view references belong to document construction; modifiers may adopt
             // this physical tree without publishing a live root or binding actor data.
             base.OnCreate();
+            OnPostOpen += ExcludeInitialPicking;
         }
 
         protected virtual void OnEnable()
@@ -90,11 +94,13 @@ namespace VMFramework.UI
 
         protected override void OnClear()
         {
+            OnPostOpen -= ExcludeInitialPicking;
             ReleaseRuntimeRoot(afterLayout: () => base.OnClear());
         }
 
         protected override void OnDestroy()
         {
+            OnPostOpen -= ExcludeInitialPicking;
             var failures = new UIPanelReleaseFailures(nameof(UIToolkitPanel));
             failures.Attempt("native-destruction.close", BeginPanelDestruction);
             failures.Attempt("native-destruction.root", () => ReleaseRuntimeRoot(
@@ -123,7 +129,7 @@ namespace VMFramework.UI
             if (runtimeRoot != null)
                 throw new InvalidOperationException($"UIToolkitPanel {name} already owns a published runtime root.");
 
-            var work = new UIToolkitRootReleaseWork(UIDocument.rootVisualElement);
+            var work = new UIToolkitRootReleaseWork(UIDocument.rootVisualElement, UIToolkitPanelConfig.IgnoreMouseEvents);
             runtimeRoot = work;
             LayoutCompletion = null;
             layoutRetirementFailure = null;
@@ -132,8 +138,6 @@ namespace VMFramework.UI
             RootVisualElement.pickingMode = PickingMode.Ignore;
             RootVisualElement.DisplayFlex();
 
-            RootVisualElement.style.visibility = Visibility.Hidden;
-
             work.Cancellation = new();
             work.Token = work.Cancellation.Token;
             LayoutCancellationToken = work.Token;
@@ -141,6 +145,7 @@ namespace VMFramework.UI
             OnGenerateVisualElement?.Invoke(this, RootVisualElement);
 
             OnRootVisualElementReady?.Invoke(this, RootVisualElement);
+            work.Presentation.ExcludePicking();
 
             if (lastLocale != null) OnCurrentLanguageChanged(lastLocale);
             if (OnPointerEnterEvent != null || OnPointerLeaveEvent != null)
@@ -178,9 +183,14 @@ namespace VMFramework.UI
             token.ThrowIfCancellationRequested();
             OnLayoutChange();
             token.ThrowIfCancellationRequested();
-            OnPostLayoutChange();
-            token.ThrowIfCancellationRequested();
             OnLayoutChangeEvent?.Invoke(this);
+            token.ThrowIfCancellationRequested();
+            OnPostLayoutChange();
+        }
+
+        private void ExcludeInitialPicking(IUIPanel panel)
+        {
+            if (IsOpened && !IsClosing) runtimeRoot.Presentation.ExcludePicking();
         }
 
         private void CancelLayout()
@@ -210,6 +220,7 @@ namespace VMFramework.UI
             var afterLayout = work.AfterLayout; work.AfterLayout = null;
             var failures = new UIPanelReleaseFailures(nameof(UIToolkitPanel), work.SourceFailure);
             failures.Attempt("pointer.unsubscribe", work.ReleasePointer);
+            failures.Attempt("presentation.retire", work.Presentation.Dispose);
             if (released != null)
             {
                 var product = new UIToolkitRootRetirement(released, failures.PrimaryFailure, work.Layout);
@@ -287,12 +298,7 @@ namespace VMFramework.UI
 
         protected virtual void OnPostLayoutChange()
         {
-            RootVisualElement.style.visibility = Visibility.Visible;
-
-            if (UIToolkitPanelConfig.IgnoreMouseEvents)
-            {
-                RootVisualElement.SetPickingMode(PickingMode.Ignore);
-            }
+            runtimeRoot.Presentation.CompleteLayout();
         }
 
         #endregion

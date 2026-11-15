@@ -18,6 +18,9 @@ namespace VMFramework.UI
 
         public CancellationToken LayoutCancellationToken { get; }
 
+        /// <summary>Delay presentation/input until a root-ready consumer publishes its actual placement.</summary>
+        public IDisposable HoldPresentation();
+
         internal void CompleteLayoutRetirement(Task actualLayout);
 
         public event Action<IUIToolkitPanel, VisualElement> OnRootVisualElementReady;
