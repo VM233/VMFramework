@@ -104,12 +104,9 @@ namespace VMFramework.UI
                 subscribers(bindName, bindObject, parentObject, added);
                 return;
             }
-            foreach (BindObjectChangedHandler subscriber in subscribers.GetInvocationList())
-            {
-                UnityEngine.Profiling.Profiler.BeginSample("UI.Binding:" + subscriber.Method.DeclaringType);
-                try { subscriber(bindName, bindObject, parentObject, added); }
-                finally { UnityEngine.Profiling.Profiler.EndSample(); }
-            }
+            UnityEngine.Profiling.Profiler.BeginSample("UI.Binding.Publish");
+            try { subscribers(bindName, bindObject, parentObject, added); }
+            finally { UnityEngine.Profiling.Profiler.EndSample(); }
         }
 
         public virtual void AddObject(object bindObject)

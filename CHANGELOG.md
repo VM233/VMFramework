@@ -1,5 +1,11 @@
 # Changelog
 
+## [9.2.15] - 2026-11-15
+
+### Changed
+
+- Replace temporary per-subscriber UI profiling with constant panel-open and binding-publication transaction markers. Recording no longer enumerates invocation lists, reflects subscriber types or formats names. Both recording states use the original multicast semantics, including ordering, nested publication and exceptions.
+
 ## [9.2.14] - 2026-11-15
 
 ### Fixed

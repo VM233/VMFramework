@@ -7,13 +7,13 @@ diagnostics use current parent membership. The address set must be composed
 before mapping; mapping callbacks own data and presentation, not the creation of
 another named address within the same mapping pass.
 
-While native Profiler recording is enabled, `UI.Panel.Open:<subscriber type>` and
-`UI.Binding:<subscriber type>` identify synchronous consumer costs in the same
-input frame. Recording-disabled publication keeps the normal multicast call.
-Profiling does not defer, reorder, retry or swallow subscriber failures. Each
-recorded publication snapshots its current invocation list once, matching native
-multicast mutation semantics; binding publications are measured separately even
-when nested. Acceptance timings still require a recording-disabled replay.
+While native Profiler recording is enabled, `UI.Panel.Open` and
+`UI.Binding.Publish` identify synchronous transactions in the same input frame.
+Both recording states retain the normal multicast invocation; recording adds
+one constant native marker without enumerating subscribers, reflection or name
+formatting. Profiling does not defer, reorder, retry or swallow failures. Native
+measurements retain their recording overhead; an adjusted Editor result must
+state its exact exclusions and must not remove runtime work inside Editor parents.
 
 `UIToolkitPanel` owns the live `UIDocument` root. A logical panel can outlive a
 root: native Live Reload, closing and destruction retire the published root and

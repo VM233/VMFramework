@@ -237,12 +237,9 @@ namespace VMFramework.UI
                 subscribers(this);
                 return;
             }
-            foreach (IUIPanel.OpenHandler subscriber in subscribers.GetInvocationList())
-            {
-                UnityEngine.Profiling.Profiler.BeginSample("UI.Panel.Open:" + subscriber.Method.DeclaringType);
-                try { subscriber(this); }
-                finally { UnityEngine.Profiling.Profiler.EndSample(); }
-            }
+            UnityEngine.Profiling.Profiler.BeginSample("UI.Panel.Open");
+            try { subscribers(this); }
+            finally { UnityEngine.Profiling.Profiler.EndSample(); }
         }
 
         protected virtual void OnOpenInternal(IUIPanel source)
