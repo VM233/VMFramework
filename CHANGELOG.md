@@ -1,5 +1,11 @@
 # Changelog
 
+## [9.5.1] - 2026-11-16
+
+### Fixed
+
+- Correct post-open fixture binding declarations: the initial-data witness is multi-mode, while a container slot source requires single-mode registration. Runtime publication behavior is unchanged.
+
 ## [9.5.0] - 2026-11-16
 
 ### Changed

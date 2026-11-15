@@ -99,7 +99,7 @@ namespace VMFramework.Editor.Tests
             };
             panel.OnPostOpen += _ =>
             {
-                Assert.That(panel.BindObjectsManager.GetObject("initial"), Is.SameAs(data));
+                Assert.That(panel.BindObjectsManager.GetObjects("initial"), Is.EquivalentTo(new[] { data }));
                 Assert.That(published, Is.EqualTo(++completed));
             };
             try
@@ -135,6 +135,9 @@ namespace VMFramework.Editor.Tests
             panel.DocumentRoot.Add(slot);
             var modifier = panel.gameObject.AddComponent<UIToolkitContainerModifierBase>();
             modifier.bindObjectsName = "initial_slots";
+            ((HashSet<string>)typeof(BindObjectsManager)
+                .GetField("singleModeNames", BindingFlags.Instance | BindingFlags.NonPublic)
+                .GetValue(panel.BindObjectsManager)).Add(modifier.bindObjectsName);
             modifier.slotDistributorConfigs.Add(new ContainerSlotDistributorConfig
             {
                 parentName = slot.name, findMethod = SlotFindMethod.Default,
