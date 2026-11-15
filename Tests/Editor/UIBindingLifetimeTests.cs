@@ -49,6 +49,37 @@ namespace VMFramework.Editor.Tests
         private GameEventManager events;
 
         [UnityTest]
+        public IEnumerator PreClosePublishesItsPhaseBeforeConsumersReleaseBindings()
+        {
+            var panel = CreateToolkitPanel(UIToolkitPanelCloseMode.VisualElementDisplayNone,
+                out var settings, out _, includeObjects: true);
+            var data = new object();
+            panel.OnOpen += _ => panel.BindObjectsManager.DelayedAddObject("initial", data);
+            panel.OnPreClose += _ => panel.BindObjectsManager.RemoveObject("initial", data);
+            int removed = 0;
+            panel.BindObjectsManager.OnBindObjectChanged += (name, value, parent, added) =>
+            {
+                if (added) return;
+                Assert.That(panel.IsClosing, Is.True,
+                    "A nested unbind must observe closure before later PreClose consumers run.");
+                removed++;
+            };
+            try
+            {
+                ((IUIPanel)panel).OnOpenInternal(null);
+                yield return null;
+                CloseToolkitPanel(panel);
+                Assert.That(removed, Is.EqualTo(1));
+                Assert.That(panel.IsOpened || panel.IsClosing, Is.False);
+            }
+            finally
+            {
+                InvokeToolkitLifecycle(panel, "OnDisable");
+                Object.DestroyImmediate(settings);
+            }
+        }
+
+        [UnityTest]
         public IEnumerator OpenPublishesQueuedBindingsAfterEveryConsumerAndBeforeReturning()
         {
             var panel = CreateToolkitPanel(UIToolkitPanelCloseMode.VisualElementDisplayNone,

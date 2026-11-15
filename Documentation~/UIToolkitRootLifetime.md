@@ -40,6 +40,12 @@ barrier. Later queued additions use the same `PublishDelayedObjects` owner in
 the manager's normal Update. Immediate `AddObject` retains its synchronous
 semantics; queued data is not a separate presentation or fallback route.
 
+Close admission publishes `IsClosing=true` before PreClose subscribers run.
+An earlier subscriber may remove a binding and synchronously notify a later
+subscriber; both observe the closing phase. `IsOpened` may remain true during
+an authored close animation, so open-session data work must also exclude
+`IsClosing`. PostClose clears both flags and retires the root normally.
+
 `OnRootVisualElementReleased` publishes a `UIToolkitRootRetirement` containing
 the exact released root, its original failure and its actual layout Task.
 Cancellation belongs to that root's `LayoutCancellationToken`. It does not

@@ -1,5 +1,12 @@
 # Changelog
 
+## [9.2.12] - 2026-11-15
+
+### Fixed
+
+- Publish the admitted closing phase before invoking PreClose subscribers. Nested binding removals now observe IsClosing immediately, rather than being mistaken for normal live-data changes by later subscribers. Animated closure retains IsOpened until its normal terminal boundary.
+- Add a native negative control for nested unbind notifications during PreClose.
+
 ## [9.2.11] - 2026-11-15
 
 ### Fixed

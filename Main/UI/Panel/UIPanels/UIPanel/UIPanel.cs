@@ -254,7 +254,6 @@ namespace VMFramework.UI
 
         protected virtual void OnPreCloseInternal()
         {
-            IsClosing = true;
             var closable = true;
             OnCheckClosable?.Invoke(this, ref closable);
             if (closable)
@@ -297,6 +296,9 @@ namespace VMFramework.UI
 
         void IUIPanel.OnPreCloseInternal()
         {
+            // PreClose consumers must observe the admitted phase, including nested binding
+            // notifications emitted by an earlier consumer in this same publication.
+            IsClosing = true;
             var failures = new UIPanelReleaseFailures(nameof(UIPanel));
             PublishClose(OnPreClose, "pre-close.subscriber", ref failures);
             failures.Attempt("pre-close.internal", OnPreCloseInternal);
