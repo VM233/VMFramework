@@ -31,6 +31,9 @@ namespace VMFramework.UI
 
         public event OpenHandler OnOpen;
 
+        /// <summary>Initial queued bindings have published; runs before Open returns.</summary>
+        public event OpenHandler OnPostOpen;
+
         public event ReenterHandler OnReenter;
 
         public event CloseHandler OnPreClose;

@@ -87,6 +87,7 @@ namespace VMFramework.Editor.Tests
             var data = new object();
             bool consumerReady = false;
             int published = 0;
+            int completed = 0;
             panel.OnOpen += _ => panel.BindObjectsManager.DelayedAddObject("initial", data);
             panel.OnOpen += _ => consumerReady = true;
             panel.BindObjectsManager.OnBindObjectChanged += (name, value, parent, added) =>
@@ -96,10 +97,16 @@ namespace VMFramework.Editor.Tests
                 Assert.That(value, Is.SameAs(data));
                 published++;
             };
+            panel.OnPostOpen += _ =>
+            {
+                Assert.That(panel.BindObjectsManager.GetObject("initial"), Is.SameAs(data));
+                Assert.That(published, Is.EqualTo(++completed));
+            };
             try
             {
                 ((IUIPanel)panel).OnOpenInternal(null);
                 Assert.That(published, Is.EqualTo(1), "Waiting for the following Update is a response defect.");
+                Assert.That(completed, Is.EqualTo(1), "Post-open data consumers run before input returns.");
                 panel.BindObjectsManager.PublishDelayedObjects();
                 Assert.That(published, Is.EqualTo(1), "The open admission must consume the queue exactly once.");
                 yield return null;
@@ -107,8 +114,81 @@ namespace VMFramework.Editor.Tests
                 consumerReady = false;
                 ((IUIPanel)panel).OnOpenInternal(null);
                 Assert.That(published, Is.EqualTo(2));
+                Assert.That(completed, Is.EqualTo(2));
                 yield return null;
                 CloseToolkitPanel(panel);
+            }
+            finally
+            {
+                InvokeToolkitLifecycle(panel, "OnDisable");
+                Object.DestroyImmediate(settings);
+            }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void ContainerSlots_InitialEligibilityUsesThePublishedBindingWithoutATransientDisable(bool bind)
+        {
+            var panel = CreateToolkitPanel(UIToolkitPanelCloseMode.VisualElementDisplayNone,
+                out var settings, out _, includeObjects: true);
+            var slot = new SlotVisualElement { name = "Initial Slot" };
+            panel.DocumentRoot.Add(slot);
+            var modifier = panel.gameObject.AddComponent<UIToolkitContainerModifierBase>();
+            modifier.bindObjectsName = "initial_slots";
+            modifier.slotDistributorConfigs.Add(new ContainerSlotDistributorConfig
+            {
+                parentName = slot.name, findMethod = SlotFindMethod.Default,
+                removeExtraSlots = false, isFinite = true
+            });
+            modifier.Initialize(panel, panel.Config);
+            var container = new GameObject("Initial Slot Source").AddComponent<Container>();
+            container.transform.SetParent(host.transform);
+            panel.OnRootVisualElementReady += (_, _) => Assert.That(slot.enabledSelf, Is.True,
+                "The original root-ready callback disabled slots before initial data could be published.");
+            panel.OnOpen += _ =>
+            {
+                if (bind) panel.BindObjectsManager.DelayedAddObject(modifier.bindObjectsName, container);
+            };
+            try
+            {
+                for (int cycle = 0; cycle < 2; cycle++)
+                {
+                    ((IUIPanel)panel).OnOpenInternal(null);
+                    Assert.That(slot.enabledSelf, Is.EqualTo(bind));
+                    if (!bind)
+                    {
+                        panel.BindObjectsManager.AddObject(modifier.bindObjectsName, container);
+                        Assert.That(slot.enabledSelf, Is.True);
+                        panel.BindObjectsManager.RemoveObject(modifier.bindObjectsName, container);
+                        Assert.That(slot.enabledSelf, Is.False);
+                    }
+                    CloseToolkitPanel(panel);
+                    Assert.That(slot.enabledSelf, Is.True);
+                    Assert.That(ContainerVisualCallbacks(container), Is.Zero);
+                }
+            }
+            finally
+            {
+                modifier.Deinitialize();
+                InvokeToolkitLifecycle(panel, "OnDisable");
+                Object.DestroyImmediate(settings);
+            }
+        }
+
+        [Test]
+        public void PostOpenDoesNotAcquireDataAfterAnOpenCallbackClosesThePanel()
+        {
+            var panel = CreateToolkitPanel(UIToolkitPanelCloseMode.VisualElementDisplayNone,
+                out var settings, out _, includeObjects: true);
+            int acquired = 0;
+            panel.OnOpen += _ => CloseToolkitPanel(panel);
+            panel.OnPostOpen += _ => acquired++;
+            try
+            {
+                ((IUIPanel)panel).OnOpenInternal(null);
+                Assert.That(acquired, Is.Zero);
+                Assert.That(panel.IsOpened, Is.False);
+                Assert.That(panel.RootVisualElement, Is.Null);
             }
             finally
             {
@@ -651,7 +731,6 @@ namespace VMFramework.Editor.Tests
 
         [TestCase(UIToolkitPanelCloseMode.DisableDocument)]
         [TestCase(UIToolkitPanelCloseMode.VisualElementDisplayNone)]
-        [TestCase(UIToolkitPanelCloseMode.RetainLayoutOffscreen)]
         public void ToolkitRoot_ClosedDocumentKeepsItsConfiguredVisibilityAfterReconstruction(UIToolkitPanelCloseMode mode)
         {
             var panel = CreateToolkitPanel(mode, out var settings, out var tree);
@@ -671,11 +750,6 @@ namespace VMFramework.Editor.Tests
                 Assert.That(released, Is.EqualTo(1));
                 if (mode == UIToolkitPanelCloseMode.DisableDocument)
                     Assert.That(panel.UIDocument.enabled, Is.False);
-                else if (mode == UIToolkitPanelCloseMode.RetainLayoutOffscreen)
-                {
-                    Assert.That(panel.DocumentRoot.style.display.value, Is.EqualTo(DisplayStyle.Flex));
-                    Assert.That(panel.DocumentRoot.style.translate.value.x, Is.EqualTo(Length.Percent(200)));
-                }
                 else
                     Assert.That(panel.UIDocument.rootVisualElement.style.display.value, Is.EqualTo(DisplayStyle.None));
             }
@@ -1242,58 +1316,6 @@ namespace VMFramework.Editor.Tests
                 InvokeToolkitLifecycle(panel, "OnDisable");
                 typeof(TracingUIManager).GetMethod("OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic)
                     .Invoke(manager, null);
-                Object.DestroyImmediate(settings);
-            }
-        }
-
-        [UnityTest]
-        public IEnumerator ToolkitRoot_OffscreenLayoutRetiresEveryLiveLeaseAndRestoresOnlyAfterLayout()
-        {
-            var panel = CreateToolkitPanel(UIToolkitPanelCloseMode.RetainLayoutOffscreen,
-                out var settings, out _);
-            var physical = panel.DocumentRoot;
-            var originalVisibility = physical.style.visibility;
-            var target = new VisualElement();
-            physical.Add(target);
-            int ready = 0, released = 0, enters = 0;
-            panel.OnRootVisualElementReady += (_, _) => ready++;
-            panel.OnRootVisualElementReleased += (_, _) => released++;
-            ((IUIPanelPointerEventProvider)panel).AddPointerEvent(_ => enters++, _ => { });
-            try
-            {
-                for (int cycle = 0; cycle < 3; cycle++)
-                {
-                    Assert.That(panel.RootVisualElement, Is.Null);
-                    Assert.That(physical.style.display.value, Is.EqualTo(DisplayStyle.Flex));
-                    Assert.That(physical.style.translate.value.x, Is.EqualTo(Length.Percent(200)));
-                    ((IUIPanel)panel).OnOpenInternal(null);
-                    var token = panel.LayoutCancellationToken;
-                    Assert.That(panel.RootVisualElement, Is.SameAs(physical));
-                    Assert.That(physical.style.translate.value.x, Is.EqualTo(Length.Percent(200)));
-                    double deadline = EditorApplication.timeSinceStartup + 3;
-                    while (!panel.LayoutCompletion.IsCompleted)
-                    {
-                        Assert.That(EditorApplication.timeSinceStartup, Is.LessThan(deadline));
-                        yield return null;
-                    }
-                    Assert.That(panel.LayoutCompletion.IsCompletedSuccessfully, Is.True);
-                    Assert.That(physical.style.translate.keyword, Is.EqualTo(StyleKeyword.Null));
-                    Assert.That(physical.style.visibility, Is.EqualTo(originalVisibility));
-                    SendMouseEnter(target);
-                    Assert.That(enters, Is.EqualTo(cycle + 1));
-                    CloseToolkitPanel(panel);
-                    Assert.That(token.IsCancellationRequested, Is.True);
-                    Assert.That(panel.RootVisualElement, Is.Null);
-                    Assert.That(panel.DocumentRoot, Is.SameAs(physical));
-                    SendMouseEnter(target);
-                    Assert.That(enters, Is.EqualTo(cycle + 1));
-                }
-                Assert.That(ready, Is.EqualTo(3));
-                Assert.That(released, Is.EqualTo(3));
-            }
-            finally
-            {
-                InvokeToolkitLifecycle(panel, "OnDisable");
                 Object.DestroyImmediate(settings);
             }
         }

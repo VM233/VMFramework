@@ -132,10 +132,7 @@ namespace VMFramework.UI
             RootVisualElement.pickingMode = PickingMode.Ignore;
             RootVisualElement.DisplayFlex();
 
-            if (UIToolkitPanelConfig.CloseMode == UIToolkitPanelCloseMode.RetainLayoutOffscreen)
-                RootVisualElement.style.translate = ClosedViewportTranslation;
-            else
-                RootVisualElement.style.visibility = Visibility.Hidden;
+            RootVisualElement.style.visibility = Visibility.Hidden;
 
             work.Cancellation = new();
             work.Token = work.Cancellation.Token;
@@ -264,8 +261,6 @@ namespace VMFramework.UI
             failures.ThrowIfReleaseFailed();
         }
 
-        private static Translate ClosedViewportTranslation => new(Length.Percent(200), 0);
-
         private void ApplyClosedDocumentState()
         {
             // Rental/native retirement has already consumed this document's lifetime.
@@ -277,14 +272,7 @@ namespace VMFramework.UI
             else
             {
                 UIDocument.enabled = true;
-                var root = UIDocument.rootVisualElement;
-                if (UIToolkitPanelConfig.CloseMode == UIToolkitPanelCloseMode.RetainLayoutOffscreen)
-                {
-                    root.pickingMode = PickingMode.Ignore;
-                    root.DisplayFlex();
-                    root.style.translate = ClosedViewportTranslation;
-                }
-                else root.DisplayNone();
+                UIDocument.rootVisualElement.DisplayNone();
             }
         }
 
@@ -299,10 +287,7 @@ namespace VMFramework.UI
 
         protected virtual void OnPostLayoutChange()
         {
-            if (UIToolkitPanelConfig.CloseMode == UIToolkitPanelCloseMode.RetainLayoutOffscreen)
-                RootVisualElement.style.translate = StyleKeyword.Null;
-            else
-                RootVisualElement.style.visibility = Visibility.Visible;
+            RootVisualElement.style.visibility = Visibility.Visible;
 
             if (UIToolkitPanelConfig.IgnoreMouseEvents)
             {

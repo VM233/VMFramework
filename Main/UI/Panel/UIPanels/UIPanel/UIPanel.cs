@@ -38,6 +38,8 @@ namespace VMFramework.UI
 
         public event IUIPanel.OpenHandler OnOpen;
 
+        public event IUIPanel.OpenHandler OnPostOpen;
+
         public event IUIPanel.ReenterHandler OnReenter;
 
         public event IUIPanel.CloseHandler OnPreClose;
@@ -226,6 +228,21 @@ namespace VMFramework.UI
             // All visual consumers now own their root. Publish initial data before returning
             // to input/layout rather than using the following Update as an initialization barrier.
             BindObjectsManager?.PublishDelayedObjects();
+            if (IsOpened && !IsClosing) PublishPostOpen();
+        }
+
+        private void PublishPostOpen()
+        {
+            var subscribers = OnPostOpen;
+            if (subscribers == null) return;
+            if (!UnityEngine.Profiling.Profiler.enabled)
+            {
+                subscribers(this);
+                return;
+            }
+            UnityEngine.Profiling.Profiler.BeginSample("UI.Panel.PostOpen");
+            try { subscribers(this); }
+            finally { UnityEngine.Profiling.Profiler.EndSample(); }
         }
 
         private void PublishOpen()

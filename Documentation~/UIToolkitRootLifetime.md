@@ -76,6 +76,17 @@ barrier. Later queued additions use the same `PublishDelayedObjects` owner in
 the manager's normal Update. Immediate `AddObject` retains its synchronous
 semantics; queued data is not a separate presentation or fallback route.
 
+`OnPostOpen` follows that initial publication in the same open transaction.
+Consumers that read a complete initial binding set acquire their live view at
+this phase and subscribe for subsequent changes. `OnOpen` remains the phase for
+queuing initial data and preparing consumers that must observe each addition.
+Post-open is omitted if a callback has already admitted closure. It does not
+wait for another frame or for layout. Live document reconstruction still uses
+`OnRootVisualElementReady` with the current binding set; it is not another open.
+Container-slot consumers finalize genuinely unbound enabled state at post-open,
+avoiding a disable/re-enable of every slot before initial data arrives. Later
+live binding removals still disable their slots synchronously.
+
 Close admission publishes `IsClosing=true` before PreClose subscribers run.
 An earlier subscriber may remove a binding and synchronously notify a later
 subscriber; both observe the closing phase. `IsOpened` may remain true during
@@ -93,18 +104,6 @@ Closing uses the configured close policy. `DisableDocument` disables the
 document and releases its native root; reopening creates and publishes a new
 root through that same document. `VisualElementDisplayNone` keeps the document
 enabled and hides its existing root; reopening publishes that retained root.
-`RetainLayoutOffscreen` keeps the viewport in layout and translates it two
-viewport widths to the right while closed or preparing. Use it for frequently
-switched windows whose presentation fits their viewport. It trades ongoing
-native layout/render-tree retention for lower switching cost. The generated
-viewport owns this transform; authored window placement remains on its children.
-The native layout boundary clears that transform before repaint, avoiding an
-inherited visibility toggle throughout the tree. Closure still cancels and joins
-the layout Task, retires the published root and releases all live data/input
-subscriptions. It does not keep a panel logically open or retain actor leases.
-Qualify actual closed-window pixels and picking, first entry, repeated routes,
-placement, document reconstruction and closed-frame cost in the consumer. The
-existing close modes keep their previous behavior.
 Live Reload can replace a closed retained root, with the same close policy.
 Native destruction publishes item liveness before its physical pool retirement.
 Pool clear destroys the native panel immediately in Edit Mode and schedules its

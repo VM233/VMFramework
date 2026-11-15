@@ -1,5 +1,16 @@
 # Changelog
 
+## [9.5.0] - 2026-11-16
+
+### Changed
+
+- Publish `IUIPanel.OnPostOpen` after queued initial bindings and before returning from Open. Data consumers can acquire the complete binding set once; a callback that already admitted closure does not publish post-open. Native document reconstruction keeps its root-ready lifetime.
+- Finalize unbound container-slot eligibility at that synchronous post-open boundary. Avoid disabling and immediately enabling slots between root admission and initial data, while preserving immediate live removal, empty views and paired retirement.
+
+### Removed
+
+- Withdraw the experimental `RetainLayoutOffscreen` policy. Consumer acceptance still exceeded its latency budget and showed motion defects. Existing configurations use their established document close policies.
+
 ## [9.4.0] - 2026-11-16
 
 ### Added

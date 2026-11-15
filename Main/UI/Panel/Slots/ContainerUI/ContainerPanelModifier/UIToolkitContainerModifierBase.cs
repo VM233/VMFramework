@@ -41,6 +41,7 @@ namespace VMFramework.UI
             rootOwner = this.UIToolkitPanel();
             rootOwner.OnRootVisualElementReady += OnRootReady;
             rootOwner.OnRootVisualElementReleased += OnRootReleased;
+            Panel.OnPostOpen += OnPostOpen;
             Panel.BindObjectsManager.OnBindObjectChanged += OnBindObjectChanged;
         }
 
@@ -54,6 +55,7 @@ namespace VMFramework.UI
                 rootOwner.OnRootVisualElementReady -= OnRootReady;
                 rootOwner.OnRootVisualElementReleased -= OnRootReleased;
             }
+            Panel.OnPostOpen -= OnPostOpen;
             failures.Attempt("slots.retire", RetireSlots);
             rootOwner = null;
             failures.Attempt("base.deinitialize", () => base.OnDeinitialize());
@@ -65,9 +67,11 @@ namespace VMFramework.UI
             Panel.BindObjectsManager.OnBindObjectChanged += OnSlotBindingChanged;
             if (Panel.BindObjectsManager.GetObject(bindObjectsName) is IContainer container)
                 AdoptSlotSource(container);
-            else
+            else if (Panel.IsOpened)
                 RefreshUnboundSlotsEnabledState();
         }
+
+        private void OnPostOpen(IUIPanel panel) => RefreshUnboundSlotsEnabledState();
 
         private void OnRootReleased(IUIToolkitPanel panel, UIToolkitRootRetirement retirement)
         {
