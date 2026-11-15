@@ -49,6 +49,13 @@ registration and adds no state, subscription, traversal or resource lifetime.
 The UIDocument root carries the viewport and always uses `PickingMode.Ignore`.
 Authored descendants own their hit areas. A full-screen modal backdrop must be
 an authored pickable element; a document wrapper must not intercept the desktop.
+Content picking policies use `GetContentPickingMode` / `SetContentPickingMode`
+on their owning panel. These access the requested mode while admission temporarily
+masks native picking, including controls created by initial bindings. Reading
+`element.pickingMode` during that mask would incorrectly preserve Ignore across
+root retirement. The gate restores requested modes before root-release consumers
+restore their authored policy. Declared mouse exclusion remains authoritative
+through the published lifetime and restores content modes on retirement.
 `UIPanelManager.GetPresentedPanels` appends the actual opened and closing rentals,
 including nonunique instances. Callers supply and clear their collection. Native
 input consumers may query each distinct `RootVisualElement.panel` once, using

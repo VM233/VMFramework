@@ -36,6 +36,19 @@ namespace VMFramework.UI
         public IDisposable HoldPresentation() => runtimeRoot?.Presentation.Hold() ??
             throw new InvalidOperationException($"UIToolkitPanel {id} has no preparing root.");
 
+        public PickingMode GetContentPickingMode(VisualElement element)
+        {
+            if (element == null) throw new ArgumentNullException(nameof(element));
+            return runtimeRoot?.Presentation.GetContentPickingMode(element) ?? element.pickingMode;
+        }
+
+        public void SetContentPickingMode(VisualElement element, PickingMode mode)
+        {
+            if (element == null) throw new ArgumentNullException(nameof(element));
+            if (runtimeRoot != null) runtimeRoot.Presentation.SetContentPickingMode(element, mode);
+            else element.pickingMode = mode;
+        }
+
         public event Action<IUIToolkitPanel> OnLayoutChangeEvent;
 
         public event Action<IUIToolkitPanel, VisualElement> OnRootVisualElementReady;

@@ -64,5 +64,51 @@ namespace VMFramework.Editor.Tests
             gate.CompleteLayout();
             Assert.That(button.pickingMode, Is.EqualTo(PickingMode.Position));
         }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void ContentPolicyReadsLogicalModesAndCanChangeThemWhileNativeInputIsMasked(bool ignoreMouseEvents)
+        {
+            var root = new VisualElement();
+            var gate = new UIToolkitPresentationGate(root, ignoreMouseEvents);
+            gate.ExcludePicking();
+            var generated = new Button();
+            root.Add(generated);
+            gate.ExcludePicking();
+            Assert.That(gate.GetContentPickingMode(generated), Is.EqualTo(PickingMode.Position));
+            gate.SetContentPickingMode(generated, PickingMode.Ignore);
+            Assert.That(gate.GetContentPickingMode(generated), Is.EqualTo(PickingMode.Ignore));
+            gate.SetContentPickingMode(generated, PickingMode.Position);
+            Assert.That(generated.pickingMode, Is.EqualTo(PickingMode.Ignore));
+            gate.CompleteLayout();
+            Assert.That(generated.pickingMode,
+                Is.EqualTo(ignoreMouseEvents ? PickingMode.Ignore : PickingMode.Position));
+            Assert.That(gate.GetContentPickingMode(generated), Is.EqualTo(PickingMode.Position));
+            gate.Dispose();
+            Assert.That(generated.pickingMode, Is.EqualTo(PickingMode.Position));
+            gate.SetContentPickingMode(generated, PickingMode.Ignore);
+            using var reopened = new UIToolkitPresentationGate(root, ignoreMouseEvents: false);
+            reopened.ExcludePicking();
+            reopened.CompleteLayout();
+            Assert.That(generated.pickingMode, Is.EqualTo(PickingMode.Ignore),
+                "A retired content owner may restore its original policy before another root publishes.");
+        }
+
+        [Test]
+        public void NativeScrollViewPartsParticipateAlongsideLogicalContent()
+        {
+            var root = new VisualElement();
+            var scroll = new ScrollView();
+            root.Add(scroll);
+            var nativePart = scroll.verticalScroller;
+            Assert.That(scroll.contentContainer.Contains(nativePart), Is.False);
+            nativePart.pickingMode = PickingMode.Position;
+            using var gate = new UIToolkitPresentationGate(root, ignoreMouseEvents: false);
+            gate.ExcludePicking();
+            Assert.That(nativePart.pickingMode, Is.EqualTo(PickingMode.Ignore));
+            Assert.That(gate.GetContentPickingMode(nativePart), Is.EqualTo(PickingMode.Position));
+            gate.CompleteLayout();
+            Assert.That(nativePart.pickingMode, Is.EqualTo(PickingMode.Position));
+        }
     }
 }

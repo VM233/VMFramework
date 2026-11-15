@@ -21,6 +21,12 @@ namespace VMFramework.UI
         /// <summary>Delay presentation/input until a root-ready consumer publishes its actual placement.</summary>
         public IDisposable HoldPresentation();
 
+        /// <summary>Read content policy without observing the preparing-root input mask.</summary>
+        public PickingMode GetContentPickingMode(VisualElement element);
+
+        /// <summary>Set content policy while preserving any active presentation/mouse exclusion.</summary>
+        public void SetContentPickingMode(VisualElement element, PickingMode mode);
+
         internal void CompleteLayoutRetirement(Task actualLayout);
 
         public event Action<IUIToolkitPanel, VisualElement> OnRootVisualElementReady;

@@ -1,5 +1,16 @@
 # Changelog
 
+## [9.7.0] - 2026-11-16
+
+### Fixed
+
+- Separate logical content picking modes from the presentation gate's temporary native mask. `IUIToolkitPanel.GetContentPickingMode` and `SetContentPickingMode` let content policies preserve their authored modes for binding-created controls across retirement/reopen.
+- Keep declared mouse exclusion authoritative after admission, while restoring the content policy when the root retires.
+
+### Validation scope
+
+- Native gate regressions cover logical policy updates during masking, generated ScrollView parts, declared mouse exclusion and retirement/reopen. Consumer native capacity-cell picking, window input and the independent response budget remain required.
+
 ## [9.6.0] - 2026-11-16
 
 ### Changed

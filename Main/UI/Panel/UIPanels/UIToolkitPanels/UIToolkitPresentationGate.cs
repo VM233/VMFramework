@@ -53,6 +53,19 @@ namespace VMFramework.UI
             element.pickingMode = PickingMode.Ignore;
         }
 
+        internal PickingMode GetContentPickingMode(VisualElement element) =>
+            picking.TryGetValue(element, out var requested) ? requested : element.pickingMode;
+
+        internal void SetContentPickingMode(VisualElement element, PickingMode requested)
+        {
+            if (!retired && (!admitted || ignoreMouseEvents))
+            {
+                picking[element] = requested;
+                element.pickingMode = PickingMode.Ignore;
+            }
+            else element.pickingMode = requested;
+        }
+
         internal void CompleteLayout()
         {
             ExcludePicking();
@@ -78,7 +91,9 @@ namespace VMFramework.UI
         {
             foreach (var pair in picking)
                 pair.Key.pickingMode = admitting && ignoreMouseEvents ? PickingMode.Ignore : pair.Value;
-            picking.Clear();
+            // A declared mouse exclusion owns its mask for the whole published root.
+            // Preserve logical modes until retirement, including subsequent content updates.
+            if (!admitting || !ignoreMouseEvents) picking.Clear();
             root.UnregisterCallback<PointerDownEvent>(BlockInput, TrickleDown.TrickleDown);
             root.UnregisterCallback<PointerUpEvent>(BlockInput, TrickleDown.TrickleDown);
             root.UnregisterCallback<ClickEvent>(BlockInput, TrickleDown.TrickleDown);
