@@ -1,5 +1,15 @@
 # Changelog
 
+## [9.4.0] - 2026-11-16
+
+### Added
+
+- Add `RetainLayoutOffscreen` for frequently switched UI Toolkit windows. Closed and preparing documents retain native layout outside the viewport; the existing native layout completion restores presentation. Root retirement, cancellation, bindings and pointer subscriptions keep their normal logical lifetimes.
+
+### Changed
+
+- Collect actual container slots with native UQuery instead of recursive managed tree iterators. Preserve typed-root and duplicate-name matching, authored mapping order, scope and removal behavior; collect before hierarchy mutation and return pooled lists in finally.
+
 ## [9.3.0] - 2026-11-15
 
 ### Changed

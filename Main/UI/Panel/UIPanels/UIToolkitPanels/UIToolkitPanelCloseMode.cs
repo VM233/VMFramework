@@ -4,5 +4,6 @@
     {
         DisableDocument,
         VisualElementDisplayNone,
+        RetainLayoutOffscreen,
     }
 }

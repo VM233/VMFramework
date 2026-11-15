@@ -13,12 +13,20 @@ PreLateUpdate.UIElementsUpdatePanels and before PostLateUpdate repaint. It uses
 the existing cancellable layout Task and joined retirement; a generic Update
 continuation does not establish native layout completion.
 
-Named container-slot mapping resolves the current typed slot set once per pass,
+Named container-slot mapping resolves the current typed slot set with native UQuery once per pass,
 then applies authored bindings in order. It does not retain an address cache
 across root, hierarchy or container changes. Extra-slot removal and missing-name
 diagnostics use current parent membership. The address set must be composed
 before mapping; mapping callbacks own data and presentation, not the creation of
 another named address within the same mapping pass.
+
+Default and named slot collection also use native UQuery rather than recursive
+managed tree iterators. Collection precedes callbacks that may move or remove
+slots. Pooled temporary lists return in finally. For D distributors, N native
+elements, S matched slots and B configured name bindings, selection costs
+O(D*N + B*S), retaining at most S temporary slot references per pass. No address
+or actor cache is introduced. The existing native named-address and container
+retirement fixtures verify typed roots, duplicate matches, scope and rebinding.
 
 While native Profiler recording is enabled, `UI.Panel.Open` and
 `UI.Binding.Publish` identify synchronous transactions in the same input frame.
@@ -85,6 +93,18 @@ Closing uses the configured close policy. `DisableDocument` disables the
 document and releases its native root; reopening creates and publishes a new
 root through that same document. `VisualElementDisplayNone` keeps the document
 enabled and hides its existing root; reopening publishes that retained root.
+`RetainLayoutOffscreen` keeps the viewport in layout and translates it two
+viewport widths to the right while closed or preparing. Use it for frequently
+switched windows whose presentation fits their viewport. It trades ongoing
+native layout/render-tree retention for lower switching cost. The generated
+viewport owns this transform; authored window placement remains on its children.
+The native layout boundary clears that transform before repaint, avoiding an
+inherited visibility toggle throughout the tree. Closure still cancels and joins
+the layout Task, retires the published root and releases all live data/input
+subscriptions. It does not keep a panel logically open or retain actor leases.
+Qualify actual closed-window pixels and picking, first entry, repeated routes,
+placement, document reconstruction and closed-frame cost in the consumer. The
+existing close modes keep their previous behavior.
 Live Reload can replace a closed retained root, with the same close policy.
 Native destruction publishes item liveness before its physical pool retirement.
 Pool clear destroys the native panel immediately in Edit Mode and schedules its

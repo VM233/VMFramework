@@ -267,46 +267,33 @@ namespace VMFramework.UI
             var slots = ListPool<SlotVisualElement>.Default.Get();
             slots.Clear();
 
-            if (distributorConfig.findMethod == SlotFindMethod.Default)
+            try
             {
-                slots.AddRange(parent.QueryAll<SlotVisualElement>());
-            }
-            else if (distributorConfig.findMethod == SlotFindMethod.ByName)
-            {
-                slots.AddRange(parent.QueryAllByName<SlotVisualElement>(distributorConfig.slotName));
-            }
-            else
-            {
-                UnityEngine.Debug.LogError($"Unsupported find method: {distributorConfig.findMethod}!");
-                slots.ReturnToDefaultPool();
-                return;
-            }
-
-            foreach (var slot in slots)
-            {
-                if (count <= 0)
+                if (distributorConfig.findMethod == SlotFindMethod.Default)
+                    parent.Query<SlotVisualElement>().ToList(slots);
+                else if (distributorConfig.findMethod == SlotFindMethod.ByName)
+                    parent.Query<SlotVisualElement>(name: distributorConfig.slotName).ToList(slots);
+                else
                 {
-                    break;
+                    throw new System.InvalidOperationException($"Unsupported find method: {distributorConfig.findMethod}!");
                 }
 
-                if (distributorConfig.removeExtraSlots)
+                foreach (var slot in slots)
                 {
-                    if (container != null && index >= container.Count)
+                    if (count <= 0) break;
+                    if (distributorConfig.removeExtraSlots && container != null && index >= container.Count)
                     {
                         slot.RemoveFromHierarchy();
                         index++;
                         count--;
                         continue;
                     }
+                    SetSlot(index, slot);
+                    index++;
+                    count--;
                 }
-
-                SetSlot(index, slot);
-
-                index++;
-                count--;
             }
-
-            slots.ReturnToDefaultPool();
+            finally { slots.ReturnToDefaultPool(); }
 
             if (container == null)
             {
@@ -401,7 +388,7 @@ namespace VMFramework.UI
 
             if (distributorConfig.findMethod == SlotFindMethod.Default)
             {
-                foreach (var slot in parent.QueryAll<SlotVisualElement>())
+                foreach (var slot in parent.Query<SlotVisualElement>().Build())
                 {
                     existingSlots.Add(slot);
                 }
@@ -411,7 +398,7 @@ namespace VMFramework.UI
 
             if (distributorConfig.findMethod == SlotFindMethod.ByName)
             {
-                foreach (var slot in parent.QueryAllByName<SlotVisualElement>(distributorConfig.slotName))
+                foreach (var slot in parent.Query<SlotVisualElement>(name: distributorConfig.slotName).Build())
                 {
                     existingSlots.Add(slot);
                 }
@@ -425,7 +412,7 @@ namespace VMFramework.UI
                 slots.Clear();
                 try
                 {
-                    slots.AddRange(parent.QueryAll<SlotVisualElement>());
+                    parent.Query<SlotVisualElement>().ToList(slots);
                     foreach (var binding in distributorConfig.slotNameBindings)
                     {
                         if (string.IsNullOrWhiteSpace(binding.slotName) || binding.slotIndex < 0) continue;
@@ -438,7 +425,7 @@ namespace VMFramework.UI
                 return;
             }
 
-            UnityEngine.Debug.LogError($"Unsupported find method: {distributorConfig.findMethod}!");
+            throw new System.InvalidOperationException($"Unsupported find method: {distributorConfig.findMethod}!");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -454,7 +441,7 @@ namespace VMFramework.UI
             {
                 // Resolve the typed address set once. Each authored name then searches slots,
                 // rather than traversing every Label, Image and generated descendant again.
-                slots.AddRange(parent.QueryAll<SlotVisualElement>());
+                parent.Query<SlotVisualElement>().ToList(slots);
                 foreach (var binding in distributorConfig.slotNameBindings)
                 {
                     if (string.IsNullOrWhiteSpace(binding.slotName))
