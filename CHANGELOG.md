@@ -1,5 +1,12 @@
 # Changelog
 
+## [9.2.11] - 2026-11-15
+
+### Fixed
+
+- Publish queued initial UI bindings at the end of the panel-open transaction, after every view consumer initializes and before returning to input/layout. Reopening uses the same admission boundary, avoiding a mandatory extra frame of unbound UI.
+- Add a native root fixture rejecting next-Update publication, subscriber-order dependence and duplicate queue publication.
+
 ## [9.2.10] - 2026-11-15
 
 ### Fixed

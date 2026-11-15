@@ -223,6 +223,9 @@ namespace VMFramework.UI
             IsOpened = true;
             OnPostOpenInternal(source);
             OnOpen?.Invoke(this);
+            // All visual consumers now own their root. Publish initial data before returning
+            // to input/layout rather than using the following Update as an initialization barrier.
+            BindObjectsManager?.PublishDelayedObjects();
         }
 
         protected virtual void OnOpenInternal(IUIPanel source)

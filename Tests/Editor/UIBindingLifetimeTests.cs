@@ -48,6 +48,44 @@ namespace VMFramework.Editor.Tests
         private UIPanelManager panels;
         private GameEventManager events;
 
+        [UnityTest]
+        public IEnumerator OpenPublishesQueuedBindingsAfterEveryConsumerAndBeforeReturning()
+        {
+            var panel = CreateToolkitPanel(UIToolkitPanelCloseMode.VisualElementDisplayNone,
+                out var settings, out _, includeObjects: true);
+            var data = new object();
+            bool consumerReady = false;
+            int published = 0;
+            panel.OnOpen += _ => panel.BindObjectsManager.DelayedAddObject("initial", data);
+            panel.OnOpen += _ => consumerReady = true;
+            panel.BindObjectsManager.OnBindObjectChanged += (name, value, parent, added) =>
+            {
+                if (!added) return;
+                Assert.That(consumerReady, Is.True, "Initial binding must not depend on subscriber order.");
+                Assert.That(value, Is.SameAs(data));
+                published++;
+            };
+            try
+            {
+                ((IUIPanel)panel).OnOpenInternal(null);
+                Assert.That(published, Is.EqualTo(1), "Waiting for the following Update is a response defect.");
+                panel.BindObjectsManager.PublishDelayedObjects();
+                Assert.That(published, Is.EqualTo(1), "The open admission must consume the queue exactly once.");
+                yield return null;
+                CloseToolkitPanel(panel);
+                consumerReady = false;
+                ((IUIPanel)panel).OnOpenInternal(null);
+                Assert.That(published, Is.EqualTo(2));
+                yield return null;
+                CloseToolkitPanel(panel);
+            }
+            finally
+            {
+                InvokeToolkitLifecycle(panel, "OnDisable");
+                Object.DestroyImmediate(settings);
+            }
+        }
+
         [Test]
         public void IconLabelRetainsAuthoredContentAndClearsAnOptionalIcon()
         {

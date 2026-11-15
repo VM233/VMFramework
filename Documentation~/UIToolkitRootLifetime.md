@@ -32,6 +32,14 @@ layout Task. The layout event runs within that Task, so the event itself does
 not prove terminal completion. Await the original `LayoutCompletion` before
 adopting a completed layout or releasing resources held by its continuation.
 
+The panel's open transaction invokes every `OnOpen` consumer before publishing
+the bind-object manager's queued initial data. Thus a producer can queue an
+object without depending on the order of view subscribers, and `Open` returns
+with those bindings published. The following frame is not an initialization
+barrier. Later queued additions use the same `PublishDelayedObjects` owner in
+the manager's normal Update. Immediate `AddObject` retains its synchronous
+semantics; queued data is not a separate presentation or fallback route.
+
 `OnRootVisualElementReleased` publishes a `UIToolkitRootRetirement` containing
 the exact released root, its original failure and its actual layout Task.
 Cancellation belongs to that root's `LayoutCancellationToken`. It does not

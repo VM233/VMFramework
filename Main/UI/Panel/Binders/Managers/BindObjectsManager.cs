@@ -73,6 +73,12 @@ namespace VMFramework.UI
                 return;
             }
 
+            PublishDelayedObjects();
+        }
+
+        /// <summary>Publishes queued data after open consumers have acquired their actual view.</summary>
+        public void PublishDelayedObjects()
+        {
             foreach (var (bindName, bindObjects) in addQueue)
             {
                 if (bindObjects.Count > 0)
