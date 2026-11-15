@@ -421,18 +421,19 @@ namespace VMFramework.UI
 
             if (distributorConfig.findMethod == SlotFindMethod.BySlotNames)
             {
-                foreach (var binding in distributorConfig.slotNameBindings)
+                var slots = ListPool<SlotVisualElement>.Default.Get();
+                slots.Clear();
+                try
                 {
-                    if (string.IsNullOrWhiteSpace(binding.slotName) || binding.slotIndex < 0)
+                    slots.AddRange(parent.QueryAll<SlotVisualElement>());
+                    foreach (var binding in distributorConfig.slotNameBindings)
                     {
-                        continue;
-                    }
-
-                    foreach (var slot in parent.QueryAllByName<SlotVisualElement>(binding.slotName))
-                    {
-                        existingSlots.Add(slot);
+                        if (string.IsNullOrWhiteSpace(binding.slotName) || binding.slotIndex < 0) continue;
+                        foreach (var slot in slots)
+                            if (slot.name == binding.slotName) existingSlots.Add(slot);
                     }
                 }
+                finally { slots.ReturnToDefaultPool(); }
 
                 return;
             }
@@ -449,46 +450,44 @@ namespace VMFramework.UI
             var parentName = string.IsNullOrWhiteSpace(distributorConfig.parentName)
                 ? "panel root"
                 : distributorConfig.parentName;
-
-            foreach (var binding in distributorConfig.slotNameBindings)
+            try
             {
-                if (string.IsNullOrWhiteSpace(binding.slotName))
+                // Resolve the typed address set once. Each authored name then searches slots,
+                // rather than traversing every Label, Image and generated descendant again.
+                slots.AddRange(parent.QueryAll<SlotVisualElement>());
+                foreach (var binding in distributorConfig.slotNameBindings)
                 {
-                    UnityEngine.Debug.LogWarning("Slot name binding has an empty slot name!");
-                    continue;
-                }
-
-                if (binding.slotIndex < 0)
-                {
-                    UnityEngine.Debug.LogWarning(
-                        $"Slot name binding for slot: {binding.slotName} has an invalid index: {binding.slotIndex}!");
-                    continue;
-                }
-
-                slots.Clear();
-                slots.AddRange(parent.QueryAllByName<SlotVisualElement>(binding.slotName));
-
-                if (slots.Count <= 0)
-                {
-                    UnityEngine.Debug.LogWarning(
-                        $"Failed to find slot: {binding.slotName} under parent: {parentName}!");
-                    continue;
-                }
-
-                foreach (var slot in slots)
-                {
-                    if (distributorConfig.removeExtraSlots && container != null &&
-                        binding.slotIndex >= container.Count)
+                    if (string.IsNullOrWhiteSpace(binding.slotName))
                     {
-                        slot.RemoveFromHierarchy();
+                        UnityEngine.Debug.LogWarning("Slot name binding has an empty slot name!");
                         continue;
                     }
-
-                    SetSlot(binding.slotIndex, slot);
+                    if (binding.slotIndex < 0)
+                    {
+                        UnityEngine.Debug.LogWarning(
+                            $"Slot name binding for slot: {binding.slotName} has an invalid index: {binding.slotIndex}!");
+                        continue;
+                    }
+                    bool found = false;
+                    foreach (var slot in slots)
+                    {
+                        if (slot.name != binding.slotName ||
+                            !ReferenceEquals(parent, slot) && !parent.Contains(slot)) continue;
+                        found = true;
+                        if (distributorConfig.removeExtraSlots && container != null &&
+                            binding.slotIndex >= container.Count)
+                        {
+                            slot.RemoveFromHierarchy();
+                            continue;
+                        }
+                        SetSlot(binding.slotIndex, slot);
+                    }
+                    if (!found)
+                        UnityEngine.Debug.LogWarning(
+                            $"Failed to find slot: {binding.slotName} under parent: {parentName}!");
                 }
             }
-
-            slots.ReturnToDefaultPool();
+            finally { slots.ReturnToDefaultPool(); }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -1,5 +1,11 @@
 # Changelog
 
+## [9.2.14] - 2026-11-15
+
+### Fixed
+
+- Resolve named container-slot addresses with one typed tree traversal per pass. Match configured names within that scoped slot set, preserving binding order, duplicate-name matches, missing-address diagnostics and removal behavior. Unbound-slot collection uses the same bounded traversal; temporary pooled lists retire in finally.
+
 ## [9.2.13] - 2026-11-15
 
 ### Added

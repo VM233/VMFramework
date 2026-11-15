@@ -1,5 +1,12 @@
 # Runtime UI Toolkit roots
 
+Named container-slot mapping resolves the current typed slot set once per pass,
+then applies authored bindings in order. It does not retain an address cache
+across root, hierarchy or container changes. Extra-slot removal and missing-name
+diagnostics use current parent membership. The address set must be composed
+before mapping; mapping callbacks own data and presentation, not the creation of
+another named address within the same mapping pass.
+
 While native Profiler recording is enabled, `UI.Panel.Open:<subscriber type>` and
 `UI.Binding:<subscriber type>` identify synchronous consumer costs in the same
 input frame. Recording-disabled publication keeps the normal multicast call.

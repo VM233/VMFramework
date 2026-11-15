@@ -753,6 +753,78 @@ namespace VMFramework.Editor.Tests
         }
 
         [UnityTest]
+        public IEnumerator ContainerSlots_NamedAddressesIncludeTheirTypedRootAndAllScopedMatches()
+        {
+            var panel = CreateToolkitPanel(UIToolkitPanelCloseMode.VisualElementDisplayNone,
+                out var settings, out _, includeObjects: true);
+            var modifier = panel.gameObject.AddComponent<UIToolkitContainerModifierBase>();
+            modifier.bindObjectsName = "fixture_named_slots";
+            ((HashSet<string>)typeof(BindObjectsManager)
+                .GetField("singleModeNames", BindingFlags.Instance | BindingFlags.NonPublic)
+                .GetValue(panel.BindObjectsManager)).Add(modifier.bindObjectsName);
+            modifier.slotDistributorConfigs.Add(new ContainerSlotDistributorConfig
+            {
+                parentName = "Named Slot Root", findMethod = SlotFindMethod.BySlotNames,
+                removeExtraSlots = false,
+                slotNameBindings = new List<ContainerSlotNameBindingConfig>
+                {
+                    new() { slotName = "Named Slot Root", slotIndex = 0 },
+                    new() { slotName = "Twin", slotIndex = 1 },
+                    new() { slotName = "Last", slotIndex = 2 }
+                }
+            });
+            modifier.Initialize(panel, panel.Config);
+            SlotVisualElement rootSlot = null, first = null, second = null, last = null;
+            panel.OnGenerateVisualElement += (_, root) =>
+            {
+                rootSlot = new SlotVisualElement { name = "Named Slot Root" };
+                first = new SlotVisualElement { name = "Twin" };
+                second = new SlotVisualElement { name = "Twin" };
+                last = new SlotVisualElement { name = "Last" };
+                rootSlot.Add(first); rootSlot.Add(new VisualElement { name = "Twin" });
+                rootSlot.Add(second); rootSlot.Add(last);
+                root.Add(rootSlot);
+                root.Add(new SlotVisualElement { name = "Twin" });
+            };
+            var containerHost = new GameObject("Named Slot Source");
+            containerHost.transform.SetParent(host.transform);
+            var container = containerHost.AddComponent<Container>();
+            var order = new List<SlotVisualElement>();
+            modifier.OnSlotChanged += (_, slot, added) => { if (added) order.Add(slot); };
+            try
+            {
+                panel.BindObjectsManager.AddObject(modifier.bindObjectsName, container);
+                ((IUIPanel)panel).OnOpenInternal(null);
+                yield return null;
+                yield return null;
+                Assert.That(order, Is.EqualTo(new[] { rootSlot, first, second, last }));
+                Assert.That(modifier.TryGetSlots(0, out var rootMatches), Is.True);
+                Assert.That(rootMatches, Is.EqualTo(new[] { rootSlot }));
+                Assert.That(modifier.TryGetSlots(1, out var twins), Is.True);
+                Assert.That(twins, Is.EquivalentTo(new[] { first, second }));
+                Assert.That(modifier.TryGetSlots(2, out var tail), Is.True);
+                Assert.That(tail, Is.EqualTo(new[] { last }));
+                panel.BindObjectsManager.RemoveObject(modifier.bindObjectsName, container);
+                Assert.That(ContainerVisualCallbacks(container), Is.Zero);
+                foreach (var slot in new[] { rootSlot, first, second, last })
+                    Assert.That(slot.enabledSelf, Is.False);
+                Assert.That(modifier.Slots, Is.Empty);
+                panel.BindObjectsManager.AddObject(modifier.bindObjectsName, container);
+                Assert.That(modifier.Slots.Count, Is.EqualTo(4));
+                foreach (var slot in new[] { rootSlot, first, second, last })
+                    Assert.That(slot.enabledSelf, Is.True);
+                CloseToolkitPanel(panel);
+                Assert.That(ContainerVisualCallbacks(container), Is.Zero);
+            }
+            finally
+            {
+                modifier.Deinitialize();
+                InvokeToolkitLifecycle(panel, "OnDisable");
+                Object.DestroyImmediate(settings);
+            }
+        }
+
+        [UnityTest]
         public IEnumerator ContainerSlots_DisabledRootRetiresBeforeBindingRemoval() =>
             ExerciseContainerRootRetirement("disable");
 
