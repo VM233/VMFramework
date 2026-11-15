@@ -1,5 +1,11 @@
 # Changelog
 
+## [9.2.13] - 2026-11-15
+
+### Added
+
+- Attribute recorded UI panel-open and binding publication CPU samples to their actual subscriber types. Preserve multicast ordering, exception propagation and mutation semantics; disabled recording keeps the original allocation-free delegate invocation.
+
 ## [9.2.12] - 2026-11-15
 
 ### Fixed

@@ -91,8 +91,25 @@ namespace VMFramework.UI
 
         protected virtual void InvokeChange(string bindName, object bindObject, object parentObject, bool added)
         {
-            OnBindObjectPreChanged?.Invoke(bindName, bindObject, parentObject, added);
-            OnBindObjectChanged?.Invoke(bindName, bindObject, parentObject, added);
+            PublishChange(OnBindObjectPreChanged, bindName, bindObject, parentObject, added);
+            PublishChange(OnBindObjectChanged, bindName, bindObject, parentObject, added);
+        }
+
+        private static void PublishChange(BindObjectChangedHandler subscribers, string bindName,
+            object bindObject, object parentObject, bool added)
+        {
+            if (subscribers == null) return;
+            if (!UnityEngine.Profiling.Profiler.enabled)
+            {
+                subscribers(bindName, bindObject, parentObject, added);
+                return;
+            }
+            foreach (BindObjectChangedHandler subscriber in subscribers.GetInvocationList())
+            {
+                UnityEngine.Profiling.Profiler.BeginSample("UI.Binding:" + subscriber.Method.DeclaringType);
+                try { subscriber(bindName, bindObject, parentObject, added); }
+                finally { UnityEngine.Profiling.Profiler.EndSample(); }
+            }
         }
 
         public virtual void AddObject(object bindObject)

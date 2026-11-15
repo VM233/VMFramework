@@ -1,5 +1,13 @@
 # Runtime UI Toolkit roots
 
+While native Profiler recording is enabled, `UI.Panel.Open:<subscriber type>` and
+`UI.Binding:<subscriber type>` identify synchronous consumer costs in the same
+input frame. Recording-disabled publication keeps the normal multicast call.
+Profiling does not defer, reorder, retry or swallow subscriber failures. Each
+recorded publication snapshots its current invocation list once, matching native
+multicast mutation semantics; binding publications are measured separately even
+when nested. Acceptance timings still require a recording-disabled replay.
+
 `UIToolkitPanel` owns the live `UIDocument` root. A logical panel can outlive a
 root: native Live Reload, closing and destruction retire the published root and
 its consumers. `GenerateVisualElement` creates a detached authoring preview and

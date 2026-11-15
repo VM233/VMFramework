@@ -222,10 +222,27 @@ namespace VMFramework.UI
             }
             IsOpened = true;
             OnPostOpenInternal(source);
-            OnOpen?.Invoke(this);
+            PublishOpen();
             // All visual consumers now own their root. Publish initial data before returning
             // to input/layout rather than using the following Update as an initialization barrier.
             BindObjectsManager?.PublishDelayedObjects();
+        }
+
+        private void PublishOpen()
+        {
+            var subscribers = OnOpen;
+            if (subscribers == null) return;
+            if (!UnityEngine.Profiling.Profiler.enabled)
+            {
+                subscribers(this);
+                return;
+            }
+            foreach (IUIPanel.OpenHandler subscriber in subscribers.GetInvocationList())
+            {
+                UnityEngine.Profiling.Profiler.BeginSample("UI.Panel.Open:" + subscriber.Method.DeclaringType);
+                try { subscriber(this); }
+                finally { UnityEngine.Profiling.Profiler.EndSample(); }
+            }
         }
 
         protected virtual void OnOpenInternal(IUIPanel source)
