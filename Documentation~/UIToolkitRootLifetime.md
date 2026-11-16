@@ -28,6 +28,12 @@ O(D*N + B*S), retaining at most S temporary slot references per pass. No address
 or actor cache is introduced. The existing native named-address and container
 retirement fixtures verify typed roots, duplicate matches, scope and rebinding.
 
+An explicit container `Refresh` consumes the existing pending dirty flag before
+publishing slot sources. `BuildSlots` publishes immediately after assigning item
+data; the following Update must not repeat that completed work. A subscriber may
+dirty the container during publication. That new work remains pending and is
+consumed by the next Update. This adds no state, queue, scan or frame delay.
+
 While native Profiler recording is enabled, `UI.Panel.Open` and
 `UI.Binding.Publish` identify synchronous transactions in the same input frame.
 Both recording states retain the normal multicast invocation; recording adds

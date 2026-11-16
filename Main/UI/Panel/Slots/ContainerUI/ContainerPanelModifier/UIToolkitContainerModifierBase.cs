@@ -94,7 +94,6 @@ namespace VMFramework.UI
         {
             if (refreshTag)
             {
-                refreshTag = false;
                 Refresh();
             }
         }
@@ -109,6 +108,7 @@ namespace VMFramework.UI
 
         public void Refresh()
         {
+            refreshTag = false;
             OnRefresh();
         }
 

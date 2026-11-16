@@ -1,5 +1,15 @@
 # Changelog
 
+## [9.7.1] - 2026-11-16
+
+### Fixed
+
+- An explicit container-slot refresh now consumes its pending dirty work before publication. The next Update no longer repeats that publication, while dirtiness raised by a subscriber remains pending for its own update.
+
+### Validation scope
+
+- Publication fixtures cover the old duplicate and subscriber-triggered dirtiness. Native consumer rendering, binding retirement and response timing remain independent acceptance gates.
+
 ## [9.7.0] - 2026-11-16
 
 ### Fixed
