@@ -27,6 +27,7 @@ namespace VMFramework.Procedure
         private readonly Dictionary<string, IProcedure> procedures = new();
         private readonly Queue<ProcedureTransitionRequest> procedureSwitchQueue = new();
         private readonly CancellationTokenSource lifetime = new();
+        private Task startup;
         private ProcedureTransitionRequest activeRequest;
         private TaskCompletionSource<bool> retirement;
         public CancellationToken LifetimeToken => lifetime.Token;
@@ -47,11 +48,25 @@ namespace VMFramework.Procedure
         }
         private void Start()
         {
+            startup = DiscoverStartupAsync(lifetime.Token).AsTask();
+            ObserveAutomaticTransition(startup);
+        }
+
+        private async UniTask DiscoverStartupAsync(CancellationToken token)
+        {
+            var procedureTypes = await InitializationTypeDiscovery.FindAsync(typeof(IProcedure), false, token);
+            var initializerTypes = await InitializationTypeDiscovery.FindAsync(typeof(IGameInitializer), false, token);
+            token.ThrowIfCancellationRequested();
+            BindStartup(procedureTypes, initializerTypes);
+        }
+
+        private void BindStartup(IReadOnlyList<Type> procedureTypes, IReadOnlyList<Type> initializerTypes)
+        {
             procedures.Clear();
             fsm = new MultiFSM<string, ProcedureManager>();
             string startProcedureID = null;
             int startProcedurePriority = 0;
-            foreach (var procedureType in typeof(IProcedure).GetDerivedInstantiableClasses(false))
+            foreach (var procedureType in procedureTypes)
             {
                 var procedure = (IProcedure)procedureType.CreateInstance();
                 procedures.Add(procedure.id, procedure);
@@ -72,7 +87,7 @@ namespace VMFramework.Procedure
                 if (ProcedureAutoSwitchBinder.TryGetNextProcedureID(procedureID, out var nextProcedureID))
                     ObserveAutomaticTransition(EnterProcedure(procedureID, nextProcedureID));
             };
-            CollectGameInitializers();
+            CollectGameInitializers(initializerTypes);
             ObserveAutomaticTransition(EnterProcedure(startProcedureID));
         }
         private async void ObserveAutomaticTransition(Task actual)
@@ -270,7 +285,7 @@ namespace VMFramework.Procedure
         private async void CompleteRetirementAsync(TaskCompletionSource<bool> completion)
         {
             var token = lifetime.Token;
-            var running = activeRequest?.Completion;
+            var running = activeRequest?.Completion ?? (startup is { IsCompleted: false } ? startup : null);
             bool released = true;
             var failures = new List<Exception>();
             try { lifetime.Cancel(); }
@@ -332,11 +347,14 @@ namespace VMFramework.Procedure
         private readonly InitializerManager initializerManager = new();
 
         public void CollectGameInitializers()
+            => CollectGameInitializers(typeof(IGameInitializer).GetDerivedInstantiableClasses(false));
+
+        private void CollectGameInitializers(IEnumerable<Type> initializerTypes)
         {
             initializerManager.Set(Array.Empty<IInitializer>());
             gameInitializers.Clear();
 
-            foreach (var derivedClass in typeof(IGameInitializer).GetDerivedInstantiableClasses(false))
+            foreach (var derivedClass in initializerTypes)
             {
                 if (derivedClass.TryGetAttribute<GameInitializerRegister>(false,
                         out var register) == false)

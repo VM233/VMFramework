@@ -41,6 +41,11 @@ adds constant work and retains no timing history or native resource.
 
 ## Cooperative runtime validation
 
+Procedure startup uses the same frame work budget to discover procedures and
+initializers before binding them on the main thread. The start procedure is
+selected in the original discovery order after both type lists are available.
+Retirement cancels and joins any pending discovery before releasing its lifetime.
+
 Runtime registration, validation and unique panel creation consume an
 InitializationWorkSlice with a10ms continuous-work budget. Budget expiry awaits an
 actual next PlayerLoop frame on the existing action token; cancellation and source

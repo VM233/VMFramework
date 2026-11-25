@@ -1,5 +1,11 @@
 # Changelog
 
+## [9.7.2] - 2026-11-25
+
+### Fixed
+
+- Procedure startup discovers procedures and registered initializers through the shared frame work budget. The first procedure enters after registration is complete, and retirement joins any pending discovery.
+
 ## [9.7.1] - 2026-11-16
 
 ### Fixed
