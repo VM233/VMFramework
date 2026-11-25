@@ -22,7 +22,7 @@ namespace VMFramework.Procedure
         private static readonly ProfilerMarker exitStateMarker = new("VMFramework.Procedure.State.Exit");
         private static readonly ProfilerMarker enterPublicationMarker = new("VMFramework.Procedure.Entry.Publish");
         private static readonly ProfilerMarker exitPublicationMarker = new("VMFramework.Procedure.Exit.Publish");
-        [ShowInInspector] private IMultiFSM<string, ProcedureManager> fsm;
+        [ShowInInspector] private readonly IMultiFSM<string, ProcedureManager> fsm = new MultiFSM<string, ProcedureManager>();
         [ShowInInspector] private List<IManagerBehaviour> managerBehaviours = new();
         private readonly Dictionary<string, IProcedure> procedures = new();
         private readonly Queue<ProcedureTransitionRequest> procedureSwitchQueue = new();
@@ -34,7 +34,7 @@ namespace VMFramework.Procedure
         public ProcedureResourceRetirement RetirementProduct { get; private set; }
         public ProcedureTransitionException LastTransitionFailure { get; private set; }
         [ShowInInspector] public IReadOnlyList<IProcedure> Procedures => procedures.Values.ToList();
-        [ShowInInspector] public IReadOnlyList<string> CurrentProcedureIDs => fsm?.CurrentStates.Keys.ToList();
+        [ShowInInspector] public IReadOnlyList<string> CurrentProcedureIDs => fsm.CurrentStates.Keys.ToList();
         public event Action<string> OnEnterProcedureEvent;
         public event Action<string> OnExitProcedureEvent;
 
@@ -63,7 +63,6 @@ namespace VMFramework.Procedure
         private void BindStartup(IReadOnlyList<Type> procedureTypes, IReadOnlyList<Type> initializerTypes)
         {
             procedures.Clear();
-            fsm = new MultiFSM<string, ProcedureManager>();
             string startProcedureID = null;
             int startProcedurePriority = 0;
             foreach (var procedureType in procedureTypes)

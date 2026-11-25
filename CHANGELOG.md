@@ -1,5 +1,11 @@
 # Changelog
 
+## [9.7.3] - 2026-11-25
+
+### Fixed
+
+- Procedure queries report the empty current state during startup discovery, so early frame and rendering consumers can safely check procedure membership.
+
 ## [9.7.2] - 2026-11-25
 
 ### Fixed

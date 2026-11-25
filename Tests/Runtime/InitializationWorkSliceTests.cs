@@ -17,6 +17,24 @@ namespace VMFramework.Tests
     public sealed class InitializationWorkSliceTests
     {
         [UnityTest]
+        public IEnumerator CurrentProcedureQueriesAreValidBeforeStartupBinding()
+        {
+            var host = new GameObject(nameof(ProcedureManager));
+            host.SetActive(false);
+            try
+            {
+                var procedures = host.AddComponent<ProcedureManager>();
+                Assert.That(procedures.HasCurrentProcedure(MainMenuProcedure.ID), Is.False);
+                Assert.That(procedures.CurrentProcedureIDs, Is.Empty);
+            }
+            finally
+            {
+                UnityEngine.Object.Destroy(host);
+            }
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator NewSiblingCannotResetConsumedFrameCredit()
         {
             return UniTask.ToCoroutine(async () =>

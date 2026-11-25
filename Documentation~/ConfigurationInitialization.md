@@ -45,6 +45,8 @@ Procedure startup uses the same frame work budget to discover procedures and
 initializers before binding them on the main thread. The start procedure is
 selected in the original discovery order after both type lists are available.
 Retirement cancels and joins any pending discovery before releasing its lifetime.
+Current-procedure queries read an empty state machine during discovery. Callers
+can check membership before the first procedure is bound.
 
 Runtime registration, validation and unique panel creation consume an
 InitializationWorkSlice with a10ms continuous-work budget. Budget expiry awaits an
